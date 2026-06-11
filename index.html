@@ -496,14 +496,28 @@
   tick();
   setInterval(tick, 1000);
 
-  function submitEmail() {
+  async function submitEmail() {
     const val = document.getElementById('email-input').value.trim();
     if (!val || !val.includes('@')) {
       document.getElementById('email-input').style.borderColor = '#B22234';
       return;
     }
-    document.querySelector('.signup-form').style.display = 'none';
-    document.getElementById('signup-thanks').style.display = 'block';
+    document.querySelector('button[onclick]').textContent = 'Sending...';
+    try {
+      const resp = await fetch('https://formspree.io/f/xlgkwwyl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email: val, source: 'CheckYourRepresentative.com launch signup' })
+      });
+      if (resp.ok) {
+        document.querySelector('.signup-form').style.display = 'none';
+        document.getElementById('signup-thanks').style.display = 'block';
+      } else {
+        document.querySelector('button[onclick]').textContent = 'Try again';
+      }
+    } catch(e) {
+      document.querySelector('button[onclick]').textContent = 'Try again';
+    }
   }
 </script>
 </body>
