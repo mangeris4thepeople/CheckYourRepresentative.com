@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYR Site Design Questionnaire</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: #0a0f1e;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .card {
+    background: #111827;
+    border: 1px solid rgba(178,34,52,0.3);
+    border-radius: 16px;
+    max-width: 640px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: #B22234;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .card-header .seal {
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .card-header h1 { font-family: 'Playfair Display', serif; font-size: 18px; }
+  .card-header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  .progress-bar-wrap {
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+  }
+  .progress-fill {
+    height: 100%;
+    background: #B22234;
+    transition: width 0.4s ease;
+  }
+
+  .card-body { padding: 36px 32px; }
+
+  .q-counter {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 10px;
+  }
+
+  .question {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+
+  .q-hint {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    text-align: left;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .opt:hover { border-color: rgba(178,34,52,0.5); background: rgba(178,34,52,0.08); }
+  .opt.selected { border-color: #B22234; background: rgba(178,34,52,0.15); }
+  .opt-letter {
+    width: 24px; height: 24px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+    color: rgba(255,255,255,0.5);
+  }
+  .opt.selected .opt-letter { background: #B22234; border-color: #B22234; color: #fff; }
+  .opt-text strong { display: block; font-weight: 600; margin-bottom: 2px; }
+  .opt-text span { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+  .text-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #fff;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    min-height: 100px;
+    margin-bottom: 28px;
+  }
+  .text-input:focus { border-color: #B22234; }
+  .text-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .btn-next {
+    background: #B22234;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-next:hover { opacity: 0.85; }
+  .btn-next:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* SUMMARY */
+  .summary { display: none; padding: 32px; }
+  .summary h2 { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 8px; }
+  .summary-sub { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 28px; }
+  .answer-row {
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 12px 0;
+    display: flex;
+    gap: 16px;
+  }
+  .answer-q { font-size: 12px; color: rgba(255,255,255,0.4); min-width: 180px; flex-shrink: 0; line-height: 1.4; }
+  .answer-a { font-size: 14px; color: #fff; font-weight: 500; line-height: 1.4; }
+  .copy-btn {
+    display: block;
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    background: #B22234;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .copy-btn:hover { opacity: 0.85; }
+  .copy-note { font-size: 12px; color: rgba(255,255,255,0.35); text-align: center; margin-top: 10px; }
+  .copied-msg { color: #6bcf7f; font-size: 13px; text-align: center; margin-top: 8px; display: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-header">
+    <div class="seal">★</div>
+    <div>
+      <h1>Site Design Questionnaire</h1>
+      <p>CheckYourRepresentative.com — Let's spec the final site</p>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-fill" id="progress" style="width:0%"></div>
+  </div>
+
+  <div class="card-body" id="q-area">
+    <div class="q-counter" id="q-counter">Question 1 of 9</div>
+    <div class="question" id="q-text"></div>
+    <div class="q-hint" id="q-hint"></div>
+    <div id="q-input-area"></div>
+    <div class="btn-row">
+      <button class="btn-next" id="btn-next" onclick="nextQ()">Next →</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <h2>✓ Your design brief is ready</h2>
+    <p class="summary-sub">Copy this and paste it into the Site Builder (file 3) to generate your full site.</p>
+    <div id="answers-list"></div>
+    <button class="copy-btn" onclick="copyBrief()">Copy design brief to clipboard</button>
+    <div class="copy-note">Then open the Site Builder file and paste it in.</div>
+    <div class="copied-msg" id="copied-msg">✓ Copied!</div>
+  </div>
+</div>
+
+<script>
+  const questions = [
+    {
+      id: 'tone',
+      q: 'What tone should the site strike?',
+      hint: 'This determines the voice, copy, and visual energy across every page.',
+      type: 'choice',
+      options: [
+        { label: 'Aggressive accountability', desc: 'Confrontational. We are watching you. High urgency.' },
+        { label: 'Serious and civic', desc: 'Authoritative. This is your government. Formal but accessible.' },
+        { label: 'Empowering and hopeful', desc: 'Your voice matters. Civic pride, not anger.' },
+        { label: 'Neutral information tool', desc: 'Facts only. No editorial lean. Let the data speak.' },
+      ]
+    },
+    {
+      id: 'color',
+      q: 'Which color direction feels right?',
+      hint: 'The existing app uses crimson/navy/gold — we can carry that forward or shift it.',
+      type: 'choice',
+      options: [
+        { label: 'Crimson, navy, and gold', desc: 'The existing We the People palette. Classic American.' },
+        { label: 'Deep navy with red accents', desc: 'More understated. Government-authority feel.' },
+        { label: 'Dark background with bold red', desc: 'High contrast. Modern. Urgent.' },
+        { label: 'Light / white with patriotic accents', desc: 'Clean, approachable, newspaper-like.' },
+      ]
+    },
+    {
+      id: 'priority_feature',
+      q: 'What is the FIRST thing a visitor should see and do?',
+      hint: 'This becomes the hero section — the single most prominent element above the fold.',
+      type: 'choice',
+      options: [
+        { label: 'Enter ZIP and see my rep immediately', desc: 'Get straight to the accountability data.' },
+        { label: 'See the live bill feed', desc: 'What is Congress voting on right now.' },
+        { label: 'The accountability scorecard', desc: 'Your rep\'s alignment score, front and center.' },
+        { label: 'A bold statement / call to action', desc: 'The mission first, then the tools.' },
+      ]
+    },
+    {
+      id: 'mobile',
+      q: 'Mobile or desktop priority?',
+      hint: 'Civic tools tend to be used on phones — but your call.',
+      type: 'choice',
+      options: [
+        { label: 'Mobile first', desc: 'Design for phones, scale up to desktop.' },
+        { label: 'Desktop first', desc: 'Full-featured desktop, functional on mobile.' },
+        { label: 'Equal — fully responsive both ways', desc: 'Takes more build time but works everywhere.' },
+      ]
+    },
+    {
+      id: 'nav_items',
+      q: 'What should be in the main navigation?',
+      hint: 'Keep it to 4–5 items max. What are the core sections?',
+      type: 'text',
+      placeholder: 'e.g. Home, Find My Rep, Live Bills, Voter ID Info, About'
+    },
+    {
+      id: 'rep_display',
+      q: 'How should a representative be displayed?',
+      hint: 'When someone looks up their rep, what info should be front and center?',
+      type: 'choice',
+      options: [
+        { label: 'Photo, name, alignment score', desc: 'Visual and immediate — the scorecard leads.' },
+        { label: 'Name, party, recent votes', desc: 'More factual — voting record leads.' },
+        { label: 'Full profile — bio, committees, voting history', desc: 'Comprehensive. More scrolling.' },
+        { label: 'Just the accountability score and comparison', desc: 'Ruthlessly focused on the data.' },
+      ]
+    },
+    {
+      id: 'footer_content',
+      q: 'What should be in the footer?',
+      hint: 'Trust signals, legal, contact — what matters?',
+      type: 'text',
+      placeholder: 'e.g. About, Contact, Privacy Policy, Data Sources, GitHub link, nonpartisan disclaimer'
+    },
+    {
+      id: 'extra_pages',
+      q: 'What additional pages should the site have beyond the main app?',
+      hint: 'Think about pages someone might link to directly.',
+      type: 'text',
+      placeholder: 'e.g. About the project, How we source data, FAQ, Contact, Press kit, API docs'
+    },
+    {
+      id: 'anything_else',
+      q: 'Anything else you want in the final site?',
+      hint: 'Features, design details, content, integrations — anything not covered above.',
+      type: 'text',
+      placeholder: 'e.g. Social sharing, donation link, newsletter, dark mode, specific animations, GitHub link...'
+    }
+  ];
+
+  let current = 0;
+  const answers = {};
+
+  function render() {
+    const q = questions[current];
+    const pct = (current / questions.length) * 100;
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('q-counter').textContent = `Question ${current + 1} of ${questions.length}`;
+    document.getElementById('q-text').textContent = q.q;
+    document.getElementById('q-hint').textContent = q.hint;
+
+    const area = document.getElementById('q-input-area');
+    area.innerHTML = '';
+
+    if (q.type === 'choice') {
+      const div = document.createElement('div');
+      div.className = 'options';
+      const letters = ['A','B','C','D'];
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt' + (answers[q.id] === opt.label ? ' selected' : '');
+        btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span class="opt-text"><strong>${opt.label}</strong><span>${opt.desc}</span></span>`;
+        btn.onclick = () => {
+          answers[q.id] = opt.label;
+          document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('btn-next').disabled = false;
+        };
+        div.appendChild(btn);
+      });
+      area.appendChild(div);
+      document.getElementById('btn-next').disabled = !answers[q.id];
+    } else {
+      const ta = document.createElement('textarea');
+      ta.className = 'text-input';
+      ta.placeholder = q.placeholder;
+      ta.value = answers[q.id] || '';
+      ta.oninput = () => {
+        answers[q.id] = ta.value;
+        document.getElementById('btn-next').disabled = !ta.value.trim();
+      };
+      area.appendChild(ta);
+      document.getElementById('btn-next').disabled = !answers[q.id];
+    }
+
+    const isLast = current === questions.length - 1;
+    document.getElementById('btn-next').textContent = isLast ? 'See my design brief →' : 'Next →';
+  }
+
+  function nextQ() {
+    const q = questions[current];
+    if (q.type === 'text') {
+      const ta = document.querySelector('.text-input');
+      if (!ta.value.trim()) return;
+      answers[q.id] = ta.value.trim();
+    }
+    if (!answers[q.id]) return;
+
+    current++;
+    if (current >= questions.length) {
+      showSummary();
+    } else {
+      render();
+    }
+  }
+
+  function showSummary() {
+    document.getElementById('progress').style.width = '100%';
+    document.getElementById('q-area').style.display = 'none';
+    document.getElementById('summary').style.display = 'block';
+
+    const list = document.getElementById('answers-list');
+    list.innerHTML = '';
+    questions.forEach(q => {
+      const row = document.createElement('div');
+      row.className = 'answer-row';
+      row.innerHTML = `<div class="answer-q">${q.q}</div><div class="answer-a">${answers[q.id] || '—'}</div>`;
+      list.appendChild(row);
+    });
+  }
+
+  function copyBrief() {
+    let text = 'CHECKYOURREPRESENTATIVE.COM — DESIGN BRIEF\n';
+    text += '==========================================\n\n';
+    questions.forEach(q => {
+      text += `${q.q}\n→ ${answers[q.id] || '—'}\n\n`;
+    });
+    text += '\nGenerated by CYR Design Questionnaire';
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('copied-msg').style.display = 'block';
+      setTimeout(() => document.getElementById('copied-msg').style.display = 'none', 3000);
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>
