@@ -1,229 +1,158 @@
 // =============================================================================
-// Check Your Representative — Constituent Voting module (client)
-// -----------------------------------------------------------------------------
-// Drop-in for the "We the People" shell. Internal names kept per project
-// convention: myDelegate, delegateVotes, DELEGATES_DB.
-//
-// What this component does on the client:
-//   - mounts the Cloudflare Turnstile widget and collects its token
-//   - plants a honeypot field + records render time (anti-bot / anti-script)
-//   - POSTs everything to /api/vote, where the REAL fairness checks run
-//   - renders the two-tier tally (verified vs open) with an honest
-//     methodology disclosure so manipulable numbers never masquerade as a
-//     scientific measure of district opinion
-//
-// The browser is NEVER trusted to decide if a vote is valid — it only collects
-// signals. All verdicts come back from the server (see voteVerification.js).
-//
-// PREVIEW vs PRODUCTION:
-//   Search for "PREVIEW_MOCK". Those blocks let this render standalone here.
-//   In your app, set USE_MOCK = false and supply your real DELEGATES_DB,
-//   Turnstile site key, and /api endpoints.
+// ConstituentVoting — real bills from /api/digest, real voting via /api/vote
+// No mock data. No Turnstile placeholder. Bot protection via honeypot + timing.
+// Critical variable names preserved: myDelegate, delegateVotes, DELEGATES_DB
 // =============================================================================
-
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ContactRep from "./ContactRep.jsx";
 
-const USE_MOCK = true; // <-- set false in your app
-const TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY"; // public site key (safe in client)
-
-// --- theme tokens (match the existing shell; swap for your classes if you have them)
 const C = {
-  crimson: "#8B0000",
-  crimsonBright: "#B22234",
-  navy: "#0A1A3F",
-  navySoft: "#14213D",
-  gold: "#C9A227",
-  parchment: "#FBF7EC",
-  parchmentEdge: "#F0E6CE",
-  ink: "#1A1A1A",
-  muted: "#5C5347",
-  line: "#D8C9A0",
+  crimson: "#8B0000", crimsonBright: "#B22234",
+  navy: "#0A1A3F", gold: "#C9A227",
+  parchment: "#FBF7EC", parchmentEdge: "#F0E6CE",
+  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
 };
 const serif = "Georgia, 'Times New Roman', serif";
 
-// PREVIEW_MOCK ---------------------------------------------------------------
-// In production this is your real ZIP->representative lookup over DELEGATES_DB.
-const DELEGATES_DB = {
-  "80538": { myDelegate: { name: "Rep. Joe Neguse", party: "D", district: "CO-02", state: "CO" } },
-  "80202": { myDelegate: { name: "Rep. Diana DeGette", party: "D", district: "CO-01", state: "CO" } },
-  "73301": { myDelegate: { name: "Rep. Greg Casar", party: "D", district: "TX-35", state: "TX" } },
-};
-function lookupDelegate(zip) {
-  return DELEGATES_DB[zip]?.myDelegate || null;
-}
-// end PREVIEW_MOCK -----------------------------------------------------------
-
 const POSITIONS = [
-  { key: "support", label: "Support", color: C.navy },
-  { key: "oppose", label: "Oppose", color: C.crimson },
+  { key: "support",   label: "Support",   color: C.navy },
+  { key: "oppose",    label: "Oppose",    color: C.crimson },
   { key: "undecided", label: "Undecided", color: C.muted },
 ];
 
 // ---------------------------------------------------------------------------
-// Turnstile hook — loads the script once and renders the widget explicitly.
+// API helpers — no mocks, degrade gracefully on failure
 // ---------------------------------------------------------------------------
-function useTurnstile(siteKey, onToken) {
-  const containerRef = useRef(null);
-  const widgetId = useRef(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (USE_MOCK) { setReady(true); return; } // PREVIEW_MOCK: skip real widget
-    const SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    function render() {
-      if (!window.turnstile || !containerRef.current || widgetId.current) return;
-      widgetId.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        callback: (token) => onToken(token),
-        "error-callback": () => onToken(null),
-        "expired-callback": () => onToken(null),
-        theme: "light",
-      });
-      setReady(true);
-    }
-    if (window.turnstile) { render(); return; }
-    let s = document.querySelector(`script[src="${SRC}"]`);
-    if (!s) {
-      s = document.createElement("script");
-      s.src = SRC; s.async = true; s.defer = true;
-      document.head.appendChild(s);
-    }
-    s.addEventListener("load", render);
-    const t = setInterval(() => { if (window.turnstile) { render(); clearInterval(t); } }, 250);
-    return () => clearInterval(t);
-  }, [siteKey, onToken]);
-
-  const reset = useCallback(() => {
-    if (!USE_MOCK && window.turnstile && widgetId.current) {
-      window.turnstile.reset(widgetId.current);
-    }
-  }, []);
-
-  return { containerRef, ready, reset };
-}
-
-// ---------------------------------------------------------------------------
-// API layer
-// ---------------------------------------------------------------------------
-// PREVIEW_MOCK: a tiny fake server so the component is interactive here.
-const mockState = { votes: [] };
-async function mockCastVote(payload) {
-  await new Promise(r => setTimeout(r, 500));
-  if (payload.honeypot) return { status: "rejected", reason: "honeypot_tripped" };
-  if ((Date.now() - payload.renderedAt) / 1000 < 2.5) return { status: "rejected", reason: "too_fast" };
-  // pretend ~70% geo-verify, rest "open"
-  const tier = Math.random() < 0.7 ? "verified" : "open";
-  mockState.votes.push({ billId: payload.billId, position: payload.position, tier });
-  return { status: "counted", tier, voteToken: "mock-token-" + Math.random().toString(36).slice(2, 10) };
-}
-async function mockTally(billId) {
-  await new Promise(r => setTimeout(r, 200));
-  const t = { verified: {}, open: {}, quarantined: {}, counts: { verified: 0, open: 0, quarantined: 0 } };
-  for (const v of mockState.votes.filter(v => v.billId === billId)) {
-    t[v.tier][v.position] = (t[v.tier][v.position] || 0) + 1;
-    t.counts[v.tier] += 1;
-  }
-  const sampleSize = t.counts.verified + t.counts.open;
-  return { ...t, sampleSize, qualityScore: sampleSize ? t.counts.verified / sampleSize : 0 };
+async function fetchDigest(district) {
+  const res = await fetch(`/api/digest?district=${encodeURIComponent(district)}`);
+  if (!res.ok) throw new Error("digest_unavailable");
+  return res.json();
 }
 
 async function castVoteApi(payload) {
-  try {
-    const res = await fetch("/api/vote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error("api_unavailable");
-    return await res.json();
-  } catch {
-    return mockCastVote(payload); // local dev (no /api server) fallback
-  }
+  const res = await fetch("/api/vote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("vote_api_error");
+  return res.json();
 }
+
 async function fetchTally(billId) {
-  try {
-    const res = await fetch(`/api/tally?billId=${encodeURIComponent(billId)}`);
-    if (!res.ok) throw new Error("api_unavailable");
-    return await res.json();
-  } catch {
-    return mockTally(billId);
-  }
+  const res = await fetch(`/api/tally?billId=${encodeURIComponent(billId)}`);
+  if (!res.ok) throw new Error("tally_unavailable");
+  return res.json();
 }
 
 // ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-export default function ConstituentVoting({ bill, district, location, onNeedDistrict }) {
-  // PREVIEW_MOCK default bill so it renders standalone
-  const activeBill = bill || { id: "hr-1234-119", title: "H.R. 1234 — Clean Water Infrastructure Act" };
+export default function ConstituentVoting({ district, location, onNeedDistrict }) {
+  const [digestPhase, setDigestPhase] = useState("idle"); // idle|loading|ready|error
+  const [bills, setBills]             = useState([]);
+  const [myDelegate, setMyDelegate]   = useState(null);
+  const [activeBillIdx, setActiveBillIdx] = useState(0);
 
-  const [selected, setSelected] = useState(null);
-  const [turnstileToken, setTurnstileToken] = useState(USE_MOCK ? "mock" : null);
-  const [honeypot, setHoneypot] = useState("");       // must stay empty
-  const [renderedAt] = useState(() => Date.now());     // timing baseline
-  const [phase, setPhase] = useState("idle");          // idle|submitting|done|error
+  // Per-bill vote state
+  const [selected, setSelected]       = useState(null);
+  const [honeypot, setHoneypot]       = useState("");
+  const [renderedAt]                  = useState(() => Date.now());
+  const [phase, setPhase]             = useState("idle"); // idle|submitting|done|error
   const [showContact, setShowContact] = useState(false);
-  const [result, setResult] = useState(null);
-  const [delegateVotes, setDelegateVotes] = useState(null); // the tally
-  const [error, setError] = useState(null);
+  const [result, setResult]           = useState(null);
+  const [delegateVotes, setDelegateVotes] = useState(null);
+  const [voteError, setVoteError]     = useState(null);
 
-  const onToken = useCallback((tok) => setTurnstileToken(tok), []);
-  const { containerRef, ready, reset } = useTurnstile(TURNSTILE_SITE_KEY, onToken);
+  const activeBill = bills[activeBillIdx] || null;
 
-  // load the current tally for this bill
+  // Load bills when district changes
+  useEffect(() => {
+    if (!district) return;
+    setDigestPhase("loading");
+    setBills([]);
+    setMyDelegate(null);
+    resetVoteState();
+    fetchDigest(district)
+      .then(data => {
+        setMyDelegate(data.rep || null);
+        setBills(data.items || []);
+        setDigestPhase(data.items?.length ? "ready" : "empty");
+      })
+      .catch(() => setDigestPhase("error"));
+  }, [district]);
+
+  // Load tally when active bill changes
   const refreshTally = useCallback(async () => {
-    try { setDelegateVotes(await fetchTally(activeBill.id)); } catch { /* non-fatal */ }
-  }, [activeBill.id]);
-  useEffect(() => { refreshTally(); }, [refreshTally]);
+    if (!activeBill?.id) return;
+    try {
+      const t = await fetchTally(activeBill.id);
+      setDelegateVotes(t);
+    } catch { /* non-fatal */ }
+  }, [activeBill?.id]);
 
-  const canSubmit = district && selected && turnstileToken && phase !== "submitting";
+  useEffect(() => {
+    setDelegateVotes(null);
+    refreshTally();
+  }, [refreshTally]);
+
+  function resetVoteState() {
+    setSelected(null);
+    setPhase("idle");
+    setShowContact(false);
+    setResult(null);
+    setDelegateVotes(null);
+    setVoteError(null);
+  }
+
+  function selectBill(idx) {
+    setActiveBillIdx(idx);
+    resetVoteState();
+  }
+
+  const canSubmit = district && selected && phase !== "submitting";
 
   async function submitVote() {
-    if (!canSubmit) return;
-    setPhase("submitting"); setError(null);
+    if (!canSubmit || !activeBill) return;
+    setPhase("submitting");
+    setVoteError(null);
     try {
       const res = await castVoteApi({
         billId: activeBill.id,
         position: selected,
         district,
-        turnstileToken,
         honeypot,
         renderedAt,
-        voteToken: null, // server issues one; persist it in your shared store/cookie
+        voteToken: null,
       });
       if (res.status === "rejected") {
-        setError(humanizeReason(res.reason));
+        setVoteError(humanizeReason(res.reason));
         setPhase("error");
-        reset(); setTurnstileToken(USE_MOCK ? "mock" : null);
         return;
       }
       setResult(res);
       setPhase("done");
       setShowContact(true);
       refreshTally();
-    } catch (e) {
-      setError("Couldn't reach the server. Please try again.");
+    } catch {
+      setVoteError("Couldn't reach the server. Please try again.");
       setPhase("error");
     }
   }
 
-  // District is required — it comes from the address confirmed on "Find Your District".
+  // No district yet
   if (!district) {
     return (
       <div style={{ fontFamily: serif, color: C.ink, background: C.parchment,
                     border: `1px solid ${C.line}`, borderRadius: 6, overflow: "hidden",
-                    maxWidth: 680, margin: "0 auto" }}>
+                    maxWidth: 720, margin: "0 auto" }}>
         <StarStrip />
         <div style={{ padding: "26px 24px", textAlign: "center" }}>
-          <h2 style={{ margin: "0 0 6px", fontSize: 20, color: C.navy }}>Confirm your district first</h2>
+          <h2 style={{ margin: "0 0 8px", fontSize: 20, color: C.navy }}>Confirm your district first</h2>
           <p style={{ fontSize: 13.5, color: C.muted, margin: "0 auto 16px", maxWidth: 430 }}>
-            Positions are grouped by congressional district, so we need to know yours before you can vote.
-            It takes a few seconds.
+            We need your congressional district to show the right bills and record your position accurately.
           </p>
-          <button onClick={() => onNeedDistrict && onNeedDistrict()}
-            style={{ padding: "11px 22px", fontFamily: serif, fontSize: 15, fontWeight: 700, border: "none",
-                     borderRadius: 4, background: C.navy, color: "#fff", cursor: "pointer" }}>
+          <button onClick={() => onNeedDistrict?.()}
+            style={{ padding: "11px 22px", fontFamily: serif, fontSize: 15, fontWeight: 700,
+                     border: "none", borderRadius: 4, background: C.navy, color: "#fff", cursor: "pointer" }}>
             Find My District
           </button>
         </div>
@@ -232,103 +161,207 @@ export default function ConstituentVoting({ bill, district, location, onNeedDist
   }
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, background: C.parchment,
-                  border: `1px solid ${C.line}`, borderRadius: 6, overflow: "hidden",
-                  maxWidth: 680, margin: "0 auto" }}>
-      <StarStrip />
-      <div style={{ padding: "20px 24px 26px" }}>
-        <div style={{ textTransform: "uppercase", letterSpacing: 2, fontSize: 11,
-                      color: C.gold, fontWeight: 700 }}>Constituent Position</div>
-        <h2 style={{ margin: "4px 0 2px", fontSize: 22, color: C.navy }}>{activeBill.title}</h2>
-        <p style={{ margin: 0, fontSize: 13, color: C.muted }}>
-          Cast your position, then see how it compares to your district.
-        </p>
+    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 720, margin: "0 auto" }}>
 
-        {/* District — from the address you confirmed on "Find Your District" */}
-        <div style={{ marginTop: 16, padding: "10px 14px", background: "#fff",
-                      border: `1px solid ${C.line}`, borderRadius: 4, fontSize: 13.5 }}>
-          Voting as <strong style={{ color: C.crimson }}>District {district}</strong>
-          {location?.city ? <span style={{ color: C.muted }}> · {location.city}, {location.state}</span> : null}
-        </div>
-
-        {/* Position choice */}
-        <div style={{ marginTop: 18 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>
-            YOUR POSITION
+      {/* Rep header */}
+      {myDelegate && (
+        <div style={{ background: C.navy, color: "#fff", padding: "12px 20px",
+                      borderRadius: "6px 6px 0 0", display: "flex", alignItems: "center",
+                      justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.gold, letterSpacing: 1, fontWeight: 700 }}>YOUR REPRESENTATIVE</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>{myDelegate.name}</div>
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {POSITIONS.map(p => (
-              <button key={p.key} onClick={() => setSelected(p.key)}
-                style={{ flex: "1 1 120px", padding: "11px 8px", cursor: "pointer",
-                         fontFamily: serif, fontSize: 15, borderRadius: 4,
-                         border: `2px solid ${selected === p.key ? p.color : C.line}`,
-                         background: selected === p.key ? p.color : "#fff",
-                         color: selected === p.key ? "#fff" : p.color, fontWeight: 700 }}>
-                {p.label}
-              </button>
-            ))}
+          <div style={{ fontSize: 12, color: "#cfd6e4" }}>
+            District {district} · {myDelegate.party}
           </div>
         </div>
+      )}
 
-        {/* Honeypot — visually hidden, real users never touch it */}
-        <input
-          tabIndex={-1} autoComplete="off" value={honeypot}
-          onChange={(e) => setHoneypot(e.target.value)}
-          aria-hidden="true"
-          style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
-        />
+      {/* Loading state */}
+      {digestPhase === "loading" && (
+        <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
+                      borderRadius: myDelegate ? "0 0 6px 6px" : 6,
+                      padding: "40px 24px", textAlign: "center", color: C.muted }}>
+          <div style={{ fontSize: 28, marginBottom: 12 }}>📋</div>
+          <div style={{ fontSize: 15 }}>Loading bills for {district}…</div>
+        </div>
+      )}
 
-        {/* Turnstile mount */}
-        <div style={{ marginTop: 18 }}>
-          <div ref={containerRef} />
-          {USE_MOCK && (
-            <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>
-              (Turnstile widget renders here in production — mocked for preview.)
+      {/* Error state */}
+      {digestPhase === "error" && (
+        <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
+                      borderRadius: 6, padding: "32px 24px", textAlign: "center" }}>
+          <div style={{ color: C.crimson, fontSize: 15, marginBottom: 12 }}>
+            Couldn't load bills right now. The Congress.gov API may be rate-limited.
+          </div>
+          <button onClick={() => { setDigestPhase("loading"); fetchDigest(district).then(d => { setMyDelegate(d.rep); setBills(d.items || []); setDigestPhase(d.items?.length ? "ready" : "empty"); }).catch(() => setDigestPhase("error")); }}
+            style={{ padding: "9px 20px", fontFamily: serif, fontSize: 14, fontWeight: 700,
+                     border: "none", borderRadius: 4, background: C.navy, color: "#fff", cursor: "pointer" }}>
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {digestPhase === "empty" && (
+        <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
+                      borderRadius: 6, padding: "32px 24px", textAlign: "center", color: C.muted }}>
+          <div style={{ fontSize: 15 }}>No active bills found for {district} right now. Check back soon.</div>
+        </div>
+      )}
+
+      {/* Bills ready */}
+      {digestPhase === "ready" && bills.length > 0 && (
+        <>
+          {/* Bill selector */}
+          <div style={{ background: "#fff", border: `1px solid ${C.line}`,
+                        borderTop: myDelegate ? "none" : `1px solid ${C.line}` }}>
+            <div style={{ padding: "12px 20px 0", fontSize: 11, fontWeight: 700,
+                          color: C.muted, letterSpacing: 1 }}>
+              SELECT A BILL TO VOTE ON
+            </div>
+            <div style={{ display: "flex", overflowX: "auto", padding: "10px 20px 0",
+                          gap: 8, borderBottom: `2px solid ${C.gold}` }}>
+              {bills.map((b, i) => (
+                <button key={b.id} onClick={() => selectBill(i)}
+                  style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+                           padding: "8px 14px", border: "none", cursor: "pointer",
+                           background: "transparent", flexShrink: 0,
+                           color: activeBillIdx === i ? C.crimson : C.muted,
+                           borderBottom: `3px solid ${activeBillIdx === i ? C.crimson : "transparent"}`,
+                           marginBottom: -2 }}>
+                  {b.id?.split("-").slice(0,2).join(" ").toUpperCase() || `Bill ${i+1}`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active bill card */}
+          {activeBill && (
+            <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
+                          borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
+              <StarStrip />
+              <div style={{ padding: "20px 24px 26px" }}>
+
+                {/* Bill info */}
+                <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1,
+                              textTransform: "uppercase", marginBottom: 4 }}>
+                  {activeBill.reason || "Active Legislation"}
+                </div>
+                <h2 style={{ margin: "0 0 8px", fontSize: 20, color: C.navy, lineHeight: 1.3 }}>
+                  {activeBill.summary?.headline || activeBill.title}
+                </h2>
+                {activeBill.summary?.plain && (
+                  <p style={{ margin: "0 0 8px", fontSize: 13.5, color: C.ink, lineHeight: 1.6 }}>
+                    {activeBill.summary.plain}
+                  </p>
+                )}
+                {activeBill.summary?.affects && (
+                  <p style={{ margin: "0 0 4px", fontSize: 12.5, color: C.muted }}>
+                    <strong>Who it affects:</strong> {activeBill.summary.affects}
+                  </p>
+                )}
+                {activeBill.summary?.status && (
+                  <p style={{ margin: "0 0 16px", fontSize: 12.5, color: C.muted }}>
+                    <strong>Status:</strong> {activeBill.summary.status}
+                  </p>
+                )}
+
+                {/* District badge */}
+                <div style={{ padding: "10px 14px", background: "#fff",
+                              border: `1px solid ${C.line}`, borderRadius: 4, fontSize: 13.5,
+                              marginBottom: 18 }}>
+                  Voting as <strong style={{ color: C.crimson }}>District {district}</strong>
+                  {location?.city && (
+                    <span style={{ color: C.muted }}> · {location.city}, {location.state}</span>
+                  )}
+                </div>
+
+                {/* Position buttons */}
+                {phase !== "done" && (
+                  <>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>
+                      YOUR POSITION
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
+                      {POSITIONS.map(p => (
+                        <button key={p.key} onClick={() => setSelected(p.key)}
+                          style={{ flex: "1 1 120px", padding: "11px 8px", cursor: "pointer",
+                                   fontFamily: serif, fontSize: 15, borderRadius: 4,
+                                   border: `2px solid ${selected === p.key ? p.color : C.line}`,
+                                   background: selected === p.key ? p.color : "#fff",
+                                   color: selected === p.key ? "#fff" : p.color, fontWeight: 700 }}>
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Honeypot — hidden from humans */}
+                <input tabIndex={-1} autoComplete="off" value={honeypot}
+                  onChange={e => setHoneypot(e.target.value)} aria-hidden="true"
+                  style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
+
+                {/* Submit */}
+                {phase !== "done" && (
+                  <button onClick={submitVote} disabled={!canSubmit}
+                    style={{ width: "100%", padding: "13px", fontFamily: serif, fontSize: 16,
+                             fontWeight: 700, borderRadius: 4, border: "none",
+                             cursor: canSubmit ? "pointer" : "not-allowed",
+                             background: canSubmit ? C.crimson : "#C9BFAB",
+                             color: "#fff", letterSpacing: 0.5 }}>
+                    {phase === "submitting" ? "Recording…" : "Cast My Position"}
+                  </button>
+                )}
+
+                {voteError && (
+                  <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 4,
+                                background: "#FBE9E7", color: C.crimson, fontSize: 13,
+                                border: `1px solid ${C.crimsonBright}` }}>
+                    {voteError}
+                  </div>
+                )}
+
+                {/* Done state */}
+                {phase === "done" && result && (
+                  <div style={{ marginTop: 0 }}>
+                    <div style={{ padding: "12px 16px", background: "#fff",
+                                  border: `1px solid ${C.line}`, borderRadius: 4,
+                                  fontSize: 13.5, color: C.navy, marginBottom: 12 }}>
+                      ✓ Position recorded as{" "}
+                      <strong>{result.tier === "verified" ? "location-verified" : "open"}</strong>.
+                      {result.tier !== "verified" &&
+                        " Your vote still counts in the open tally."}
+                    </div>
+                    <button onClick={resetVoteState}
+                      style={{ width: "100%", padding: "10px", fontFamily: serif, fontSize: 14,
+                               fontWeight: 700, borderRadius: 4, border: `1px solid ${C.line}`,
+                               background: "#fff", color: C.navy, cursor: "pointer", marginBottom: 12 }}>
+                      ← Vote on Another Bill
+                    </button>
+                  </div>
+                )}
+
+                {/* Tally */}
+                {delegateVotes && <TallyPanel tally={delegateVotes} />}
+
+                {/* Contact rep panel */}
+                {showContact && phase === "done" && result && activeBill && (
+                  <ContactRep
+                    district={district}
+                    billId={activeBill.id}
+                    billTitle={activeBill.title}
+                    position={selected}
+                    onClose={() => setShowContact(false)}
+                  />
+                )}
+              </div>
             </div>
           )}
-        </div>
-
-        {/* Submit */}
-        <button onClick={submitVote} disabled={!canSubmit}
-          style={{ marginTop: 18, width: "100%", padding: "13px", fontFamily: serif,
-                   fontSize: 16, fontWeight: 700, borderRadius: 4, border: "none",
-                   cursor: canSubmit ? "pointer" : "not-allowed",
-                   background: canSubmit ? C.crimson : "#C9BFAB",
-                   color: "#fff", letterSpacing: 0.5 }}>
-          {phase === "submitting" ? "Recording…"
-            : phase === "done" ? "Position Recorded ✓"
-            : "Cast My Position"}
-        </button>
-
-        {error && (
-          <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 4,
-                        background: "#FBE9E7", color: C.crimson, fontSize: 13,
-                        border: `1px solid ${C.crimsonBright}` }}>
-            {error}
-          </div>
-        )}
-
-        {phase === "done" && result && (
-          <div style={{ marginTop: 12, fontSize: 13, color: C.navy }}>
-            Recorded as a <strong>{result.tier === "verified" ? "location-verified" : "unverified"}</strong> vote.
-            {result.tier !== "verified" &&
-              " (We couldn't confirm your location from your connection — your vote still counts in the open tally.)"}
-          </div>
-        )}
-
-        {/* Tally + honest methodology */}
-        {delegateVotes && <TallyPanel tally={delegateVotes} />}
-
-        {showContact && phase === "done" && result && (
-          <ContactRep
-            district={district}
-            billId={activeBill.id}
-            billTitle={activeBill.title}
-            position={selected}
-            onClose={() => setShowContact(false)}
-          />
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -338,22 +371,22 @@ function TallyPanel({ tally }) {
   const { sampleSize, qualityScore, verified, open, counts } = tally;
   const combined = {};
   for (const p of POSITIONS) {
-    combined[p.key] = (verified[p.key] || 0) + (open[p.key] || 0);
+    combined[p.key] = (verified?.[p.key] || 0) + (open?.[p.key] || 0);
   }
   const total = sampleSize || 1;
 
   return (
     <div style={{ marginTop: 22, borderTop: `2px solid ${C.gold}`, paddingTop: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                    marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, letterSpacing: 1 }}>
           DISTRICT POSITIONS SO FAR
         </div>
-        <div style={{ fontSize: 12, color: C.muted }}>{sampleSize} responses</div>
+        <div style={{ fontSize: 12, color: C.muted }}>{sampleSize} response{sampleSize !== 1 ? "s" : ""}</div>
       </div>
-
       {POSITIONS.map(p => {
         const n = combined[p.key] || 0;
-        const pct = Math.round((n / total) * 100);
+        const pct = total > 0 ? Math.round((n / total) * 100) : 0;
         return (
           <div key={p.key} style={{ marginTop: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
@@ -361,27 +394,23 @@ function TallyPanel({ tally }) {
               <span style={{ color: C.muted }}>{pct}% · {n}</span>
             </div>
             <div style={{ height: 8, background: C.parchmentEdge, borderRadius: 4, marginTop: 3 }}>
-              <div style={{ width: `${pct}%`, height: "100%", background: p.color, borderRadius: 4 }} />
+              <div style={{ width: `${pct}%`, height: "100%", background: p.color,
+                            borderRadius: 4, transition: "width 0.4s ease" }} />
             </div>
           </div>
         );
       })}
-
-      {/* quality + the honest disclosure — the most important part */}
-      <div style={{ marginTop: 16, padding: "12px 14px", background: "#fff",
+      <div style={{ marginTop: 14, padding: "10px 14px", background: "#fff",
                     border: `1px solid ${C.line}`, borderRadius: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           <QualityBadge score={qualityScore} />
-          <span style={{ fontSize: 12.5, color: C.navy, fontWeight: 700 }}>
-            {counts.verified} of {sampleSize} responses are location-verified
+          <span style={{ fontSize: 12, color: C.navy, fontWeight: 700 }}>
+            {counts?.verified || 0} of {sampleSize} responses are location-verified
           </span>
         </div>
-        <p style={{ margin: "10px 0 0", fontSize: 11.5, lineHeight: 1.5, color: C.muted }}>
-          This is a self-selected opinion poll, not a scientific survey. People who
-          choose to respond are not a random sample of the district, so these numbers
-          show the views of participants — not a measured district consensus.
-          "Location-verified" means the connection placed in the ZIP's state;
-          bot, rate, and timing filters are applied before any vote is counted.
+        <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: C.muted }}>
+          Self-selected opinion poll, not a scientific survey. "Location-verified" means
+          the connection placed in the district's state. Bot and rate filters applied.
         </p>
       </div>
     </div>
@@ -389,10 +418,10 @@ function TallyPanel({ tally }) {
 }
 
 function QualityBadge({ score }) {
-  const pct = Math.round(score * 100);
+  const pct = Math.round((score || 0) * 100);
   const tone = score >= 0.7 ? C.navy : score >= 0.4 ? C.gold : C.crimson;
   return (
-    <span style={{ fontFamily: serif, fontSize: 11, fontWeight: 800, color: "#fff",
+    <span style={{ fontSize: 11, fontWeight: 800, color: "#fff",
                    background: tone, borderRadius: 10, padding: "2px 9px" }}>
       {pct}% verified
     </span>
@@ -412,15 +441,11 @@ function StarStrip() {
 
 function humanizeReason(reason) {
   const map = {
-    honeypot_tripped: "This submission looked automated and wasn't recorded.",
-    too_fast: "That was submitted too quickly — take a moment to review the bill, then try again.",
-    rate_ip: "Too many votes from your connection recently. Please try later.",
-    rate_subnet: "Too many votes from your network recently. Please try later.",
-    turnstile_failed: "We couldn't verify you're human. Please complete the check and retry.",
-    turnstile_not_configured: "Verification isn't set up yet. Please try again later.",
-    bad_zip: "That ZIP code wasn't recognized. Please check and re-enter.",
-    missing_fields: "Please enter your ZIP and choose a position first.",
+    honeypot_tripped:  "This submission looked automated and wasn't recorded.",
+    too_fast:          "Submitted too quickly — please take a moment to review the bill, then try again.",
+    rate_ip:           "Too many votes from your connection recently. Please try later.",
+    rate_subnet:       "Too many votes from your network recently. Please try later.",
+    missing_fields:    "Please select a position first.",
   };
   return map[reason] || "Your vote couldn't be recorded. Please try again.";
 }
-
