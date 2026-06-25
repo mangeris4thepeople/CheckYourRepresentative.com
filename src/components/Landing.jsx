@@ -1,641 +1,181 @@
 // =============================================================================
-// Landing.jsx — CheckYourRepresentative.com homepage (launches July 1, 2026)
-// Dual-tone civic design: appeals across the full political spectrum.
-// "Your voice vs their vote" — the accountability platform for ALL Americans.
+// Landing — the front door (countdown, hero, features). It's now the first
+// screen of the SAME app, so the "Enter" buttons just switch views in-app —
+// no second site, no external link, nothing to 404.
 // =============================================================================
+import React, { useState, useEffect } from "react";
 
-import React, { useState, useEffect, useRef } from "react";
+const CSS = `
+  .lp * { box-sizing: border-box; margin: 0; padding: 0; }
+  .lp { background:#0a0f1e; color:#fff; font-family:'Source Sans 3',Georgia,serif; min-height:100vh; overflow-x:hidden; position:relative; }
+  .lp .stripe { height:8px; background:repeating-linear-gradient(90deg,#B22234 0,#B22234 60px,#fff 60px,#fff 120px); }
+  .lp nav { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; border-bottom:1px solid rgba(255,255,255,.08); }
+  .lp .nav-logo { font-family:'Playfair Display',Georgia,serif; font-size:18px; font-weight:700; }
+  .lp .nav-logo span { color:#B22234; }
+  .lp .nav-right { display:flex; align-items:center; gap:14px; }
+  .lp .nav-badge { background:#B22234; color:#fff; font-size:11px; font-weight:600; padding:4px 12px; border-radius:20px; letter-spacing:.06em; text-transform:uppercase; }
+  .lp .cta-nav { font-size:13px; font-weight:600; color:#fff; background:#B22234; border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:8px 16px; cursor:pointer; white-space:nowrap; }
+  .lp .cta-nav:hover { background:#C8102E; }
+  .lp .cta-primary { display:inline-block; font-family:'Playfair Display',Georgia,serif; font-size:clamp(17px,2.2vw,20px); font-weight:700; color:#fff; background:#B22234; border:1px solid rgba(255,255,255,.18); border-radius:10px; padding:16px 44px; cursor:pointer; }
+  .lp .cta-primary:hover { background:#C8102E; transform:translateY(-1px); }
+  .lp .cta-note { font-size:13px; color:rgba(255,255,255,.4); margin-top:14px; }
+  .lp .cta-block { text-align:center; padding:0 40px 80px; }
+  .lp .hero { text-align:center; padding:80px 40px 60px; max-width:900px; margin:0 auto; }
+  .lp .eyebrow { font-size:12px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:#B22234; margin-bottom:24px; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .lp .eyebrow::before,.lp .eyebrow::after { content:''; display:block; width:40px; height:1px; background:#B22234; }
+  .lp .hero h1 { font-family:'Playfair Display',Georgia,serif; font-size:clamp(32px,5vw,64px); font-weight:900; line-height:1.1; margin-bottom:16px; }
+  .lp .hero h1 em { font-style:normal; color:#B22234; }
+  .lp .hero-sub { font-size:clamp(16px,2vw,22px); color:rgba(255,255,255,.65); line-height:1.6; max-width:680px; margin:0 auto 48px; }
+  .lp .countdown-wrap { background:rgba(255,255,255,.04); border:1px solid rgba(178,34,52,.4); border-radius:16px; padding:40px; max-width:700px; margin:0 auto 40px; }
+  .lp .countdown-label { font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.4); margin-bottom:24px; }
+  .lp .countdown { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
+  .lp .unit { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:90px; }
+  .lp .unit-num { font-family:'Playfair Display',Georgia,serif; font-size:clamp(36px,6vw,72px); font-weight:700; line-height:1; min-width:2ch; text-align:center; }
+  .lp .unit-label { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.35); }
+  .lp .colon { font-family:'Playfair Display',Georgia,serif; font-size:clamp(36px,6vw,72px); color:#B22234; line-height:1; align-self:flex-start; margin-top:4px; }
+  .lp .launch-date { margin-top:20px; font-size:13px; color:rgba(255,255,255,.35); letter-spacing:.05em; }
+  .lp .launch-date strong { color:#B22234; }
+  .lp .explainer { max-width:800px; margin:0 auto 80px; padding:0 40px; }
+  .lp .section-title { font-family:'Playfair Display',Georgia,serif; font-size:28px; font-weight:700; text-align:center; margin-bottom:40px; }
+  .lp .section-title span { color:#B22234; }
+  .lp .explainer-text { font-size:17px; line-height:1.8; color:rgba(255,255,255,.7); text-align:center; margin-bottom:48px; }
+  .lp .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
+  .lp .feature { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:24px; }
+  .lp .feature-icon { font-size:28px; margin-bottom:12px; }
+  .lp .feature h3 { font-family:'Playfair Display',Georgia,serif; font-size:16px; font-weight:700; margin-bottom:8px; }
+  .lp .feature p { font-size:14px; color:rgba(255,255,255,.5); line-height:1.6; }
+  .lp .signup { text-align:center; padding:0 40px 80px; max-width:600px; margin:0 auto; }
+  .lp .signup h2 { font-family:'Playfair Display',Georgia,serif; font-size:28px; font-weight:700; margin-bottom:12px; }
+  .lp .signup p { font-size:15px; color:rgba(255,255,255,.5); margin-bottom:24px; }
+  .lp .signup-form { display:flex; gap:10px; max-width:440px; margin:0 auto; }
+  .lp .signup-form input { flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:12px 16px; font-size:14px; color:#fff; outline:none; font-family:inherit; }
+  .lp .signup-form button { background:#B22234; color:#fff; border:none; border-radius:8px; padding:12px 20px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .lp footer { border-top:1px solid rgba(255,255,255,.08); padding:24px 40px; display:flex; align-items:center; justify-content:space-between; font-size:12px; color:rgba(255,255,255,.25); flex-wrap:wrap; gap:10px; }
+  .lp .stripe-bottom { height:6px; background:repeating-linear-gradient(90deg,#B22234 0,#B22234 40px,#fff 40px,#fff 80px,#002868 80px,#002868 120px); }
+  @media(max-width:560px){ .lp nav{flex-direction:column; gap:12px; align-items:flex-start;} }
+`;
 
-const C = {
-  black:    "#0D0D0D",
-  white:    "#FAFAFA",
-  crimson:  "#C41E3A",
-  cobalt:   "#1A3A6B",
-  gold:     "#D4A843",
-  goldDim:  "#8B6914",
-  gray:     "#6B6B6B",
-  grayLight:"#E8E8E8",
-  parchment:"#F5F0E8",
-};
-
-const bebas = "'Bebas Neue', 'Arial Black', Impact, sans-serif";
-const serif = "Georgia, 'Times New Roman', serif";
-const mono  = "'Courier New', Courier, monospace";
-
-// Live mock tally — replace with real /api/tally calls in production
-const MOCK_BILLS = [
-  {
-    id: "hr-1-119",
-    title: "H.R. 1 — American Sovereignty Act",
-    topic: "National Security",
-    peopleSupport: 61,
-    peopleOppose: 29,
-    repVote: "Yea",
-    repName: "Rep. Lauren Boebert (R-CO)",
-    aligned: true,
-  },
-  {
-    id: "hr-485-119",
-    title: "H.R. 485 — Medicare for All Act",
-    topic: "Healthcare",
-    peopleSupport: 58,
-    peopleOppose: 34,
-    repVote: "Nay",
-    repName: "Rep. Lauren Boebert (R-CO)",
-    aligned: false,
-  },
-  {
-    id: "s-100-119",
-    title: "S. 100 — Clean Energy Transition Act",
-    topic: "Environment",
-    peopleSupport: 54,
-    peopleOppose: 38,
-    repVote: "Nay",
-    repName: "Sen. John Hickenlooper (D-CO)",
-    aligned: false,
-  },
+const FEATURES = [
+  ["🗳️", "Cast Your Vote", "Confirm your district, see the bills your representative is voting on, and record your own position anonymously."],
+  ["📊", "See the Scorecard", "A real-time alignment score showing how often your rep votes the way their constituents actually want."],
+  ["📋", "Track Live Bills", "Active legislation in the 119th Congress with plain-language explanations — no law degree required."],
+  ["🪪", "Know Your Rights", "Full 50-state voter ID database. Know exactly what you need to vote in your state before Election Day."],
+  ["⚖️", "Accountability Matrix", "Side-by-side: your vote, your district's vote, your rep's actual vote. The truth is in the numbers."],
+  ["🔍", "Bill Intelligence", "AI-powered summaries of every major bill in plain English — what it does and who's behind it."],
 ];
 
 export default function Landing({ onEnter }) {
-  const [scrolled, setScrolled] = useState(false);
-  const [activeBill, setActiveBill] = useState(0);
-  const [counters, setCounters] = useState({ bills: 0, votes: 0, reps: 0 });
-  const statsRef = useRef(null);
-  const heroRef = useRef(null);
+  const [t, setT] = useState({ d: "00", h: "00", m: "00", s: "00" });
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [btn, setBtn] = useState("Notify me");
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    const launch = new Date("2026-07-01T08:00:00").getTime();
+    const pad = (n) => String(n).padStart(2, "0");
+    const tick = () => {
+      const diff = launch - Date.now();
+      if (diff <= 0) { setT({ d: "00", h: "00", m: "00", s: "00" }); return; }
+      setT({
+        d: pad(Math.floor(diff / 86400000)),
+        h: pad(Math.floor((diff % 86400000) / 3600000)),
+        m: pad(Math.floor((diff % 3600000) / 60000)),
+        s: pad(Math.floor((diff % 60000) / 1000)),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
   }, []);
 
-  // Animate counters when stats section visible
-  useEffect(() => {
-    const targets = { bills: 24847, votes: 1203847, reps: 535 };
-    const obs = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      obs.disconnect();
-      const duration = 1800;
-      const start = Date.now();
-      const tick = () => {
-        const p = Math.min((Date.now() - start) / duration, 1);
-        const ease = 1 - Math.pow(1 - p, 3);
-        setCounters({
-          bills: Math.round(targets.bills * ease),
-          votes: Math.round(targets.votes * ease),
-          reps:  Math.round(targets.reps * ease),
-        });
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }, { threshold: 0.3 });
-    if (statsRef.current) obs.observe(statsRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  // Cycle through bills
-  useEffect(() => {
-    const t = setInterval(() => setActiveBill(b => (b + 1) % MOCK_BILLS.length), 4000);
-    return () => clearInterval(t);
-  }, []);
+  async function submitEmail() {
+    if (!email.includes("@")) return;
+    setBtn("Sending...");
+    try {
+      const r = await fetch("https://formspree.io/f/xlgkwwyl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ email, source: "CheckYourRepresentative.com launch signup" }),
+      });
+      if (r.ok) setSent(true); else setBtn("Try again");
+    } catch { setBtn("Try again"); }
+  }
 
   return (
-    <div style={{ fontFamily: serif, background: C.white, color: C.black, overflowX: "hidden" }}>
+    <div className="lp">
+      <style>{CSS}</style>
+      <div className="stripe" />
 
-      {/* ── NAV ── */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrolled ? "rgba(13,13,13,0.97)" : "transparent",
-        backdropFilter: scrolled ? "blur(8px)" : "none",
-        transition: "background 0.3s",
-        padding: "0 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        height: 60,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <EagleSeal size={32} />
-          <span style={{
-            fontFamily: bebas, fontSize: 20, letterSpacing: 2,
-            color: C.gold,
-          }}>CheckYourRepresentative.com</span>
+      <nav>
+        <div className="nav-logo">Check<span>Your</span>Representative<span>.com</span></div>
+        <div className="nav-right">
+          <div className="nav-badge">Launching July 1, 2026</div>
+          <button className="cta-nav" onClick={onEnter}>Preview the Tool &rarr;</button>
         </div>
-        <button onClick={onEnter} style={{
-          fontFamily: bebas, fontSize: 15, letterSpacing: 2,
-          background: C.crimson, color: C.white, border: "none",
-          padding: "8px 22px", borderRadius: 2, cursor: "pointer",
-        }}>
-          ENTER THE TOOL →
-        </button>
       </nav>
 
-      {/* ── SPLIT HERO ── */}
-      <div ref={heroRef} style={{ height: "100vh", display: "flex", position: "relative", overflow: "hidden" }}>
+      <div className="hero">
+        <div className="eyebrow">A Civic Accountability Platform</div>
+        <h1>We are tracking down the people you placed in office and <em>holding them accountable.</em></h1>
+        <p className="hero-sub">Your vote put them there. Now find out if they're voting the way you expected — on every bill, every time.</p>
 
-        {/* LEFT — THE PEOPLE */}
-        <div style={{
-          flex: 1, background: C.black, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", padding: "60px 40px 60px 60px",
-          position: "relative",
-        }}>
-          <div style={{
-            fontSize: 11, letterSpacing: 4, color: C.gray, fontFamily: mono,
-            marginBottom: 16, textTransform: "uppercase"
-          }}>
-            WE THE PEOPLE
+        <div className="countdown-wrap">
+          <div className="countdown-label">Launching in</div>
+          <div className="countdown">
+            <div className="unit"><div className="unit-num">{t.d}</div><div className="unit-label">Days</div></div>
+            <div className="colon">:</div>
+            <div className="unit"><div className="unit-num">{t.h}</div><div className="unit-label">Hours</div></div>
+            <div className="colon">:</div>
+            <div className="unit"><div className="unit-num">{t.m}</div><div className="unit-label">Minutes</div></div>
+            <div className="colon">:</div>
+            <div className="unit"><div className="unit-num">{t.s}</div><div className="unit-label">Seconds</div></div>
           </div>
-          <div style={{
-            fontFamily: bebas, fontSize: "clamp(72px, 10vw, 120px)",
-            color: C.white, lineHeight: 0.9, textAlign: "center",
-            letterSpacing: 2,
-          }}>
-            YOUR<br />
-            <span style={{ color: C.gold }}>VOICE</span>
-          </div>
-          <div style={{
-            marginTop: 28, fontSize: 15, color: "#999", lineHeight: 1.7,
-            textAlign: "center", maxWidth: 320,
-          }}>
-            Cast your position on every bill before Congress.
-            Your ZIP code. Your district. Your opinion — counted.
-          </div>
-
-          {/* Left side pills */}
-          <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-            {["Progressive", "Conservative", "Independent", "Libertarian", "Green", "Socialist"].map(label => (
-              <span key={label} style={{
-                fontFamily: mono, fontSize: 11, padding: "4px 12px",
-                border: "1px solid #333", borderRadius: 20, color: "#666",
-              }}>{label}</span>
-            ))}
-          </div>
+          <div className="launch-date">Full launch: <strong>July 1, 2026 at 8:00 AM</strong></div>
         </div>
 
-        {/* DIAGONAL DIVIDER */}
-        <div style={{
-          position: "absolute", left: "50%", top: 0, bottom: 0, width: 0,
-          zIndex: 10, pointerEvents: "none",
-        }}>
-          <svg style={{ position: "absolute", left: -60, top: 0, height: "100%", width: 120 }}
-               viewBox="0 0 120 800" preserveAspectRatio="none">
-            <polygon points="60,0 120,0 60,800 0,800" fill={C.gold} opacity="0.15" />
-            <line x1="60" y1="0" x2="60" y2="800" stroke={C.gold} strokeWidth="2" />
-          </svg>
-          {/* VS badge */}
-          <div style={{
-            position: "absolute", top: "50%", left: "50%",
-            transform: "translate(-50%, -50%)",
-            background: C.gold, color: C.black,
-            fontFamily: bebas, fontSize: 22, letterSpacing: 3,
-            padding: "12px 16px", borderRadius: "50%", width: 56, height: 56,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 40px rgba(212,168,67,0.4)",
-            zIndex: 20,
-          }}>VS</div>
-        </div>
-
-        {/* RIGHT — THEIR VOTE */}
-        <div style={{
-          flex: 1, background: C.parchment, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", padding: "60px 60px 60px 40px",
-          position: "relative",
-        }}>
-          <div style={{
-            fontSize: 11, letterSpacing: 4, color: C.gray, fontFamily: mono,
-            marginBottom: 16, textTransform: "uppercase"
-          }}>
-            ELECTED OFFICIALS
-          </div>
-          <div style={{
-            fontFamily: bebas, fontSize: "clamp(72px, 10vw, 120px)",
-            color: C.black, lineHeight: 0.9, textAlign: "center",
-            letterSpacing: 2,
-          }}>
-            THEIR<br />
-            <span style={{ color: C.crimson }}>VOTE</span>
-          </div>
-          <div style={{
-            marginTop: 28, fontSize: 15, color: C.gray, lineHeight: 1.7,
-            textAlign: "center", maxWidth: 320,
-          }}>
-            See how your representative actually voted on every bill.
-            No spin. No excuses. Just the record.
-          </div>
-
-          {/* Voting record mockup */}
-          <div style={{
-            marginTop: 32, background: C.white, border: `1px solid ${C.grayLight}`,
-            borderRadius: 4, padding: "14px 20px", width: "100%", maxWidth: 320,
-          }}>
-            <div style={{ fontFamily: mono, fontSize: 11, color: C.gray, marginBottom: 8 }}>
-              RECENT VOTES — YOUR REP
-            </div>
-            {[
-              { bill: "H.R. 1", vote: "YEA", align: true },
-              { bill: "H.R. 485", vote: "NAY", align: false },
-              { bill: "S. 100", vote: "NAY", align: false },
-            ].map((v, i) => (
-              <div key={i} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "6px 0", borderTop: i > 0 ? `1px solid ${C.grayLight}` : "none",
-              }}>
-                <span style={{ fontFamily: mono, fontSize: 12, color: C.black }}>{v.bill}</span>
-                <span style={{
-                  fontFamily: bebas, fontSize: 14, letterSpacing: 1,
-                  color: v.vote === "YEA" ? "#1B5E20" : C.crimson,
-                  padding: "2px 10px", borderRadius: 2,
-                  background: v.vote === "YEA" ? "#E8F5E9" : "#FBE9E7",
-                }}>
-                  {v.vote}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div style={{
-          position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-          animation: "bounce 2s infinite",
-        }}>
-          <span style={{ fontFamily: mono, fontSize: 10, color: C.gold, letterSpacing: 2 }}>
-            SCROLL
-          </span>
-          <span style={{ color: C.gold, fontSize: 18 }}>↓</span>
-        </div>
+        <button className="cta-primary" onClick={onEnter}>Find Your Representative &rarr;</button>
+        <div className="cta-note">The tool is live now — preview your district before the full July 1 launch.</div>
       </div>
 
-      {/* ── LIVE ACCOUNTABILITY TICKER ── */}
-      <div style={{
-        background: C.black, borderTop: `3px solid ${C.gold}`,
-        borderBottom: `3px solid ${C.gold}`,
-        padding: "0", overflow: "hidden",
-      }}>
-        <div style={{
-          display: "flex", alignItems: "center",
-        }}>
-          <div style={{
-            background: C.gold, color: C.black,
-            fontFamily: bebas, fontSize: 13, letterSpacing: 2,
-            padding: "14px 20px", whiteSpace: "nowrap", flexShrink: 0,
-          }}>
-            LIVE RECORD
-          </div>
-          <div style={{
-            display: "flex", gap: 0, overflow: "hidden", flex: 1,
-          }}>
-            {[...MOCK_BILLS, ...MOCK_BILLS].map((b, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: 16,
-                padding: "12px 28px", borderLeft: `1px solid #222`,
-                whiteSpace: "nowrap", flexShrink: 0,
-              }}>
-                <span style={{ fontFamily: mono, fontSize: 11, color: "#555" }}>
-                  {b.title.split("—")[0].trim()}
-                </span>
-                <span style={{
-                  fontFamily: bebas, fontSize: 13, letterSpacing: 1,
-                  color: b.peopleSupport > 50 ? "#4CAF50" : C.crimson,
-                }}>
-                  PEOPLE: {b.peopleSupport}% SUPPORT
-                </span>
-                <span style={{ color: "#333" }}>·</span>
-                <span style={{
-                  fontFamily: bebas, fontSize: 13, letterSpacing: 1,
-                  color: b.repVote === "Yea" ? "#4CAF50" : C.crimson,
-                }}>
-                  REP VOTED: {b.repVote.toUpperCase()}
-                </span>
-                <span style={{
-                  fontFamily: mono, fontSize: 10,
-                  color: b.aligned ? "#4CAF50" : C.gold,
-                  padding: "2px 8px",
-                  border: `1px solid ${b.aligned ? "#4CAF50" : C.gold}`,
-                  borderRadius: 2,
-                }}>
-                  {b.aligned ? "✓ ALIGNED" : "⚠ MISALIGNED"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── STATS BAR ── */}
-      <div ref={statsRef} style={{
-        background: C.cobalt, padding: "48px 32px",
-        display: "flex", justifyContent: "center", gap: "clamp(32px, 6vw, 120px)",
-        flexWrap: "wrap",
-      }}>
-        {[
-          { n: counters.bills.toLocaleString(), label: "Bills Tracked", sub: "119th Congress" },
-          { n: counters.votes.toLocaleString(), label: "Constituent Votes", sub: "and counting" },
-          { n: counters.reps.toLocaleString(), label: "Representatives", sub: "House + Senate" },
-        ].map((s, i) => (
-          <div key={i} style={{ textAlign: "center" }}>
-            <div style={{
-              fontFamily: bebas, fontSize: "clamp(48px, 6vw, 72px)",
-              color: C.gold, lineHeight: 1, letterSpacing: 2,
-            }}>{s.n}</div>
-            <div style={{ fontSize: 14, color: C.white, fontWeight: 700, marginTop: 4 }}>{s.label}</div>
-            <div style={{ fontFamily: mono, fontSize: 11, color: "#8899cc", marginTop: 2 }}>{s.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── BILL ACCOUNTABILITY SECTION ── */}
-      <div style={{ background: C.white, padding: "80px 32px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{
-            textAlign: "center", marginBottom: 56,
-          }}>
-            <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 12 }}>
-              THE ACCOUNTABILITY MATRIX
+      <div className="explainer">
+        <div className="section-title">What is <span>CheckYourRepresentative.com</span>?</div>
+        <p className="explainer-text">
+          CheckYourRepresentative.com is a free, nonpartisan platform that gives every American the tools to see exactly how their elected representative votes in Congress — and compare it to how their district actually wants them to vote. No spin. No media filter. Just the record.
+        </p>
+        <div className="features">
+          {FEATURES.map(([icon, title, body]) => (
+            <div className="feature" key={title}>
+              <div className="feature-icon">{icon}</div>
+              <h3>{title}</h3>
+              <p>{body}</p>
             </div>
-            <div style={{
-              fontFamily: bebas, fontSize: "clamp(36px, 5vw, 64px)",
-              letterSpacing: 2, lineHeight: 1,
-            }}>
-              YOUR DISTRICT SPOKE.<br />
-              <span style={{ color: C.crimson }}>DID THEY LISTEN?</span>
-            </div>
-          </div>
-
-          {/* Bill cards */}
-          {MOCK_BILLS.map((bill, i) => (
-            <BillAccountabilityCard key={bill.id} bill={bill} index={i} />
           ))}
-
-          <div style={{ textAlign: "center", marginTop: 48 }}>
-            <button onClick={onEnter} style={{
-              fontFamily: bebas, fontSize: 20, letterSpacing: 3,
-              background: C.black, color: C.gold,
-              border: `2px solid ${C.gold}`,
-              padding: "16px 48px", borderRadius: 2, cursor: "pointer",
-            }}>
-              SEE YOUR DISTRICT'S FULL RECORD →
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* ── HOW IT WORKS ── */}
-      <div style={{ background: C.black, padding: "80px 32px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 12 }}>
-              FOR EVERYONE. LEFT. RIGHT. CENTER.
-            </div>
-            <div style={{
-              fontFamily: bebas, fontSize: "clamp(36px, 5vw, 60px)",
-              color: C.white, letterSpacing: 2,
-            }}>
-              THREE STEPS.<br />
-              <span style={{ color: C.gold }}>ONE TRUTH.</span>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 32, flexWrap: "wrap", justifyContent: "center" }}>
-            {[
-              {
-                n: "01",
-                color: C.gold,
-                title: "Find Your District",
-                body: "Enter your ZIP. We confirm your congressional district and find your House rep and both Senators.",
-                icon: "📍",
-              },
-              {
-                n: "02",
-                color: C.crimson,
-                title: "Vote on Bills",
-                body: "Read plain-language bill summaries. Cast your position — Support, Oppose, or Undecided. Anonymous. Secure.",
-                icon: "🗳️",
-              },
-              {
-                n: "03",
-                color: C.cobalt,
-                title: "Hold Them Accountable",
-                body: "See how your rep voted vs. how your district voted. Contact them directly with one click.",
-                icon: "⚖️",
-              },
-            ].map((step, i) => (
-              <div key={i} style={{
-                flex: "1 1 240px", maxWidth: 280,
-                padding: "32px 28px",
-                border: `1px solid #222`,
-                borderTop: `3px solid ${step.color}`,
-                borderRadius: 2,
-              }}>
-                <div style={{
-                  fontFamily: bebas, fontSize: 48, color: step.color,
-                  letterSpacing: 2, lineHeight: 1, marginBottom: 8,
-                }}>{step.n}</div>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>{step.icon}</div>
-                <div style={{
-                  fontFamily: bebas, fontSize: 22, color: C.white,
-                  letterSpacing: 1, marginBottom: 12,
-                }}>{step.title}</div>
-                <div style={{ fontSize: 14, color: "#888", lineHeight: 1.7 }}>
-                  {step.body}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="cta-block">
+        <button className="cta-primary" onClick={onEnter}>See It For Your District &rarr;</button>
       </div>
 
-      {/* ── FOR ALL AMERICANS ── */}
-      <div style={{
-        background: C.parchment, padding: "80px 32px",
-        borderTop: `4px solid ${C.gold}`,
-      }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 16 }}>
-            NON-PARTISAN · CITIZEN-POWERED · FREE
+      <div className="signup">
+        <h2>Get notified at launch</h2>
+        <p>Be the first to hold your representative accountable when we go live July 1.</p>
+        {sent ? (
+          <div style={{ color: "#6bcf7f", fontSize: 14 }}>✓ You're on the list. See you July 1.</div>
+        ) : (
+          <div className="signup-form">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
+            <button onClick={submitEmail}>{btn}</button>
           </div>
-          <div style={{
-            fontFamily: bebas, fontSize: "clamp(32px, 5vw, 56px)",
-            letterSpacing: 2, lineHeight: 1.1, marginBottom: 24,
-          }}>
-            WHETHER YOU'RE LEFT, RIGHT,<br />OR SICK OF BOTH —<br />
-            <span style={{ color: C.crimson }}>YOUR VOTE STILL COUNTS.</span>
-          </div>
-          <p style={{ fontSize: 16, lineHeight: 1.8, color: C.gray, maxWidth: 600, margin: "0 auto 40px" }}>
-            CheckYourRepresentative.com doesn't tell you what to think.
-            It tells you what your representative is doing — and gives you the tools
-            to respond. Democrat, Republican, Independent, or anything else: your voice
-            belongs in this database.
-          </p>
-
-          {/* Political spectrum bar */}
-          <div style={{ margin: "0 auto 40px", maxWidth: 500 }}>
-            <div style={{
-              height: 8, borderRadius: 4,
-              background: `linear-gradient(to right, #1565C0, #7B1FA2, #9E9E9E, #E65100, ${C.crimson})`,
-              marginBottom: 8,
-            }} />
-            <div style={{
-              display: "flex", justifyContent: "space-between",
-              fontFamily: mono, fontSize: 10, color: C.gray,
-            }}>
-              <span>PROGRESSIVE</span>
-              <span>LIBERAL</span>
-              <span>MODERATE</span>
-              <span>CONSERVATIVE</span>
-              <span>MAGA</span>
-            </div>
-          </div>
-          <div style={{
-            fontFamily: bebas, fontSize: 18, letterSpacing: 3,
-            color: C.gold, marginBottom: 32,
-          }}>
-            ALL WELCOME. ALL COUNTED. ALL MATTER.
-          </div>
-
-          <button onClick={onEnter} style={{
-            fontFamily: bebas, fontSize: 22, letterSpacing: 3,
-            background: C.crimson, color: C.white, border: "none",
-            padding: "18px 56px", borderRadius: 2, cursor: "pointer",
-            display: "block", margin: "0 auto",
-          }}>
-            CHECK YOUR REPRESENTATIVE NOW →
-          </button>
-        </div>
-      </div>
-
-      {/* ── FOOTER ── */}
-      <div style={{
-        background: C.black, borderTop: `3px solid ${C.gold}`,
-        padding: "32px", textAlign: "center",
-      }}>
-        <EagleSeal size={40} />
-        <div style={{
-          fontFamily: bebas, fontSize: 18, letterSpacing: 3,
-          color: C.gold, marginTop: 12, marginBottom: 8,
-        }}>
-          CHECKYOURREPRESENTATIVE.COM
-        </div>
-        <div style={{ fontFamily: mono, fontSize: 11, color: "#444", lineHeight: 1.8 }}>
-          Non-partisan voter education · Bill data from Congress.gov · 119th Congress<br />
-          "We the People of the United States, in Order to form a more perfect Union..."
-        </div>
-        <div style={{ marginTop: 16, fontFamily: mono, fontSize: 10, color: "#333" }}>
-          Paid for by We The People Inc. · Not affiliated with any political party
-        </div>
-      </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        @keyframes bounce {
-          0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(8px); }
-        }
-        * { box-sizing: border-box; }
-        button:hover { opacity: 0.88; transition: opacity 0.15s; }
-      `}</style>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-function BillAccountabilityCard({ bill, index }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { setVisible(true); obs.disconnect(); }
-    }, { threshold: 0.2 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const supportPct = bill.peopleSupport;
-  const opposePct  = bill.peopleOppose;
-
-  return (
-    <div ref={ref} style={{
-      background: C.white, border: `1px solid ${C.grayLight}`,
-      borderLeft: `4px solid ${bill.aligned ? "#2E7D32" : C.crimson}`,
-      borderRadius: 2, padding: "28px 32px", marginBottom: 20,
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0)" : "translateY(20px)",
-      transition: `opacity 0.5s ${index * 0.1}s, transform 0.5s ${index * 0.1}s`,
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: mono, fontSize: 10, color: C.gray, letterSpacing: 2, marginBottom: 6 }}>
-            {bill.topic.toUpperCase()}
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.black, marginBottom: 4 }}>
-            {bill.title}
-          </div>
-          <div style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>
-            {bill.repName}
-          </div>
-        </div>
-        <div style={{
-          fontFamily: bebas, fontSize: 13, letterSpacing: 2,
-          padding: "6px 16px", borderRadius: 2,
-          background: bill.aligned ? "#E8F5E9" : "#FBE9E7",
-          color: bill.aligned ? "#1B5E20" : C.crimson,
-          whiteSpace: "nowrap",
-        }}>
-          {bill.aligned ? "✓ REP ALIGNED" : "⚠ REP MISALIGNED"}
-        </div>
-      </div>
-
-      {/* Constituent bar */}
-      <div style={{ marginTop: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>THE PEOPLE</span>
-          <span style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>
-            {supportPct}% support · {opposePct}% oppose
-          </span>
-        </div>
-        <div style={{ height: 10, background: C.grayLight, borderRadius: 2, overflow: "hidden", display: "flex" }}>
-          <div style={{
-            width: visible ? `${supportPct}%` : "0%", background: C.cobalt,
-            transition: `width 0.8s 0.3s ease-out`,
-          }} />
-          <div style={{
-            width: visible ? `${opposePct}%` : "0%", background: C.crimson,
-            transition: `width 0.8s 0.4s ease-out`,
-          }} />
-        </div>
-      </div>
-
-      {/* Rep vote */}
-      <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>REP VOTED:</span>
-        <span style={{
-          fontFamily: bebas, fontSize: 16, letterSpacing: 2,
-          color: bill.repVote === "Yea" ? "#1B5E20" : C.crimson,
-          padding: "3px 14px",
-          background: bill.repVote === "Yea" ? "#E8F5E9" : "#FBE9E7",
-          borderRadius: 2,
-        }}>
-          {bill.repVote.toUpperCase()}
-        </span>
-        {!bill.aligned && (
-          <span style={{ fontFamily: mono, fontSize: 11, color: C.gold }}>
-            ← majority wanted the opposite
-          </span>
         )}
       </div>
-    </div>
-  );
-}
 
-// ---------------------------------------------------------------------------
-function EagleSeal({ size = 48 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 52 52" aria-hidden="true">
-      <circle cx="26" cy="26" r="24" fill="none" stroke={C.gold} strokeWidth="1.5" />
-      <circle cx="26" cy="26" r="19" fill={C.crimson} opacity="0.15" />
-      <text x="26" y="32" textAnchor="middle"
-        fontFamily={bebas} fontSize="16" fontWeight="700" fill={C.gold}
-        letterSpacing="1">CYR</text>
-    </svg>
+      <footer>
+        <div>© 2026 CheckYourRepresentative.com — Nonpartisan civic accountability</div>
+        <div style={{ letterSpacing: "4px", color: "rgba(255,255,255,.15)" }}>★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★</div>
+        <div>119th Congress</div>
+      </footer>
+      <div className="stripe-bottom" />
+    </div>
   );
 }
