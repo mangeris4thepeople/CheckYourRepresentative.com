@@ -81,7 +81,7 @@ async function geoTier(ip, district) {
   try {
     const state = String(district || "").split("-")[0];
     if (!state || !ip) return "open";
-    const r = await fetch(`http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,region`);
+    const r = await fetch(`https://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,region`);
     const d = await r.json();
     if (d.status === "success" && d.country === "United States" && d.region === state) return "verified";
     return "open";
