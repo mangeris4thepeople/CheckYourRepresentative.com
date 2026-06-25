@@ -22,6 +22,7 @@
 // =============================================================================
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ContactRep from "./ContactRep.jsx";
 
 const USE_MOCK = true; // <-- set false in your app
 const TURNSTILE_SITE_KEY = "YOUR_TURNSTILE_SITE_KEY"; // public site key (safe in client)
@@ -162,6 +163,7 @@ export default function ConstituentVoting({ bill, district, location, onNeedDist
   const [honeypot, setHoneypot] = useState("");       // must stay empty
   const [renderedAt] = useState(() => Date.now());     // timing baseline
   const [phase, setPhase] = useState("idle");          // idle|submitting|done|error
+  const [showContact, setShowContact] = useState(false);
   const [result, setResult] = useState(null);
   const [delegateVotes, setDelegateVotes] = useState(null); // the tally
   const [error, setError] = useState(null);
@@ -198,6 +200,7 @@ export default function ConstituentVoting({ bill, district, location, onNeedDist
       }
       setResult(res);
       setPhase("done");
+      setShowContact(true);
       refreshTally();
     } catch (e) {
       setError("Couldn't reach the server. Please try again.");
@@ -315,6 +318,16 @@ export default function ConstituentVoting({ bill, district, location, onNeedDist
 
         {/* Tally + honest methodology */}
         {delegateVotes && <TallyPanel tally={delegateVotes} />}
+
+        {showContact && phase === "done" && result && (
+          <ContactRep
+            district={district}
+            billId={activeBill.id}
+            billTitle={activeBill.title}
+            position={selected}
+            onClose={() => setShowContact(false)}
+          />
+        )}
       </div>
     </div>
   );
@@ -410,3 +423,4 @@ function humanizeReason(reason) {
   };
   return map[reason] || "Your vote couldn't be recorded. Please try again.";
 }
+
