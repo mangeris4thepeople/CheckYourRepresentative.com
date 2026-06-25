@@ -520,7 +520,7 @@ export default function Landing({ onEnter }) {
           "We the People of the United States, in Order to form a more perfect Union..."
         </div>
         <div style={{ marginTop: 16, fontFamily: mono, fontSize: 10, color: "#333" }}>
-          Paid for by Mangeris for the People 2026 · Not affiliated with any political party
+          Paid for by We The People Inc. · Not affiliated with any political party
         </div>
       </div>
 
