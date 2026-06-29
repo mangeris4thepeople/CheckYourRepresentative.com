@@ -90,7 +90,7 @@ export default function App() {
             <AddressLookup onResolved={setResolved} />
             {resolved ? (
               <div style={{ marginTop: 28 }}>
-                <ConstituentOnboarding location={resolved.location} district={resolved.district} />
+                <ConstituentOnboarding location={resolved.location} district={resolved.district} onGoVote={() => setTab('vote')} />
               </div>
             ) : (
               <p style={{ textAlign: "center", color: C.muted, fontStyle: "italic", maxWidth: 680, margin: "18px auto 0", fontSize: 13.5 }}>
