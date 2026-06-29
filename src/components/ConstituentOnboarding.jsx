@@ -4,6 +4,21 @@
 // =============================================================================
 import React, { useState, useEffect } from "react";
 
+const ONBOARD_CSS = `
+  @media (max-width: 600px) {
+    .cyr-onboard-pad { padding: 16px 14px 20px !important; }
+    .cyr-onboard-h2 { font-size: 18px !important; }
+    .cyr-topic-btn { font-size: 12px !important; padding: 6px 9px !important; }
+  }
+`;
+if (typeof document !== "undefined" && !document.getElementById("cyr-onboard-css")) {
+  const _ob = document.createElement("style");
+  _ob.id = "cyr-onboard-css";
+  _ob.textContent = ONBOARD_CSS;
+  document.head.appendChild(_ob);
+}
+
+
 const LAUNCH_DATE = new Date("2026-07-01T08:00:00").getTime();
 const PRE_LAUNCH  = Date.now() < LAUNCH_DATE;
 
@@ -77,12 +92,12 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
                   border: `1px solid ${C.line}`, borderRadius: 6, overflow: "hidden",
                   maxWidth: 680, margin: "0 auto" }}>
       <StarStrip />
-      <div style={{ padding: "20px 24px 26px" }}>
+      <div className="cyr-onboard-pad" style={{ padding: "20px 24px 26px" }}>
         <div style={{ textTransform: "uppercase", letterSpacing: 2, fontSize: 11,
                       color: C.gold, fontWeight: 700 }}>
           Your Legislative Digest
         </div>
-        <h2 style={{ margin: "4px 0 2px", fontSize: 22, color: C.navy }}>
+        <h2 className="cyr-onboard-h2" style={{ margin: "4px 0 2px", fontSize: 22, color: C.navy }}>
           {location ? `${location.city}, ${location.state}` : "Your district"}
           {district && <span style={{ color: C.crimson }}> · {district}</span>}
         </h2>
@@ -101,6 +116,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
               const on = topics.has(t);
               return (
                 <button key={t} onClick={() => toggleTopic(t)}
+                  className="cyr-topic-btn"
                   style={{ fontFamily: serif, fontSize: 12.5, padding: "6px 11px",
                            borderRadius: 14, cursor: "pointer",
                            border: `1.5px solid ${on ? C.navy : C.line}`,
@@ -257,3 +273,4 @@ const StarStrip = () => (
       <span key={i} style={{color: C.gold, fontSize: 11}}>★</span>)}
   </div>
 );
+
