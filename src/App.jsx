@@ -10,6 +10,7 @@ import ConstituentMap from "./components/ConstituentMap.jsx";
 import ConstituentOnboarding from "./components/ConstituentOnboarding.jsx";
 import ConstituentVoting from "./components/ConstituentVoting.jsx";
 import Merch from "./components/Merch.jsx";
+import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
@@ -18,6 +19,7 @@ const TABS = [
   { key: "district", label: "Find District" },
   { key: "vote",     label: "Vote on Bills" },
   { key: "merch",    label: "👕 Merch" },
+  { key: "matrix",   label: "📊 Accountability" },
 ];
 
 // Inject mobile CSS once
@@ -113,6 +115,10 @@ export default function App() {
         )}
 
         {tab === "merch" && <Merch />}
+
+        {tab === "matrix" && (
+          <AccountabilityDashboard district={resolved?.district} />
+        )}
       </main>
 
       <footer style={{ background: C.navy, color: "#cfd6e4", borderTop: `4px solid ${C.gold}` }}>
