@@ -2,6 +2,7 @@
 // /api/sync-reps.js — fetch all House members from clerk.house.gov XML feed
 // and store them in our DB for use by the daily email cron
 // Run once: GET /api/sync-reps?secret=YOUR_CRON_SECRET
+// v2 — env var reload
 // =============================================================================
 import { sql } from "./_db.js";
 
