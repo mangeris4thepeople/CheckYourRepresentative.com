@@ -1,470 +1,435 @@
 // =============================================================================
-// ConstituentVoting — real bills from /api/digest, real voting via /api/vote
-// No mock data. No Turnstile placeholder. Bot protection via honeypot + timing.
-// Critical variable names preserved: myDelegate, delegateVotes, DELEGATES_DB
+// ConstituentVoting v2 — Big YES/NO buttons + full money trail matrix
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
 import ContactRep from "./ContactRep.jsx";
 
-const VOTE_CSS = `
-  @media (max-width: 600px) {
-    .cyr-vote-pad { padding: 16px 14px 20px !important; }
-    .cyr-bill-title { font-size: 17px !important; }
-    .cyr-cast-btn { font-size: 15px !important; padding: 15px !important; min-height: 52px; }
-    .cyr-pos-btn { padding: 13px 6px !important; font-size: 14px !important; }
-  }
-`;
-if (typeof document !== "undefined" && !document.getElementById("cyr-vote-css")) {
-  const _vs = document.createElement("style");
-  _vs.id = "cyr-vote-css";
-  _vs.textContent = VOTE_CSS;
-  document.head.appendChild(_vs);
-}
-
-
 const C = {
-  crimson: "#8B0000", crimsonBright: "#B22234",
-  navy: "#0A1A3F", gold: "#C9A227",
-  parchment: "#FBF7EC", parchmentEdge: "#F0E6CE",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
+  yes: "#1B5E20", yesLight: "#E8F5E9", yesBorder: "#A5D6A7",
+  no: "#B71C1C", noLight: "#FFEBEE", noBorder: "#EF9A9A",
+  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000",
+  parchment: "#FBF7EC", ink: "#1A1A1A", muted: "#5C5347",
+  line: "#D8C9A0", panel: "#fff",
 };
 const serif = "Georgia, 'Times New Roman', serif";
+const sans = "-apple-system, BlinkMacSystemFont, sans-serif";
 
-const POSITIONS = [
-  { key: "support",   label: "Support",   color: C.navy },
-  { key: "oppose",    label: "Oppose",    color: C.crimson },
-  { key: "undecided", label: "Undecided", color: C.muted },
-];
-
-// ---------------------------------------------------------------------------
-// API helpers — no mocks, degrade gracefully on failure
-// ---------------------------------------------------------------------------
 async function fetchDigest(district) {
-  const res = await fetch(`/api/digest?district=${encodeURIComponent(district)}`);
-  if (!res.ok) throw new Error("digest_unavailable");
-  return res.json();
+  const r = await fetch(`/api/digest?district=${encodeURIComponent(district)}`);
+  if (!r.ok) throw new Error("digest_unavailable");
+  return r.json();
 }
-
 async function castVoteApi(payload) {
-  const res = await fetch("/api/vote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const r = await fetch("/api/vote", {
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("vote_api_error");
-  return res.json();
+  if (!r.ok) throw new Error("vote_api_error");
+  return r.json();
 }
-
 async function fetchTally(billId) {
-  const res = await fetch(`/api/tally?billId=${encodeURIComponent(billId)}`);
-  if (!res.ok) throw new Error("tally_unavailable");
-  return res.json();
+  const r = await fetch(`/api/tally?billId=${encodeURIComponent(billId)}`);
+  if (!r.ok) throw new Error("tally_unavailable");
+  return r.json();
 }
 
-// ---------------------------------------------------------------------------
 export default function ConstituentVoting({ district, location, onNeedDistrict }) {
-  const [digestPhase, setDigestPhase] = useState("idle"); // idle|loading|ready|error
-  const [bills, setBills]             = useState([]);
-  const [myDelegate, setMyDelegate]   = useState(null);
-  const [activeBillIdx, setActiveBillIdx] = useState(0);
-
-  // Per-bill vote state
-  const [selected, setSelected]       = useState(null);
-  const [honeypot, setHoneypot]       = useState("");
-  const [renderedAt]                  = useState(() => Date.now());
-  const [phase, setPhase]             = useState("idle"); // idle|submitting|done|error
+  const [phase, setPhase] = useState("idle");
+  const [bills, setBills] = useState([]);
+  const [myDelegate, setMyDelegate] = useState(null);
+  const [idx, setIdx] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [honeypot, setHoneypot] = useState("");
+  const [renderedAt] = useState(() => Date.now());
+  const [votePhase, setVotePhase] = useState("idle");
   const [showContact, setShowContact] = useState(false);
-  const [result, setResult]           = useState(null);
-  const [delegateVotes, setDelegateVotes] = useState(null);
-  const [voteError, setVoteError]     = useState(null);
+  const [result, setResult] = useState(null);
+  const [tally, setTally] = useState(null);
+  const [voteError, setVoteError] = useState(null);
+  const [expanded, setExpanded] = useState({});
 
-  const activeBill = bills[activeBillIdx] || null;
+  const bill = bills[idx] || null;
 
-  // Load bills when district changes
   useEffect(() => {
     if (!district) return;
-    setDigestPhase("loading");
-    setBills([]);
-    setMyDelegate(null);
-    resetVoteState();
+    setPhase("loading"); setBills([]); setMyDelegate(null); reset();
     fetchDigest(district)
       .then(data => {
         setMyDelegate(data.rep || null);
         setBills(data.items || []);
-        setDigestPhase(data.items?.length ? "ready" : "empty");
+        setPhase(data.items?.length ? "ready" : "empty");
       })
-      .catch(() => setDigestPhase("error"));
+      .catch(() => setPhase("error"));
   }, [district]);
 
-  // Load tally when active bill changes
-  const refreshTally = useCallback(async () => {
-    if (!activeBill?.id) return;
-    try {
-      const t = await fetchTally(activeBill.id);
-      setDelegateVotes(t);
-    } catch { /* non-fatal */ }
-  }, [activeBill?.id]);
+  const loadTally = useCallback(async () => {
+    if (!bill?.id) return;
+    try { setTally(await fetchTally(bill.id)); } catch {}
+  }, [bill?.id]);
 
-  useEffect(() => {
-    setDelegateVotes(null);
-    refreshTally();
-  }, [refreshTally]);
+  useEffect(() => { setTally(null); loadTally(); }, [loadTally]);
 
-  function resetVoteState() {
-    setSelected(null);
-    setPhase("idle");
-    setShowContact(false);
-    setResult(null);
-    setDelegateVotes(null);
-    setVoteError(null);
+  function reset() {
+    setSelected(null); setVotePhase("idle"); setShowContact(false);
+    setResult(null); setTally(null); setVoteError(null);
   }
 
-  function selectBill(idx) {
-    setActiveBillIdx(idx);
-    resetVoteState();
-  }
+  function selectBill(i) { setIdx(i); reset(); }
 
-  const canSubmit = district && selected && phase !== "submitting";
-
-  async function submitVote() {
-    if (!canSubmit || !activeBill) return;
-    setPhase("submitting");
-    setVoteError(null);
+  async function castVote(position) {
+    if (!bill || votePhase === "submitting") return;
+    setSelected(position);
+    setVotePhase("submitting"); setVoteError(null);
     try {
       const res = await castVoteApi({
-        billId: activeBill.id,
-        position: selected,
-        district,
-        honeypot,
-        renderedAt,
-        voteToken: null,
+        billId: bill.id, position, district,
+        honeypot, renderedAt, voteToken: null,
       });
       if (res.status === "rejected") {
-        setVoteError(humanizeReason(res.reason));
-        setPhase("error");
-        return;
+        setVoteError(humanize(res.reason)); setVotePhase("error"); return;
       }
-      setResult(res);
-      setPhase("done");
-      setShowContact(true);
-      refreshTally();
+      setResult(res); setVotePhase("done"); setShowContact(true); loadTally();
     } catch {
-      setVoteError("Couldn't reach the server. Please try again.");
-      setPhase("error");
+      setVoteError("Could not reach the server. Try again."); setVotePhase("error");
     }
   }
 
-  // No district yet
+  function toggle(key) { setExpanded(e => ({ ...e, [key]: !e[key] })); }
+
   if (!district) {
     return (
-      <div style={{ fontFamily: serif, color: C.ink, background: C.parchment,
-                    border: `1px solid ${C.line}`, borderRadius: 6, overflow: "hidden",
-                    maxWidth: 720, margin: "0 auto" }}>
-        <StarStrip />
-        <div style={{ padding: "26px 24px", textAlign: "center" }}>
-          <h2 style={{ margin: "0 0 8px", fontSize: 20, color: C.navy }}>Confirm your district first</h2>
-          <p style={{ fontSize: 13.5, color: C.muted, margin: "0 auto 16px", maxWidth: 430 }}>
-            We need your congressional district to show the right bills and record your position accurately.
-          </p>
-          <button onClick={() => onNeedDistrict?.()}
-            style={{ padding: "11px 22px", fontFamily: serif, fontSize: 15, fontWeight: 700,
-                     border: "none", borderRadius: 4, background: C.navy, color: "#fff", cursor: "pointer" }}>
-            Find My District
-          </button>
-        </div>
+      <div style={{ fontFamily: serif, maxWidth: 720, margin: "0 auto", textAlign: "center", padding: "40px 24px" }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🗳️</div>
+        <h2 style={{ color: C.navy, margin: "0 0 12px" }}>Find your district first</h2>
+        <p style={{ color: C.muted, marginBottom: 20 }}>We need your address to assign the right bills and record your position accurately.</p>
+        <button onClick={() => onNeedDistrict?.()}
+          style={{ fontFamily: serif, fontSize: 16, fontWeight: 700, padding: "14px 32px",
+                   background: C.navy, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+          Find My District
+        </button>
       </div>
     );
   }
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ fontFamily: serif, maxWidth: 760, margin: "0 auto" }}>
 
-      {/* Rep header */}
+      {/* Rep banner */}
       {myDelegate && (
-        <div style={{ background: C.navy, color: "#fff", padding: "12px 20px",
-                      borderRadius: "6px 6px 0 0", display: "flex", alignItems: "center",
-                      justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ background: C.navy, color: "#fff", padding: "10px 20px",
+                      borderRadius: "8px 8px 0 0", display: "flex", justifyContent: "space-between",
+                      alignItems: "center", flexWrap: "wrap", gap: 6 }}>
           <div>
-            <div style={{ fontSize: 11, color: C.gold, letterSpacing: 1, fontWeight: 700 }}>YOUR REPRESENTATIVE</div>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>{myDelegate.name}</div>
+            <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1 }}>YOUR REPRESENTATIVE</div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>{myDelegate.name}</div>
           </div>
-          <div style={{ fontSize: 12, color: "#cfd6e4" }}>
-            District {district} · {myDelegate.party}
-          </div>
+          <div style={{ fontSize: 12, color: "#cfd6e4" }}>{district} · {myDelegate.party}</div>
         </div>
       )}
 
-      {/* Loading state */}
-      {digestPhase === "loading" && (
-        <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                      borderRadius: myDelegate ? "0 0 6px 6px" : 6,
-                      padding: "40px 24px", textAlign: "center", color: C.muted }}>
-          <div style={{ fontSize: 28, marginBottom: 12 }}>📋</div>
-          <div style={{ fontSize: 15 }}>Loading bills for {district}…</div>
+      {/* Loading / error / empty */}
+      {phase === "loading" && (
+        <div style={{ padding: "48px 24px", textAlign: "center", color: C.muted, background: C.parchment, borderRadius: myDelegate ? "0 0 8px 8px" : 8 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+          <div>Loading bills from Congress...</div>
         </div>
       )}
-
-      {/* Error state */}
-      {digestPhase === "error" && (
-        <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                      borderRadius: 6, padding: "32px 24px", textAlign: "center" }}>
-          <div style={{ color: C.crimson, fontSize: 15, marginBottom: 12 }}>
-            Couldn't load bills right now. The Congress.gov API may be rate-limited.
-          </div>
-          <button onClick={() => { setDigestPhase("loading"); fetchDigest(district).then(d => { setMyDelegate(d.rep); setBills(d.items || []); setDigestPhase(d.items?.length ? "ready" : "empty"); }).catch(() => setDigestPhase("error")); }}
-            style={{ padding: "9px 20px", fontFamily: serif, fontSize: 14, fontWeight: 700,
-                     border: "none", borderRadius: 4, background: C.navy, color: "#fff", cursor: "pointer" }}>
+      {phase === "error" && (
+        <div style={{ padding: "32px 24px", textAlign: "center", background: C.parchment, borderRadius: 8 }}>
+          <div style={{ color: C.crimson, marginBottom: 12 }}>Could not load bills. Please try again.</div>
+          <button onClick={() => { setPhase("loading"); fetchDigest(district).then(d => { setMyDelegate(d.rep); setBills(d.items||[]); setPhase(d.items?.length?"ready":"empty"); }).catch(()=>setPhase("error")); }}
+            style={{ fontFamily: serif, padding: "10px 20px", background: C.navy, color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
             Try Again
           </button>
         </div>
       )}
-
-      {/* Empty state */}
-      {digestPhase === "empty" && (
-        <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                      borderRadius: 6, padding: "32px 24px", textAlign: "center", color: C.muted }}>
-          <div style={{ fontSize: 15 }}>No active bills found for {district} right now. Check back soon.</div>
+      {phase === "empty" && (
+        <div style={{ padding: "32px 24px", textAlign: "center", color: C.muted, background: C.parchment, borderRadius: 8 }}>
+          No active bills found right now. Check back soon.
         </div>
       )}
 
-      {/* Bills ready */}
-      {digestPhase === "ready" && bills.length > 0 && (
+      {phase === "ready" && bill && (
         <>
-          {/* Bill selector */}
-          <div style={{ background: "#fff", border: `1px solid ${C.line}`,
-                        borderTop: myDelegate ? "none" : `1px solid ${C.line}` }}>
-            <div style={{ padding: "12px 20px 0", fontSize: 11, fontWeight: 700,
-                          color: C.muted, letterSpacing: 1 }}>
-              SELECT A BILL TO VOTE ON
+          {/* Bill tabs */}
+          <div style={{ background: "#fff", borderLeft: "1px solid "+C.line, borderRight: "1px solid "+C.line }}>
+            <div style={{ padding: "10px 16px 0", fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 1 }}>
+              SELECT A BILL
             </div>
-            <div style={{ display: "flex", overflowX: "auto", padding: "10px 20px 0",
-                          gap: 8, borderBottom: `2px solid ${C.gold}` }}>
+            <div style={{ display: "flex", overflowX: "auto", padding: "8px 16px 0", gap: 6, borderBottom: "2px solid "+C.gold }}>
               {bills.map((b, i) => (
                 <button key={b.id} onClick={() => selectBill(i)}
-                  style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-                           padding: "8px 14px", border: "none", cursor: "pointer",
-                           background: "transparent", flexShrink: 0,
-                           color: activeBillIdx === i ? C.crimson : C.muted,
-                           borderBottom: `3px solid ${activeBillIdx === i ? C.crimson : "transparent"}`,
-                           marginBottom: -2 }}>
-                  {b.id?.split("-").slice(0,2).join(" ").toUpperCase() || `Bill ${i+1}`}
+                  style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
+                           padding: "6px 12px", border: "none", cursor: "pointer", background: "transparent",
+                           flexShrink: 0, marginBottom: -2,
+                           color: idx === i ? C.crimson : C.muted,
+                           borderBottom: "3px solid "+(idx === i ? C.crimson : "transparent") }}>
+                  {b.id?.replace(/-119$/,"").toUpperCase() || "Bill "+(i+1)}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Active bill card */}
-          {activeBill && (
-            <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                          borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
-              <StarStrip />
-              <div className="cyr-vote-pad" style={{ padding: "20px 24px 26px" }}>
+          {/* Bill card */}
+          <div style={{ background: C.parchment, border: "1px solid "+C.line, borderTop: "none", borderRadius: "0 0 8px 8px", overflow: "hidden" }}>
+            
+            {/* Bill headline */}
+            <div style={{ padding: "20px 24px 0" }}>
+              <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+                {bill.policyArea || "Active Legislation"}
+              </div>
+              <h2 style={{ margin: "0 0 10px", fontSize: 20, color: C.navy, lineHeight: 1.3, fontFamily: serif }}>
+                {bill.summary?.headline || bill.title}
+              </h2>
+              {bill.summary?.plain && (
+                <p style={{ margin: "0 0 8px", fontSize: 14, color: C.ink, lineHeight: 1.65 }}>
+                  {bill.summary.plain}
+                </p>
+              )}
+            </div>
 
-                {/* Bill info */}
-                <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1,
-                              textTransform: "uppercase", marginBottom: 4 }}>
-                  {activeBill.reason || "Active Legislation"}
+            {/* WHO INTRODUCED IT */}
+            {bill.summary?.sponsor && (
+              <div style={{ margin: "0 24px 8px", padding: "10px 14px", background: "#fff",
+                            border: "1px solid "+C.line, borderRadius: 6 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, letterSpacing: 1, marginBottom: 4 }}>
+                  INTRODUCED BY
                 </div>
-                <h2 className="cyr-bill-title" style={{ margin: "0 0 8px", fontSize: 20, color: C.navy, lineHeight: 1.3 }}>
-                  {activeBill.summary?.headline || activeBill.title}
-                </h2>
-                {activeBill.summary?.plain && (
-                  <p style={{ margin: "0 0 8px", fontSize: 13.5, color: C.ink, lineHeight: 1.6 }}>
-                    {activeBill.summary.plain}
-                  </p>
-                )}
-                {activeBill.summary?.affects && (
-                  <p style={{ margin: "0 0 4px", fontSize: 12.5, color: C.muted }}>
-                    <strong>Who it affects:</strong> {activeBill.summary.affects}
-                  </p>
-                )}
-                {activeBill.summary?.status && (
-                  <p style={{ margin: "0 0 16px", fontSize: 12.5, color: C.muted }}>
-                    <strong>Status:</strong> {activeBill.summary.status}
-                  </p>
-                )}
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>{bill.summary.sponsor}</div>
+              </div>
+            )}
 
-                {/* District badge */}
-                <div style={{ padding: "10px 14px", background: "#fff",
-                              border: `1px solid ${C.line}`, borderRadius: 4, fontSize: 13.5,
-                              marginBottom: 18 }}>
-                  Voting as <strong style={{ color: C.crimson }}>District {district}</strong>
-                  {location?.city && (
-                    <span style={{ color: C.muted }}> · {location.city}, {location.state}</span>
-                  )}
+            {/* MONEY MATRIX — expandable sections */}
+            <div style={{ margin: "0 24px 16px" }}>
+
+              {/* Who Benefits */}
+              {bill.summary?.who_benefits && (
+                <MoneyRow
+                  icon="✅" label="Who benefits if this passes"
+                  text={bill.summary.who_benefits}
+                  color="#1B5E20" bg="#E8F5E9" border="#A5D6A7"
+                  open={expanded.benefits}
+                  onToggle={() => toggle("benefits")}
+                />
+              )}
+
+              {/* Who Loses */}
+              {bill.summary?.who_loses && (
+                <MoneyRow
+                  icon="❌" label="Who is worse off if this passes"
+                  text={bill.summary.who_loses}
+                  color="#B71C1C" bg="#FFEBEE" border="#EF9A9A"
+                  open={expanded.loses}
+                  onToggle={() => toggle("loses")}
+                />
+              )}
+
+              {/* PAC Money */}
+              {bill.summary?.pac_money && (
+                <MoneyRow
+                  icon="💰" label="PAC & donor money behind this bill"
+                  text={bill.summary.pac_money}
+                  color="#5C4400" bg="#FFF8E1" border="#FFE082"
+                  open={expanded.pac}
+                  onToggle={() => toggle("pac")}
+                />
+              )}
+
+              {/* Industries */}
+              {bill.summary?.industries && (
+                <MoneyRow
+                  icon="🏭" label="Industries with financial stake"
+                  text={bill.summary.industries}
+                  color="#1A237E" bg="#E8EAF6" border="#9FA8DA"
+                  open={expanded.industries}
+                  onToggle={() => toggle("industries")}
+                />
+              )}
+
+              {/* Vote Impact */}
+              {bill.summary?.vote_impact && (
+                <div style={{ marginTop: 8, padding: "12px 14px", background: "#0A1A3F",
+                              borderRadius: 6, color: "#fff" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, letterSpacing: 1, marginBottom: 4 }}>
+                    IF THIS PASSES — WHAT CHANGES FOR YOU
+                  </div>
+                  <div style={{ fontSize: 14, lineHeight: 1.6 }}>{bill.summary.vote_impact}</div>
                 </div>
+              )}
+            </div>
 
-                {/* Position buttons */}
-                {phase !== "done" && (
-                  <>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>
-                      YOUR POSITION
-                    </div>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
-                      {POSITIONS.map(p => (
-                        <button key={p.key} onClick={() => setSelected(p.key)}
-                          className="cyr-pos-btn"
-                          style={{ flex: "1 1 120px", padding: "11px 8px", cursor: "pointer",
-                                   fontFamily: serif, fontSize: 15, borderRadius: 4,
-                                   border: `2px solid ${selected === p.key ? p.color : C.line}`,
-                                   background: selected === p.key ? p.color : "#fff",
-                                   color: selected === p.key ? "#fff" : p.color, fontWeight: 700, touchAction: "manipulation" }}>
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+            {/* Status */}
+            {bill.summary?.status && (
+              <div style={{ margin: "0 24px 16px", fontSize: 12.5, color: C.muted }}>
+                <strong>Status:</strong> {bill.summary.status}
+              </div>
+            )}
 
-                {/* Honeypot — hidden from humans */}
-                <input tabIndex={-1} autoComplete="off" value={honeypot}
-                  onChange={e => setHoneypot(e.target.value)} aria-hidden="true"
-                  style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
+            {/* District badge */}
+            <div style={{ margin: "0 24px 20px", padding: "10px 14px", background: "#fff",
+                          border: "1px solid "+C.line, borderRadius: 4, fontSize: 13 }}>
+              Voting as <strong style={{ color: C.crimson }}>District {district}</strong>
+              {location?.city && <span style={{ color: C.muted }}> · {location.city}, {location.state}</span>}
+            </div>
 
-                {/* Submit */}
-                {phase !== "done" && (
-                  <button onClick={submitVote} disabled={!canSubmit}
-                    className="cyr-cast-btn"
-                    style={{ width: "100%", padding: "13px", fontFamily: serif, fontSize: 16,
-                             fontWeight: 700, borderRadius: 4, border: "none",
-                             cursor: canSubmit ? "pointer" : "not-allowed",
-                             background: canSubmit ? C.crimson : "#C9BFAB",
-                             color: "#fff", letterSpacing: 0.5, touchAction: "manipulation" }}>
-                    {phase === "submitting" ? "Recording…" : "Cast My Position"}
+            {/* BIG YES / NO BUTTONS */}
+            {votePhase !== "done" && (
+              <div style={{ margin: "0 24px 24px" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 10, letterSpacing: 1 }}>
+                  YOUR VOTE ON THIS BILL
+                </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    onClick={() => castVote("support")}
+                    disabled={votePhase === "submitting"}
+                    style={{ flex: 1, padding: "20px 12px", fontFamily: serif, fontSize: 22,
+                             fontWeight: 900, borderRadius: 8, border: "3px solid "+C.yesBorder,
+                             background: selected === "support" ? C.yes : C.yesLight,
+                             color: selected === "support" ? "#fff" : C.yes,
+                             cursor: votePhase === "submitting" ? "not-allowed" : "pointer",
+                             transition: "all 0.15s", letterSpacing: 1 }}>
+                    ✓ YES
                   </button>
-                )}
-
-                {voteError && (
-                  <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 4,
-                                background: "#FBE9E7", color: C.crimson, fontSize: 13,
-                                border: `1px solid ${C.crimsonBright}` }}>
-                    {voteError}
+                  <button
+                    onClick={() => castVote("oppose")}
+                    disabled={votePhase === "submitting"}
+                    style={{ flex: 1, padding: "20px 12px", fontFamily: serif, fontSize: 22,
+                             fontWeight: 900, borderRadius: 8, border: "3px solid "+C.noBorder,
+                             background: selected === "oppose" ? C.no : C.noLight,
+                             color: selected === "oppose" ? "#fff" : C.no,
+                             cursor: votePhase === "submitting" ? "not-allowed" : "pointer",
+                             transition: "all 0.15s", letterSpacing: 1 }}>
+                    ✗ NO
+                  </button>
+                </div>
+                <button
+                  onClick={() => castVote("undecided")}
+                  disabled={votePhase === "submitting"}
+                  style={{ width: "100%", marginTop: 8, padding: "10px", fontFamily: serif, fontSize: 13,
+                           fontWeight: 700, borderRadius: 6, border: "1px solid "+C.line,
+                           background: selected === "undecided" ? "#eee" : "#fff",
+                           color: C.muted, cursor: "pointer" }}>
+                  Not sure / Undecided
+                </button>
+                {votePhase === "submitting" && (
+                  <div style={{ textAlign: "center", color: C.muted, fontSize: 13, marginTop: 8 }}>
+                    Recording your vote...
                   </div>
-                )}
-
-                {/* Done state */}
-                {phase === "done" && result && (
-                  <div style={{ marginTop: 0 }}>
-                    <div style={{ padding: "12px 16px", background: "#fff",
-                                  border: `1px solid ${C.line}`, borderRadius: 4,
-                                  fontSize: 13.5, color: C.navy, marginBottom: 12 }}>
-                      ✓ Position recorded as{" "}
-                      <strong>{result.tier === "verified" ? "location-verified" : "open"}</strong>.
-                      {result.tier !== "verified" &&
-                        " Your vote still counts in the open tally."}
-                    </div>
-                    <button onClick={resetVoteState}
-                      style={{ width: "100%", padding: "10px", fontFamily: serif, fontSize: 14,
-                               fontWeight: 700, borderRadius: 4, border: `1px solid ${C.line}`,
-                               background: "#fff", color: C.navy, cursor: "pointer", marginBottom: 12 }}>
-                      ← Vote on Another Bill
-                    </button>
-                  </div>
-                )}
-
-                {/* Tally */}
-                {delegateVotes && <TallyPanel tally={delegateVotes} />}
-
-                {/* Contact rep panel */}
-                {showContact && phase === "done" && result && activeBill && (
-                  <ContactRep
-                    district={district}
-                    billId={activeBill.id}
-                    billTitle={activeBill.title}
-                    position={selected}
-                    onClose={() => setShowContact(false)}
-                  />
                 )}
               </div>
-            </div>
-          )}
+            )}
+
+            {voteError && (
+              <div style={{ margin: "0 24px 16px", padding: "10px 12px", borderRadius: 4,
+                            background: "#FBE9E7", color: C.crimson, fontSize: 13,
+                            border: "1px solid "+C.crimson }}>
+                {voteError}
+              </div>
+            )}
+
+            {/* Done state */}
+            {votePhase === "done" && result && (
+              <div style={{ margin: "0 24px 16px" }}>
+                <div style={{ padding: "14px 16px", background: C.yes, color: "#fff",
+                              borderRadius: 6, textAlign: "center", marginBottom: 12 }}>
+                  <div style={{ fontSize: 20, fontWeight: 900 }}>
+                    {selected === "support" ? "✓ YES recorded" : selected === "oppose" ? "✗ NO recorded" : "Undecided recorded"}
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
+                    {result.tier === "verified" ? "Location-verified vote" : "Vote counted"}
+                  </div>
+                </div>
+                <button onClick={() => { reset(); }}
+                  style={{ width: "100%", padding: "10px", fontFamily: serif, fontSize: 14,
+                           fontWeight: 700, borderRadius: 4, border: "1px solid "+C.line,
+                           background: "#fff", color: C.navy, cursor: "pointer" }}>
+                  ← Vote on Another Bill
+                </button>
+              </div>
+            )}
+
+            {/* Tally */}
+            {tally && <TallyPanel tally={tally} />}
+
+            {/* Honeypot */}
+            <input tabIndex={-1} autoComplete="off" value={honeypot}
+              onChange={e => setHoneypot(e.target.value)} aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
+
+            {/* Contact rep */}
+            {showContact && votePhase === "done" && result && bill && (
+              <div style={{ margin: "0 24px 24px" }}>
+                <ContactRep district={district} billId={bill.id} billTitle={bill.title}
+                  position={selected} onClose={() => setShowContact(false)} />
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
+function MoneyRow({ icon, label, text, color, bg, border, open, onToggle }) {
+  return (
+    <div style={{ marginTop: 8, borderRadius: 6, border: "1px solid "+border, overflow: "hidden" }}>
+      <button onClick={onToggle}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 10,
+                 padding: "10px 14px", background: bg, border: "none", cursor: "pointer",
+                 textAlign: "left" }}>
+        <span style={{ fontSize: 16 }}>{icon}</span>
+        <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color, letterSpacing: 0.5, textTransform: "uppercase" }}>
+          {label}
+        </span>
+        <span style={{ fontSize: 12, color, fontWeight: 700 }}>{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div style={{ padding: "10px 14px", background: "#fff", fontSize: 13.5,
+                      color: "#1A1A1A", lineHeight: 1.65, borderTop: "1px solid "+border }}>
+          {text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TallyPanel({ tally }) {
-  const { sampleSize, qualityScore, verified, open, counts } = tally;
+  const { sampleSize, counts, verified, open } = tally;
   const combined = {};
-  for (const p of POSITIONS) {
-    combined[p.key] = (verified?.[p.key] || 0) + (open?.[p.key] || 0);
+  for (const p of ["support","oppose","undecided"]) {
+    combined[p] = (verified?.[p]||0) + (open?.[p]||0);
   }
   const total = sampleSize || 1;
+  const yPct = Math.round((combined.support/total)*100);
+  const nPct = Math.round((combined.oppose/total)*100);
 
   return (
-    <div style={{ marginTop: 22, borderTop: `2px solid ${C.gold}`, paddingTop: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                    marginBottom: 12 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, letterSpacing: 1 }}>
-          DISTRICT POSITIONS SO FAR
-        </div>
-        <div style={{ fontSize: 12, color: C.muted }}>{sampleSize} response{sampleSize !== 1 ? "s" : ""}</div>
+    <div style={{ margin: "0 24px 24px", borderTop: "2px solid #C9A227", paddingTop: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#0A1A3F", letterSpacing: 1, marginBottom: 12 }}>
+        DISTRICT TALLY — {sampleSize} VOTE{sampleSize !== 1 ? "S" : ""}
       </div>
-      {POSITIONS.map(p => {
-        const n = combined[p.key] || 0;
-        const pct = total > 0 ? Math.round((n / total) * 100) : 0;
-        return (
-          <div key={p.key} style={{ marginTop: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-              <span style={{ fontWeight: 700, color: p.color }}>{p.label}</span>
-              <span style={{ color: C.muted }}>{pct}% · {n}</span>
-            </div>
-            <div style={{ height: 8, background: C.parchmentEdge, borderRadius: 4, marginTop: 3 }}>
-              <div style={{ width: `${pct}%`, height: "100%", background: p.color,
-                            borderRadius: 4, transition: "width 0.4s ease" }} />
-            </div>
-          </div>
-        );
-      })}
-      <div style={{ marginTop: 14, padding: "10px 14px", background: "#fff",
-                    border: `1px solid ${C.line}`, borderRadius: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <QualityBadge score={qualityScore} />
-          <span style={{ fontSize: 12, color: C.navy, fontWeight: 700 }}>
-            {counts?.verified || 0} of {sampleSize} responses are location-verified
-          </span>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <div style={{ flex: yPct || 1, background: "#1B5E20", height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>{yPct}% YES</span>
         </div>
-        <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: C.muted }}>
-          Self-selected opinion poll, not a scientific survey. "Location-verified" means
-          the connection placed in the district's state. Bot and rate filters applied.
-        </p>
+        <div style={{ flex: nPct || 1, background: "#B71C1C", height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>{nPct}% NO</span>
+        </div>
+      </div>
+      <div style={{ fontSize: 11.5, color: "#5C5347" }}>
+        {counts?.verified || 0} of {sampleSize} location-verified · Self-selected poll, not a scientific survey
       </div>
     </div>
   );
 }
 
-function QualityBadge({ score }) {
-  const pct = Math.round((score || 0) * 100);
-  const tone = score >= 0.7 ? C.navy : score >= 0.4 ? C.gold : C.crimson;
-  return (
-    <span style={{ fontSize: 11, fontWeight: 800, color: "#fff",
-                   background: tone, borderRadius: 10, padding: "2px 9px" }}>
-      {pct}% verified
-    </span>
-  );
-}
-
-function StarStrip() {
-  return (
-    <div style={{ background: C.navy, padding: "6px 0", display: "flex",
-                  justifyContent: "center", gap: 9 }}>
-      {Array.from({ length: 13 }).map((_, i) => (
-        <span key={i} style={{ color: C.gold, fontSize: 11 }}>★</span>
-      ))}
-    </div>
-  );
-}
-
-function humanizeReason(reason) {
-  const map = {
-    honeypot_tripped:  "This submission looked automated and wasn't recorded.",
-    too_fast:          "Submitted too quickly — please take a moment to review the bill, then try again.",
-    rate_ip:           "Too many votes from your connection recently. Please try later.",
-    rate_subnet:       "Too many votes from your network recently. Please try later.",
-    missing_fields:    "Please select a position first.",
+function humanize(reason) {
+  const m = {
+    honeypot_tripped: "This submission looked automated.",
+    too_fast: "Submitted too quickly. Please review the bill first.",
+    rate_ip: "Too many votes from your connection. Try later.",
+    rate_subnet: "Too many votes from your network. Try later.",
+    missing_fields: "Please select a position.",
   };
-  return map[reason] || "Your vote couldn't be recorded. Please try again.";
+  return m[reason] || "Could not record your vote. Please try again.";
 }
-
