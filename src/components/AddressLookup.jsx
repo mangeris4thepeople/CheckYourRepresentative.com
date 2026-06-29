@@ -24,6 +24,24 @@ const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID"
 
 const FIPS_ABBR = {"01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
 
+// Mobile CSS injected once
+const ADDR_CSS = `
+  @media (max-width: 600px) {
+    .cyr-addr-pad { padding: 16px 14px 18px !important; }
+    .cyr-addr-h2 { font-size: 18px !important; }
+    .cyr-addr-row { flex-direction: column !important; }
+    .cyr-state-field, .cyr-zip-field { flex: 1 1 100% !important; }
+    .cyr-state-select { width: 100% !important; }
+    .cyr-zip-input { width: 100% !important; }
+  }
+`;
+if (typeof document !== "undefined" && !document.getElementById("cyr-addr-css")) {
+  const s = document.createElement("style");
+  s.id = "cyr-addr-css";
+  s.textContent = ADDR_CSS;
+  document.head.appendChild(s);
+}
+
 // JSONP call to the Census geocoder (no CORS, no key needed)
 function censusGeocode({ street, city, state, zip }) {
   return new Promise((resolve, reject) => {
@@ -53,7 +71,6 @@ function parseDistrict(data) {
 
   const stateFips = cd.STATE;
   const abbr = FIPS_ABBR[stateFips] || "";
-  // district number: prefer a CDnnn field (e.g. CD119), else BASENAME ("4")
   let num = cd.BASENAME;
   const cdField = Object.keys(cd).find(k => /^CD\d+$/.test(k));
   if (cdField && cd[cdField]) num = cd[cdField];
@@ -108,11 +125,11 @@ export default function AddressLookup({ onResolved }) {
     <div style={{ fontFamily:serif, color:C.ink, background:C.parchment, border:`1px solid ${C.line}`,
                   borderRadius:6, overflow:"hidden", maxWidth:680, margin:"0 auto" }}>
       <StarStrip />
-      <div style={{ padding:"20px 24px 24px" }}>
+      <div className="cyr-addr-pad" style={{ padding:"20px 24px 24px" }}>
         <div style={{ textTransform:"uppercase", letterSpacing:2, fontSize:11, color:C.gold, fontWeight:700 }}>
           Step 1 · Confirm Your District
         </div>
-        <h2 style={{ margin:"4px 0 2px", fontSize:22, color:C.navy }}>Enter your home address</h2>
+        <h2 className="cyr-addr-h2" style={{ margin:"4px 0 2px", fontSize:22, color:C.navy }}>Enter your home address</h2>
         <p style={{ margin:0, fontSize:13, color:C.muted }}>
           Your congressional district is set by your exact address, not your city — so we use it to
           assign the right bills. We look up the district only; we don't store your street address.
@@ -121,29 +138,36 @@ export default function AddressLookup({ onResolved }) {
         <div style={{ marginTop:16, display:"grid", gap:10 }}>
           <Field label="STREET ADDRESS">
             <input value={street} onChange={e=>setStreet(e.target.value)} placeholder="123 Main St"
-              style={inp} />
+              autoComplete="street-address" style={inp} />
           </Field>
-          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+          {/* City + State + ZIP — stacks to column on mobile via CSS */}
+          <div className="cyr-addr-row" style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
             <Field label="CITY" grow>
-              <input value={city} onChange={e=>setCity(e.target.value)} placeholder="Loveland" style={inp} />
+              <input value={city} onChange={e=>setCity(e.target.value)} placeholder="Loveland"
+                autoComplete="address-level2" style={inp} />
             </Field>
-            <Field label="STATE">
-              <select value={state} onChange={e=>setState(e.target.value)} style={{ ...inp, width:90 }}>
+            <Field label="STATE" className="cyr-state-field">
+              <select value={state} onChange={e=>setState(e.target.value)}
+                className="cyr-state-select"
+                style={{ ...inp, width:90 }}>
                 <option value="">—</option>
                 {STATES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </Field>
-            <Field label="ZIP">
+            <Field label="ZIP" className="cyr-zip-field">
               <input value={zip} onChange={e=>setZip(e.target.value.replace(/\D/g,"").slice(0,5))}
-                placeholder="80538" inputMode="numeric" style={{ ...inp, width:110 }} />
+                placeholder="80538" inputMode="numeric" autoComplete="postal-code"
+                className="cyr-zip-input"
+                style={{ ...inp, width:110 }} />
             </Field>
           </div>
         </div>
 
         <button onClick={lookup} disabled={!canLookup}
-          style={{ marginTop:16, width:"100%", padding:"12px", fontFamily:serif, fontSize:16, fontWeight:700,
+          style={{ marginTop:16, width:"100%", padding:"13px", fontFamily:serif, fontSize:16, fontWeight:700,
                    borderRadius:4, border:"none", cursor: canLookup ? "pointer":"not-allowed",
-                   background: canLookup ? C.navy : "#9aa0ad", color:"#fff", letterSpacing:0.5 }}>
+                   background: canLookup ? C.navy : "#9aa0ad", color:"#fff", letterSpacing:0.5,
+                   touchAction:"manipulation" }}>
           {phase === "looking" ? "Looking up your district…" : "Find My District"}
         </button>
 
@@ -173,14 +197,14 @@ export default function AddressLookup({ onResolved }) {
 
 const inp = { padding:"9px 11px", width:"100%", boxSizing:"border-box", fontFamily:serif, fontSize:14,
   border:`1px solid ${C.line}`, borderRadius:4, background:"#fff" };
-const Field = ({ label, grow, children }) => (
-  <div style={{ flex: grow ? "1 1 160px" : "0 0 auto" }}>
-    <label style={{ fontSize:11, fontWeight:700, color:C.navy, display:"block", marginBottom:4 }}>{label}</label>
+const Field = ({ label, grow, className, children }) => (
+  <div className={className || ""} style={{ flex: grow ? "1 1 160px" : "0 0 auto" }}>
+    <label style={{ fontSize:11, fontWeight:700, color:"#0A1A3F", display:"block", marginBottom:4 }}>{label}</label>
     {children}
   </div>
 );
 const StarStrip = () => (
-  <div style={{ background:C.navy, padding:"6px 0", display:"flex", justifyContent:"center", gap:9 }}>
-    {Array.from({length:13}).map((_,i)=><span key={i} style={{color:C.gold, fontSize:11}}>★</span>)}
+  <div style={{ background:"#0A1A3F", padding:"6px 0", display:"flex", justifyContent:"center", gap:9 }}>
+    {Array.from({length:13}).map((_,i)=><span key={i} style={{color:"#C9A227", fontSize:11}}>★</span>)}
   </div>
 );
