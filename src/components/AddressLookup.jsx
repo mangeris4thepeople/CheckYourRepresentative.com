@@ -1,15 +1,11 @@
 // =============================================================================
 // Check Your Representative — Address → Congressional District lookup
 // -----------------------------------------------------------------------------
-// Congressional districts do NOT follow city or county lines — a single town
-// can sit in two districts (e.g. Loveland spans CO-02 and CO-04). The only
-// accurate way to assign the right bills is to resolve the voter's STREET
-// ADDRESS to its district. We use the U.S. Census Bureau geocoder: free,
-// authoritative, no API key.
-//
-// The Census geocoder doesn't allow normal browser (CORS) calls, so we use its
-// supported JSONP mode — which also means this needs no backend to work.
-//
+// Uses /api/geocode.js backend which:
+//   1. Tries Census onelineaddress (more forgiving than parsed endpoint)
+//   2. Auto-expands abbreviations (dr->Drive, st->Street, etc.) and retries
+//   3. Retries with ZIP only (ignores city misspelling)
+//   4. Falls back to Congress.gov ZIP-to-district if Census fails entirely
 // onResolved({ district, districtCode, state, location, matchedAddress, coords })
 // =============================================================================
 import React, { useState } from "react";
@@ -22,9 +18,7 @@ const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID"
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND",
   "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
-const FIPS_ABBR = {"01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
-
-// Mobile CSS injected once
+// Mobile CSS
 const ADDR_CSS = `
   @media (max-width: 600px) {
     .cyr-addr-pad { padding: 16px 14px 18px !important; }
@@ -42,52 +36,21 @@ if (typeof document !== "undefined" && !document.getElementById("cyr-addr-css"))
   document.head.appendChild(s);
 }
 
-// JSONP call to the Census geocoder (no CORS, no key needed)
-function censusGeocode({ street, city, state, zip }) {
-  return new Promise((resolve, reject) => {
-    const cb = "__cyr_census_" + Math.random().toString(36).slice(2);
-    const script = document.createElement("script");
-    const cleanup = () => { try { delete window[cb]; } catch {} script.remove(); clearTimeout(timer); };
-    const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 12000);
-    window[cb] = (data) => { cleanup(); resolve(data); };
-    const qs = new URLSearchParams({
-      street: street || "", city: city || "", state: state || "", zip: zip || "",
-      benchmark: "Public_AR_Current", vintage: "Current_Current",
-      layers: "all", format: "jsonp", callback: cb,
-    });
-    script.src = `https://geocoding.geo.census.gov/geocoder/geographies/address?${qs}`;
-    script.onerror = () => { cleanup(); reject(new Error("network")); };
-    document.body.appendChild(script);
-  });
-}
+async function geocodeAddress({ street, city, state, zip }) {
+  // Clean the street: strip apartment/unit info, trailing periods
+  const cleanStreet = street
+    .replace(/\b(apt|apartment|unit|ste|suite|#)\s*[\w-]+/gi, "")
+    .replace(/\.$/, "")
+    .trim();
 
-function parseDistrict(data) {
-  const match = data?.result?.addressMatches?.[0];
-  if (!match) return null;
-  const geos = match.geographies || {};
-  const cdKey = Object.keys(geos).find(k => /Congressional Districts/i.test(k));
-  const cd = cdKey && geos[cdKey] && geos[cdKey][0];
-  if (!cd) return null;
+  const params = new URLSearchParams({ street: cleanStreet });
+  if (city) params.set("city", city.trim());
+  if (state) params.set("state", state);
+  if (zip) params.set("zip", zip.trim());
 
-  const stateFips = cd.STATE;
-  const abbr = FIPS_ABBR[stateFips] || "";
-  let num = cd.BASENAME;
-  const cdField = Object.keys(cd).find(k => /^CD\d+$/.test(k));
-  if (cdField && cd[cdField]) num = cd[cdField];
-
-  const atLarge = ["00", "98", "Zero"].includes(String(num)) || /at.?large/i.test(cd.NAME || "");
-  const districtCode = atLarge ? `${abbr}-AL` : `${abbr}-${String(num).padStart(2, "0")}`;
-
-  const a = match.addressComponents || {};
-  const location = {
-    state: abbr,
-    city: a.city || "",
-    zip: a.zip || "",
-    street: [a.fromAddress, a.streetName, a.suffixType].filter(Boolean).join(" ").trim(),
-  };
-  const coords = match.coordinates ? { lng: match.coordinates.x, lat: match.coordinates.y } : null;
-  return { district: districtCode, districtCode, state: abbr, atLarge,
-           location, matchedAddress: match.matchedAddress, coords };
+  const res = await fetch(`/api/geocode?${params}`);
+  if (!res.ok) throw new Error("server_error");
+  return res.json();
 }
 
 export default function AddressLookup({ onResolved }) {
@@ -98,27 +61,39 @@ export default function AddressLookup({ onResolved }) {
   const [phase, setPhase] = useState("idle"); // idle | looking | done | error
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [isApprox, setIsApprox] = useState(false);
 
   const canLookup = street.trim() && ((city.trim() && state) || zip.trim()) && phase !== "looking";
 
   async function lookup() {
     if (!canLookup) return;
-    setPhase("looking"); setError(null); setResult(null);
+    setPhase("looking"); setError(null); setResult(null); setIsApprox(false);
     try {
-      const data = await censusGeocode({ street, city, state, zip });
-      const parsed = parseDistrict(data);
-      if (!parsed) {
-        setError("We couldn't match that address. Double-check the street and ZIP, then try again.");
+      const data = await geocodeAddress({ street, city, state, zip });
+
+      if (!data.ok) {
+        // Give specific, actionable error based on what they entered
+        const tips = [];
+        if (!zip) tips.push("add your ZIP code");
+        tips.push("check street name spelling");
+        tips.push("try abbreviating: "St" not "Street"");
+        setError(`Address not found. Try: ${tips.join(" · ")}`);
         setPhase("error");
         return;
       }
-      setResult(parsed);
+
+      setResult(data);
+      setIsApprox(!!data.approximate);
       setPhase("done");
-      onResolved && onResolved(parsed);
+      onResolved && onResolved(data);
     } catch {
-      setError("The address lookup service didn't respond. Please try again in a moment.");
+      setError("Connection error — please try again in a moment.");
       setPhase("error");
     }
+  }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && canLookup) lookup();
   }
 
   return (
@@ -131,24 +106,21 @@ export default function AddressLookup({ onResolved }) {
         </div>
         <h2 className="cyr-addr-h2" style={{ margin:"4px 0 2px", fontSize:22, color:C.navy }}>Enter your home address</h2>
         <p style={{ margin:0, fontSize:13, color:C.muted }}>
-          Your congressional district is set by your exact address, not your city — so we use it to
-          assign the right bills. We look up the district only; we don't store your street address.
+          Your congressional district is set by your exact address, not your city. We look up the district only — we never store your address.
         </p>
 
         <div style={{ marginTop:16, display:"grid", gap:10 }}>
           <Field label="STREET ADDRESS">
-            <input value={street} onChange={e=>setStreet(e.target.value)} placeholder="123 Main St"
-              autoComplete="street-address" style={inp} />
+            <input value={street} onChange={e=>setStreet(e.target.value)} onKeyDown={handleKey}
+              placeholder="1011 Valley Dr" autoComplete="street-address" style={inp} />
           </Field>
-          {/* City + State + ZIP — stacks to column on mobile via CSS */}
           <div className="cyr-addr-row" style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
             <Field label="CITY" grow>
-              <input value={city} onChange={e=>setCity(e.target.value)} placeholder="Loveland"
-                autoComplete="address-level2" style={inp} />
+              <input value={city} onChange={e=>setCity(e.target.value)} onKeyDown={handleKey}
+                placeholder="Windsor" autoComplete="address-level2" style={inp} />
             </Field>
             <Field label="STATE" className="cyr-state-field">
-              <select value={state} onChange={e=>setState(e.target.value)}
-                className="cyr-state-select"
+              <select value={state} onChange={e=>setState(e.target.value)} className="cyr-state-select"
                 style={{ ...inp, width:90 }}>
                 <option value="">—</option>
                 {STATES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -156,25 +128,36 @@ export default function AddressLookup({ onResolved }) {
             </Field>
             <Field label="ZIP" className="cyr-zip-field">
               <input value={zip} onChange={e=>setZip(e.target.value.replace(/\D/g,"").slice(0,5))}
-                placeholder="80538" inputMode="numeric" autoComplete="postal-code"
-                className="cyr-zip-input"
-                style={{ ...inp, width:110 }} />
+                onKeyDown={handleKey} placeholder="80550" inputMode="numeric" autoComplete="postal-code"
+                className="cyr-zip-input" style={{ ...inp, width:110 }} />
             </Field>
           </div>
         </div>
 
+        {/* Tip: ZIP is the most reliable field */}
+        <p style={{ margin:"8px 0 0", fontSize:12, color:C.muted }}>
+          💡 Including your ZIP code gives the best results.
+        </p>
+
         <button onClick={lookup} disabled={!canLookup}
-          style={{ marginTop:16, width:"100%", padding:"13px", fontFamily:serif, fontSize:16, fontWeight:700,
+          style={{ marginTop:12, width:"100%", padding:"14px", fontFamily:serif, fontSize:16, fontWeight:700,
                    borderRadius:4, border:"none", cursor: canLookup ? "pointer":"not-allowed",
                    background: canLookup ? C.navy : "#9aa0ad", color:"#fff", letterSpacing:0.5,
                    touchAction:"manipulation" }}>
-          {phase === "looking" ? "Looking up your district…" : "Find My District"}
+          {phase === "looking" ? "Looking up your district…" : "Find My District →"}
         </button>
 
+        {phase === "looking" && (
+          <div style={{ marginTop:10, fontSize:12.5, color:C.muted, textAlign:"center" }}>
+            Checking address formats &amp; fallbacks automatically…
+          </div>
+        )}
+
         {error && (
-          <div style={{ marginTop:12, padding:"10px 12px", borderRadius:4, background:"#FBE9E7",
-                        color:C.crimson, fontSize:13, border:`1px solid ${C.crimson}` }}>
-            {error}
+          <div style={{ marginTop:12, padding:"12px 14px", borderRadius:4, background:"#FBE9E7",
+                        color:C.crimson, fontSize:13.5, border:`1px solid ${C.crimson}`, lineHeight:1.5 }}>
+            <strong>Couldn't find that address.</strong><br />
+            Try: spell out the street type <em>(Drive not Dr)</em> · add your ZIP · double-check the street number.
           </div>
         )}
 
@@ -185,9 +168,16 @@ export default function AddressLookup({ onResolved }) {
             <div style={{ fontSize:20, fontWeight:700, color:C.crimson, marginTop:4 }}>
               {result.atLarge ? `${result.state} · At-Large District` : `District ${result.district}`}
             </div>
-            <div style={{ fontSize:12.5, color:C.muted, marginTop:4 }}>
-              Confirmed by the U.S. Census Bureau. Bills below are assigned to this district.
-            </div>
+            {isApprox ? (
+              <div style={{ marginTop:6, padding:"8px 10px", background:"#FFF8E1", borderRadius:4,
+                            border:"1px solid #F9A825", fontSize:12.5, color:"#5C4400" }}>
+                ⚠ Exact street not found — district assigned from your ZIP code. Should be correct for most addresses.
+              </div>
+            ) : (
+              <div style={{ fontSize:12.5, color:C.muted, marginTop:4 }}>
+                Confirmed by the U.S. Census Bureau.
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -199,12 +189,12 @@ const inp = { padding:"9px 11px", width:"100%", boxSizing:"border-box", fontFami
   border:`1px solid ${C.line}`, borderRadius:4, background:"#fff" };
 const Field = ({ label, grow, className, children }) => (
   <div className={className || ""} style={{ flex: grow ? "1 1 160px" : "0 0 auto" }}>
-    <label style={{ fontSize:11, fontWeight:700, color:"#0A1A3F", display:"block", marginBottom:4 }}>{label}</label>
+    <label style={{ fontSize:11, fontWeight:700, color:C.navy, display:"block", marginBottom:4 }}>{label}</label>
     {children}
   </div>
 );
 const StarStrip = () => (
-  <div style={{ background:"#0A1A3F", padding:"6px 0", display:"flex", justifyContent:"center", gap:9 }}>
-    {Array.from({length:13}).map((_,i)=><span key={i} style={{color:"#C9A227", fontSize:11}}>★</span>)}
+  <div style={{ background:C.navy, padding:"6px 0", display:"flex", justifyContent:"center", gap:9 }}>
+    {Array.from({length:13}).map((_,i)=><span key={i} style={{color:C.gold, fontSize:11}}>★</span>)}
   </div>
 );
