@@ -60,6 +60,14 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
         setLetter(data.letter || "");
         setLetterEdited(data.letter || "");
         setPhase("ready");
+      // Track that this constituent opened Contact Rep (intent to contact)
+      try {
+        fetch("/api/contact-track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ billId, district, position, identity: null })
+        });
+      } catch {}
       })
       .catch(() => {
         // Fallback: show generic contact links even if API fails
