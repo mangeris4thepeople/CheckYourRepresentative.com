@@ -218,51 +218,33 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
   );
 }
 
-function DigestPreview({ digest }) {
-  const items = digest?.items || [];
+function DigestPreview({ digest, onGoVote }) {
   return (
-    <div>
+    <div style={{ borderTop: "2px solid #C9A227", paddingTop: 16, textAlign: "center" }}>
       {digest?.rep && (
-        <div style={{ fontSize: 13, color: C.muted, marginBottom: 8 }}>
-          Bills from <strong style={{ color: C.navy }}>{digest.rep.name}</strong>
+        <div style={{ fontSize: 13, color: "#5C5347", marginBottom: 12 }}>
+          Your representative: <strong style={{ color: "#0A1A3F" }}>{digest.rep.name}</strong> · District found ✓
         </div>
       )}
-      {items.length === 0 ? (
-        <p style={{ fontSize: 13.5, color: C.muted, fontStyle: "italic" }}>
-          No recent bills matching your topics. Try selecting more topics.
-        </p>
-      ) : (
-        <div style={{ borderTop: `2px solid ${C.gold}`, paddingTop: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, letterSpacing: 1, marginBottom: 10 }}>
-            BILLS FROM YOUR REP · {items.length}
-          </div>
-          {items.map(it => (
-            <div key={it.id} style={{ padding: "12px 0", borderBottom: `1px solid ${C.parchmentEdge}` }}>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 3 }}>{it.reason}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 4, lineHeight: 1.3 }}>
-                {it.summary?.headline || it.title}
-              </div>
-              <div style={{ fontSize: 13.5, lineHeight: 1.6, color: C.ink, marginBottom: 4 }}>
-                {it.summary?.plain}
-              </div>
-              {it.summary?.affects && (
-                <div style={{ fontSize: 12.5, color: C.muted }}>
-                  <strong>Affects:</strong> {it.summary.affects}
-                </div>
-              )}
-              {it.summary?.status && (
-                <div style={{ fontSize: 12.5, color: C.muted }}>
-                  <strong>Status:</strong> {it.summary.status}
-                </div>
-              )}
-            </div>
-          ))}
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 10, fontStyle: "italic" }}>
-            AI-generated summaries — factual, nonpartisan, no voting recommendations.
-          </p>
-        </div>
-      )}
+      <div style={{ fontSize: 15, fontWeight: 700, color: "#0A1A3F", marginBottom: 8 }}>
+        Ready to vote on active legislation?
+      </div>
+      <p style={{ fontSize: 13.5, color: "#5C5347", marginBottom: 16, lineHeight: 1.6 }}>
+        Every active bill in Congress — explained in plain English with the full money trail.
+        Your vote is recorded and sent to your representative daily.
+      </p>
+      <button
+        onClick={onGoVote}
+        style={{
+          width: "100%", padding: "18px", fontFamily: "Georgia, serif",
+          fontSize: 20, fontWeight: 900, borderRadius: 8, border: "none",
+          background: "#1B5E20", color: "#fff", cursor: "pointer", letterSpacing: 1
+        }}>
+        🗳️ VOTE ON BILLS NOW →
+      </button>
     </div>
+  );
+}
   );
 }
 
