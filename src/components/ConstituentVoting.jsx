@@ -6,6 +6,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import ContactRep from "./ContactRep.jsx";
 
+const VOTE_CSS = `
+  @media (max-width: 600px) {
+    .cyr-vote-pad { padding: 16px 14px 20px !important; }
+    .cyr-bill-title { font-size: 17px !important; }
+    .cyr-cast-btn { font-size: 15px !important; padding: 15px !important; min-height: 52px; }
+    .cyr-pos-btn { padding: 13px 6px !important; font-size: 14px !important; }
+  }
+`;
+if (typeof document !== "undefined" && !document.getElementById("cyr-vote-css")) {
+  const _vs = document.createElement("style");
+  _vs.id = "cyr-vote-css";
+  _vs.textContent = VOTE_CSS;
+  document.head.appendChild(_vs);
+}
+
+
 const C = {
   crimson: "#8B0000", crimsonBright: "#B22234",
   navy: "#0A1A3F", gold: "#C9A227",
@@ -242,14 +258,14 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
             <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
                           borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
               <StarStrip />
-              <div style={{ padding: "20px 24px 26px" }}>
+              <div className="cyr-vote-pad" style={{ padding: "20px 24px 26px" }}>
 
                 {/* Bill info */}
                 <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1,
                               textTransform: "uppercase", marginBottom: 4 }}>
                   {activeBill.reason || "Active Legislation"}
                 </div>
-                <h2 style={{ margin: "0 0 8px", fontSize: 20, color: C.navy, lineHeight: 1.3 }}>
+                <h2 className="cyr-bill-title" style={{ margin: "0 0 8px", fontSize: 20, color: C.navy, lineHeight: 1.3 }}>
                   {activeBill.summary?.headline || activeBill.title}
                 </h2>
                 {activeBill.summary?.plain && (
@@ -287,11 +303,12 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
                       {POSITIONS.map(p => (
                         <button key={p.key} onClick={() => setSelected(p.key)}
+                          className="cyr-pos-btn"
                           style={{ flex: "1 1 120px", padding: "11px 8px", cursor: "pointer",
                                    fontFamily: serif, fontSize: 15, borderRadius: 4,
                                    border: `2px solid ${selected === p.key ? p.color : C.line}`,
                                    background: selected === p.key ? p.color : "#fff",
-                                   color: selected === p.key ? "#fff" : p.color, fontWeight: 700 }}>
+                                   color: selected === p.key ? "#fff" : p.color, fontWeight: 700, touchAction: "manipulation" }}>
                           {p.label}
                         </button>
                       ))}
@@ -307,11 +324,12 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
                 {/* Submit */}
                 {phase !== "done" && (
                   <button onClick={submitVote} disabled={!canSubmit}
+                    className="cyr-cast-btn"
                     style={{ width: "100%", padding: "13px", fontFamily: serif, fontSize: 16,
                              fontWeight: 700, borderRadius: 4, border: "none",
                              cursor: canSubmit ? "pointer" : "not-allowed",
                              background: canSubmit ? C.crimson : "#C9BFAB",
-                             color: "#fff", letterSpacing: 0.5 }}>
+                             color: "#fff", letterSpacing: 0.5, touchAction: "manipulation" }}>
                     {phase === "submitting" ? "Recording…" : "Cast My Position"}
                   </button>
                 )}
@@ -449,3 +467,4 @@ function humanizeReason(reason) {
   };
   return map[reason] || "Your vote couldn't be recorded. Please try again.";
 }
+
