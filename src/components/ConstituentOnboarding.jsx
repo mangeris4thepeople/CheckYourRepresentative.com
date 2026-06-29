@@ -142,7 +142,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
           </div>
         )}
         {digestPhase === "ready" && digest && (
-          <DigestPreview digest={digest} />
+          <DigestPreview digest={digest} onGoVote={onGoVote} />
         )}
         {topics.size === 0 && digestPhase === "idle" && (
           <div style={{ padding: "16px 14px", background: "#fff", border: `1px solid ${C.line}`,
