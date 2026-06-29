@@ -245,8 +245,6 @@ function DigestPreview({ digest, onGoVote }) {
     </div>
   );
 }
-  );
-}
 
 const StarStrip = () => (
   <div style={{ background: C.navy, padding: "6px 0", display: "flex",
