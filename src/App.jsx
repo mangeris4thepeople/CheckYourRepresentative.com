@@ -15,10 +15,32 @@ const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
 const serif = "Georgia, 'Times New Roman', serif";
 const TABS = [
-  { key: "district", label: "Find Your District" },
+  { key: "district", label: "Find District" },
   { key: "vote",     label: "Vote on Bills" },
   { key: "merch",    label: "👕 Merch" },
 ];
+
+// Inject mobile CSS once
+const MOBILE_CSS = `
+  @media (max-width: 600px) {
+    .cyr-header-inner { padding: 12px 14px !important; gap: 10px !important; }
+    .cyr-site-title { font-size: 17px !important; }
+    .cyr-tagline { display: none !important; }
+    .cyr-seal { width: 36px !important; height: 36px !important; }
+    .cyr-home-btn { padding: 6px 10px !important; font-size: 12px !important; }
+    .cyr-nav-inner { padding: 0 8px !important; }
+    .cyr-tab { font-size: 13px !important; padding: 11px 10px !important; }
+    .cyr-main { padding: 16px 12px 48px !important; }
+    .cyr-footer-inner { padding: 16px 14px !important; font-size: 12px !important; }
+  }
+`;
+
+if (typeof document !== "undefined" && !document.getElementById("cyr-mobile-css")) {
+  const style = document.createElement("style");
+  style.id = "cyr-mobile-css";
+  style.textContent = MOBILE_CSS;
+  document.head.appendChild(style);
+}
 
 export default function App() {
   const [view, setView] = useState("landing");
@@ -30,27 +52,28 @@ export default function App() {
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
       <header style={{ background: C.navy, color: "#fff", borderBottom: `4px solid ${C.gold}` }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="cyr-header-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
           <Seal />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>Check Your Representative</div>
-            <div style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW THE BILLS · KNOW YOUR VOTE · HOLD THE LINE</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="cyr-site-title" style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Check Your Representative</div>
+            <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW THE BILLS · KNOW YOUR VOTE · HOLD THE LINE</div>
           </div>
-          <button onClick={() => setView("landing")}
+          <button className="cyr-home-btn" onClick={() => setView("landing")}
             style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff", background: "transparent",
-                     border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer" }}>
+                     border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
             ← Home
           </button>
         </div>
         <StarStrip />
       </header>
 
-      <nav style={{ background: C.panel, borderBottom: `1px solid ${C.line}` }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 20px", display: "flex", gap: 4 }}>
+      <nav style={{ background: C.panel, borderBottom: `1px solid ${C.line}`, overflowX: "auto" }}>
+        <div className="cyr-nav-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "0 20px", display: "flex", gap: 0, minWidth: "min-content" }}>
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
+              className="cyr-tab"
               style={{ fontFamily: serif, fontSize: 15, padding: "13px 18px", cursor: "pointer", border: "none",
-                       background: "transparent", fontWeight: 700,
+                       background: "transparent", fontWeight: 700, whiteSpace: "nowrap",
                        color: tab === t.key ? C.crimson : C.muted,
                        borderBottom: `3px solid ${tab === t.key ? C.crimson : "transparent"}` }}>
               {t.label}
@@ -59,7 +82,7 @@ export default function App() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
+      <main className="cyr-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
         {tab === "district" && (
           <>
             <AddressLookup onResolved={setResolved} />
@@ -93,7 +116,7 @@ export default function App() {
       </main>
 
       <footer style={{ background: C.navy, color: "#cfd6e4", borderTop: `4px solid ${C.gold}` }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "22px 20px", fontSize: 12.5 }}>
+        <div className="cyr-footer-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "22px 20px", fontSize: 12.5 }}>
           <div style={{ fontStyle: "italic", color: C.gold, marginBottom: 8 }}>"We the People..." — a tool for an informed electorate.</div>
           Check Your Representative · Non-partisan voter education · Bill data from Congress.gov.
           <span style={{ marginLeft: 16, color: "#6680aa" }}>Paid for by We The People Inc.</span>
@@ -105,7 +128,7 @@ export default function App() {
 
 function Seal() {
   return (
-    <svg width="48" height="48" viewBox="0 0 52 52" aria-hidden="true">
+    <svg className="cyr-seal" width="48" height="48" viewBox="0 0 52 52" aria-hidden="true" style={{ flexShrink: 0 }}>
       <circle cx="26" cy="26" r="24" fill="#fff" stroke={C.gold} strokeWidth="2" />
       <circle cx="26" cy="26" r="19" fill={C.crimson} />
       <text x="26" y="33" textAnchor="middle" fontFamily={serif} fontSize="20" fontWeight="700" fill="#fff">CYR</text>
