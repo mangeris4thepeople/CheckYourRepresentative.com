@@ -53,7 +53,21 @@ const CSS = `
   .lp .signup-form button { background:#B22234; color:#fff; border:none; border-radius:8px; padding:14px 24px; font-size:15px; font-weight:900; cursor:pointer; white-space:nowrap; }
   .lp footer { border-top:2px solid rgba(255,255,255,.15); padding:28px 40px; display:flex; align-items:center; justify-content:space-between; font-size:14px; font-weight:700; color:rgba(255,255,255,.7); flex-wrap:wrap; gap:10px; }
   .lp .stripe-bottom { height:6px; background:repeating-linear-gradient(90deg,#B22234 0,#B22234 40px,#fff 40px,#fff 80px,#002868 80px,#002868 120px); }
-  @media(max-width:560px){ .lp nav{flex-direction:column; gap:12px; align-items:flex-start;} .lp .signup-form{flex-direction:column;} }
+  @media(max-width:560px){
+    .lp nav{flex-direction:column; gap:10px; align-items:flex-start; padding:14px 18px;}
+    .lp .nav-right{width:100%; justify-content:space-between;}
+    .lp .nav-badge{font-size:11px; padding:5px 10px;}
+    .lp .hero{padding:48px 18px 40px;}
+    .lp .countdown-wrap{padding:28px 18px;}
+    .lp .unit{min-width:68px;}
+    .lp .explainer{padding:0 18px; margin-bottom:48px;}
+    .lp .features{grid-template-columns:1fr;}
+    .lp .cta-block{padding:0 18px 48px;}
+    .lp .cta-primary{padding:16px 28px; font-size:18px;}
+    .lp .signup{padding:0 18px 48px;}
+    .lp .signup-form{flex-direction:column;}
+    .lp footer{padding:20px 18px; flex-direction:column; align-items:flex-start; gap:6px;}
+  }
 `;
 
 const FEATURES = [
@@ -180,3 +194,4 @@ export default function Landing({ onEnter }) {
     </div>
   );
 }
+
