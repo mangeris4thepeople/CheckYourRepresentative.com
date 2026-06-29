@@ -1,3 +1,4 @@
+// built: 1782718293
 // =============================================================================
 // /api/daily-report.js — daily accountability email to representatives
 // Cron: runs every day at 11:00 UTC (6AM ET / 7AM ET daylight)
