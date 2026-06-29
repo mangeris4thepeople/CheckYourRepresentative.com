@@ -11,6 +11,8 @@ import ConstituentOnboarding from "./components/ConstituentOnboarding.jsx";
 import ConstituentVoting from "./components/ConstituentVoting.jsx";
 import Merch from "./components/Merch.jsx";
 import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
+import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
+import VoterProfile from "./components/VoterProfile.jsx";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
@@ -20,6 +22,7 @@ const TABS = [
   { key: "vote",     label: "Vote on Bills" },
   { key: "merch",    label: "👕 Merch" },
   { key: "matrix",   label: "📊 Accountability" },
+  { key: "profile",  label: "👤 My Profile" },
 ];
 
 // Inject mobile CSS once
@@ -101,7 +104,7 @@ export default function App() {
               <div style={{ maxWidth: 1040, margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
                 — OR EXPLORE THE MAP —
               </div>
-              <ConstituentMap />
+              <InteractiveDistrictMap onDistrictSelect={(d) => { setResolved(r => ({...r, district: d})); setTab("vote"); }} />
             </div>
           </>
         )}
@@ -118,6 +121,10 @@ export default function App() {
 
         {tab === "matrix" && (
           <AccountabilityDashboard district={resolved?.district} />
+        )}
+
+        {tab === "profile" && (
+          <VoterProfile district={resolved?.district} />
         )}
       </main>
 
