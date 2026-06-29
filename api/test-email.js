@@ -1,3 +1,4 @@
+// rebuilt: 1782719296
 // /api/test-email.js
 export default async function handler(req, res) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
