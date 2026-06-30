@@ -89,6 +89,20 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
         setVoteError(humanize(res.reason)); setVotePhase("error"); return;
       }
       setResult(res); setVotePhase("done"); setShowContact(true); loadTally();
+
+      // Save to local vote history for the voter profile
+      try {
+        const history = JSON.parse(localStorage.getItem("cyr_votes") || "[]");
+        const entry = {
+          billId: bill.id,
+          billTitle: bill.summary?.headline || bill.title,
+          position, district,
+          ts: Date.now(),
+        };
+        const filtered = history.filter(v => v.billId !== bill.id);
+        filtered.unshift(entry);
+        localStorage.setItem("cyr_votes", JSON.stringify(filtered.slice(0, 200)));
+      } catch {}
     } catch {
       setVoteError("Could not reach the server. Try again."); setVotePhase("error");
     }
