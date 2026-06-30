@@ -63,6 +63,9 @@ export default function VoterProfile({ district, onClose }) {
   const positionBg   = p => p === "support" ? C.yesLight : p === "oppose" ? C.noLight : "#f5f5f5";
   const positionLabel= p => p === "support" ? "✓ YES" : p === "oppose" ? "✗ NO" : "Undecided";
 
+  const verifiedCount = votes.filter(v => v.tier === "verified").length;
+  const openCount = votes.length - verifiedCount;
+
   return (
     <div style={{ fontFamily: serif, maxWidth: 680, margin: "0 auto" }}>
 
@@ -92,6 +95,16 @@ export default function VoterProfile({ district, onClose }) {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Verification explainer */}
+      <div style={{ background: "#FFF8E1", border: `1px solid #FFE082`,
+                    borderTop: "none", padding: "10px 24px", fontSize: 11.5,
+                    color: "#5C4400", lineHeight: 1.5 }}>
+        <strong>What "Verified" means here:</strong> your network connection's location matched your
+        claimed district at the moment you voted. It is not a confirmation of voter registration status —
+        Check Your Representative does not access state voter rolls. Verified votes carry more weight in
+        district tallies but everyone's voice is counted.
       </div>
 
       {/* Tabs */}
@@ -197,8 +210,14 @@ export default function VoterProfile({ district, onClose }) {
           ) : (
             <div>
               <div style={{ padding: "12px 20px", borderBottom: `1px solid ${C.line}`,
-                            fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1 }}>
-                YOUR VOTE HISTORY · {votes.length} VOTES CAST
+                            fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
+                            display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+                <span>YOUR VOTE HISTORY · {votes.length} VOTES CAST</span>
+                <span style={{ fontWeight: 400, letterSpacing: 0 }}>
+                  <span style={{ color: "#1B5E20" }}>✓ {verifiedCount} verified</span>
+                  {" · "}
+                  <span style={{ color: C.muted }}>{openCount} open</span>
+                </span>
               </div>
               {votes.map((v, i) => (
                 <div key={i} style={{ padding: "14px 20px",
@@ -213,10 +232,15 @@ export default function VoterProfile({ district, onClose }) {
                       {v.district} · {new Date(v.ts).toLocaleDateString()}
                     </div>
                   </div>
-                  <div style={{ padding: "6px 14px", borderRadius: 20, fontWeight: 900,
-                                fontSize: 13, background: positionBg(v.position),
-                                color: positionColor(v.position) }}>
-                    {positionLabel(v.position)}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    <div style={{ padding: "6px 14px", borderRadius: 20, fontWeight: 900,
+                                  fontSize: 13, background: positionBg(v.position),
+                                  color: positionColor(v.position) }}>
+                      {positionLabel(v.position)}
+                    </div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: v.tier === "verified" ? "#1B5E20" : C.muted }}>
+                      {v.tier === "verified" ? "✓ Verified" : "○ Open"}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -284,12 +308,18 @@ export default function VoterProfile({ district, onClose }) {
                                           color: positionColor(v.position),
                                           fontSize: 11, fontWeight: 700 }}>
                       {(v.billId||"").replace(/-119$/,"").toUpperCase()} · {positionLabel(v.position)}
+                      {v.tier === "verified" && " ✓"}
                     </div>
                   ))}
                   {votes.length === 0 && (
                     <div style={{ fontSize: 12, color: C.muted }}>No votes to display yet</div>
                   )}
                 </div>
+                {votes.length > 0 && (
+                  <div style={{ marginTop: 10, fontSize: 10.5, color: C.muted }}>
+                    ✓ = network-verified district match at time of vote
+                  </div>
+                )}
               </div>
             </div>
           )}
