@@ -97,6 +97,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
           billId: bill.id,
           billTitle: bill.summary?.headline || bill.title,
           position, district,
+          tier: res.tier || "open",
           ts: Date.now(),
         };
         const filtered = history.filter(v => v.billId !== bill.id);
@@ -350,7 +351,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
                     {selected === "support" ? "✓ YES recorded" : selected === "oppose" ? "✗ NO recorded" : "Undecided recorded"}
                   </div>
                   <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
-                    {result.tier === "verified" ? "Location-verified vote" : "Vote counted"}
+                    {result.tier === "verified" ? "Network location matches your district" : "Vote counted"}
                   </div>
                 </div>
                 <button onClick={() => { reset(); }}
