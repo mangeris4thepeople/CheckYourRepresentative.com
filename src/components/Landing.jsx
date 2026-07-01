@@ -58,6 +58,7 @@ const MOCK_BILLS = [
 
 export default function Landing({ onEnter }) {
   const [scrolled, setScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [activeBill, setActiveBill] = useState(0);
   const [counters, setCounters] = useState({ bills: 0, votes: 0, reps: 0 });
   const statsRef = useRef(null);
@@ -65,8 +66,10 @@ export default function Landing({ onEnter }) {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
+    const onResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onResize);
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onResize); };
   }, []);
 
   // Animate counters when stats section visible
@@ -115,30 +118,31 @@ export default function Landing({ onEnter }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <EagleSeal size={32} />
           <span style={{
-            fontFamily: bebas, fontSize: 20, letterSpacing: 2,
+            fontFamily: bebas, fontSize: isMobile ? 15 : 20, letterSpacing: 2,
             color: C.gold,
-          }}>CheckYourRepresentative.com</span>
+          }}>{isMobile ? "CheckYourRep.com" : "CheckYourRepresentative.com"}</span>
         </div>
         <button onClick={onEnter} style={{
-          fontFamily: bebas, fontSize: 15, letterSpacing: 2,
+          fontFamily: bebas, fontSize: isMobile ? 12 : 15, letterSpacing: 2,
           background: C.crimson, color: C.white, border: "none",
-          padding: "8px 22px", borderRadius: 2, cursor: "pointer",
+          padding: isMobile ? "6px 12px" : "8px 22px", borderRadius: 2, cursor: "pointer",
         }}>
           ENTER THE TOOL →
         </button>
       </nav>
 
       {/* ── SPLIT HERO ── */}
-      <div ref={heroRef} style={{ height: "100vh", display: "flex", position: "relative", overflow: "hidden" }}>
+      <div ref={heroRef} style={{ minHeight: isMobile ? "auto" : "100vh", display: "flex", flexDirection: isMobile ? "column" : "row", position: "relative", overflow: "hidden" }}>
 
         {/* LEFT — THE PEOPLE */}
         <div style={{
           flex: 1, background: C.black, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", padding: "60px 40px 60px 60px",
+          alignItems: "center", justifyContent: "center",
+          padding: isMobile ? "80px 24px 48px" : "60px 40px 60px 60px",
           position: "relative",
         }}>
           <div style={{
-            fontSize: 11, letterSpacing: 4, color: C.gray, fontFamily: mono,
+            fontSize: 11, letterSpacing: 4, color: C.gold, fontFamily: mono,
             marginBottom: 16, textTransform: "uppercase"
           }}>
             WE THE PEOPLE
@@ -152,14 +156,15 @@ export default function Landing({ onEnter }) {
             <span style={{ color: C.gold }}>VOICE</span>
           </div>
           <div style={{
-            marginTop: 28, fontSize: 15, color: "#999", lineHeight: 1.7,
+            marginTop: 28, fontSize: 15, color: "#cccccc", lineHeight: 1.7, fontWeight: 700,
             textAlign: "center", maxWidth: 320,
           }}>
             Cast your position on every bill before Congress.
             Your ZIP code. Your district. Your opinion — counted.
           </div>
 
-          {/* Left side pills */}
+          {/* Left side pills — hidden on mobile */}
+          {!isMobile && (
           <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
             {["Progressive", "Conservative", "Independent", "Libertarian", "Green", "Socialist"].map(label => (
               <span key={label} style={{
@@ -168,9 +173,22 @@ export default function Landing({ onEnter }) {
               }}>{label}</span>
             ))}
           </div>
+          )}
         </div>
 
-        {/* DIAGONAL DIVIDER */}
+        {/* DIVIDER — diagonal on desktop, horizontal bar on mobile */}
+        {isMobile ? (
+          <div style={{ background: C.black, display: "flex", alignItems: "center",
+                        justifyContent: "center", padding: "16px 0", position: "relative", zIndex: 10 }}>
+            <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: C.gold, opacity: 0.4 }} />
+            <div style={{
+              background: C.gold, color: C.black, fontFamily: bebas, fontSize: 22, letterSpacing: 3,
+              padding: "10px 16px", borderRadius: "50%", width: 56, height: 56,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 30px rgba(212,168,67,0.5)", position: "relative", zIndex: 2,
+            }}>VS</div>
+          </div>
+        ) : (
         <div style={{
           position: "absolute", left: "50%", top: 0, bottom: 0, width: 0,
           zIndex: 10, pointerEvents: "none",
@@ -180,7 +198,6 @@ export default function Landing({ onEnter }) {
             <polygon points="60,0 120,0 60,800 0,800" fill={C.gold} opacity="0.15" />
             <line x1="60" y1="0" x2="60" y2="800" stroke={C.gold} strokeWidth="2" />
           </svg>
-          {/* VS badge */}
           <div style={{
             position: "absolute", top: "50%", left: "50%",
             transform: "translate(-50%, -50%)",
@@ -192,11 +209,13 @@ export default function Landing({ onEnter }) {
             zIndex: 20,
           }}>VS</div>
         </div>
+        )}
 
         {/* RIGHT — THEIR VOTE */}
         <div style={{
           flex: 1, background: C.parchment, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", padding: "60px 60px 60px 40px",
+          alignItems: "center", justifyContent: "center",
+          padding: isMobile ? "40px 24px 60px" : "60px 60px 60px 40px",
           position: "relative",
         }}>
           <div style={{
@@ -214,7 +233,7 @@ export default function Landing({ onEnter }) {
             <span style={{ color: C.crimson }}>VOTE</span>
           </div>
           <div style={{
-            marginTop: 28, fontSize: 15, color: C.gray, lineHeight: 1.7,
+            marginTop: 28, fontSize: 15, color: "#444", lineHeight: 1.7, fontWeight: 700,
             textAlign: "center", maxWidth: 320,
           }}>
             See how your representative actually voted on every bill.
@@ -252,8 +271,8 @@ export default function Landing({ onEnter }) {
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div style={{
+        {/* Scroll indicator — desktop only */}
+        {!isMobile && <div style={{
           position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
           animation: "bounce 2s infinite",
@@ -262,11 +281,11 @@ export default function Landing({ onEnter }) {
             SCROLL
           </span>
           <span style={{ color: C.gold, fontSize: 18 }}>↓</span>
-        </div>
+        </div>}
       </div>
 
-      {/* ── LIVE ACCOUNTABILITY TICKER ── */}
-      <div style={{
+      {/* ── LIVE ACCOUNTABILITY TICKER ── desktop only */}
+      {!isMobile && <div style={{
         background: C.black, borderTop: `3px solid ${C.gold}`,
         borderBottom: `3px solid ${C.gold}`,
         padding: "0", overflow: "hidden",
@@ -321,11 +340,12 @@ export default function Landing({ onEnter }) {
         </div>
       </div>
 
+      }
       {/* ── STATS BAR ── */}
       <div ref={statsRef} style={{
         background: C.cobalt, padding: "48px 32px",
-        display: "flex", justifyContent: "center", gap: "clamp(32px, 6vw, 120px)",
-        flexWrap: "wrap",
+        display: "flex", justifyContent: "center", gap: "clamp(20px, 4vw, 80px)",
+        flexWrap: "wrap", padding: "40px 24px",
       }}>
         {[
           { n: counters.bills.toLocaleString(), label: "Bills Tracked", sub: "119th Congress" },
@@ -344,7 +364,7 @@ export default function Landing({ onEnter }) {
       </div>
 
       {/* ── BILL ACCOUNTABILITY SECTION ── */}
-      <div style={{ background: C.white, padding: "80px 32px" }}>
+      <div style={{ background: C.white, padding: "60px 20px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{
             textAlign: "center", marginBottom: 56,
@@ -446,7 +466,7 @@ export default function Landing({ onEnter }) {
 
       {/* ── FOR ALL AMERICANS ── */}
       <div style={{
-        background: C.parchment, padding: "80px 32px",
+        background: C.parchment, padding: "60px 20px",
         borderTop: `4px solid ${C.gold}`,
       }}>
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
