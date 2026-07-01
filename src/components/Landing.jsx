@@ -58,7 +58,10 @@ const MOCK_BILLS = [
 
 export default function Landing({ onEnter }) {
   const [scrolled, setScrolled] = useState(false);
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  });
   const [activeBill, setActiveBill] = useState(0);
   const [counters, setCounters] = useState({ bills: 0, votes: 0, reps: 0 });
   const statsRef = useRef(null);
@@ -72,28 +75,67 @@ export default function Landing({ onEnter }) {
     return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onResize); };
   }, []);
 
-  // Animate counters when stats section visible
+  // Fetch REAL stats from /api/stats, animate when section visible
   useEffect(() => {
-    const targets = { bills: 24847, votes: 1203847, reps: 535 };
-    const obs = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      obs.disconnect();
-      const duration = 1800;
+    let targets = { bills: 0, votes: 0, reps: 535 };
+
+    async function loadStats() {
+      try {
+        const r = await fetch("/api/stats");
+        if (r.ok) {
+          const d = await r.json();
+          targets = {
+            bills: d.totalBills || 0,
+            votes: d.totalVotes || 0,
+            reps: d.totalReps || 535,
+          };
+        }
+      } catch {}
+    }
+
+    function animateTo(t) {
+      const duration = 1400;
       const start = Date.now();
       const tick = () => {
         const p = Math.min((Date.now() - start) / duration, 1);
         const ease = 1 - Math.pow(1 - p, 3);
         setCounters({
-          bills: Math.round(targets.bills * ease),
-          votes: Math.round(targets.votes * ease),
-          reps:  Math.round(targets.reps * ease),
+          bills: Math.round(t.bills * ease),
+          votes: Math.round(t.votes * ease),
+          reps:  Math.round(t.reps * ease),
         });
         if (p < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
-    }, { threshold: 0.3 });
+    }
+
+    const obs = new IntersectionObserver(async ([entry]) => {
+      if (!entry.isIntersecting) return;
+      obs.disconnect();
+      await loadStats();
+      animateTo(targets);
+    }, { threshold: 0.2 });
+
     if (statsRef.current) obs.observe(statsRef.current);
     return () => obs.disconnect();
+  }, []);
+
+  // Also refresh stats every 30 seconds while page is open
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const r = await fetch("/api/stats");
+        if (r.ok) {
+          const d = await r.json();
+          setCounters({
+            bills: d.totalBills || 0,
+            votes: d.totalVotes || 0,
+            reps: d.totalReps || 535,
+          });
+        }
+      } catch {}
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Cycle through bills
@@ -348,8 +390,8 @@ export default function Landing({ onEnter }) {
         flexWrap: "wrap", padding: "40px 24px",
       }}>
         {[
-          { n: counters.bills.toLocaleString(), label: "Bills Tracked", sub: "119th Congress" },
-          { n: counters.votes.toLocaleString(), label: "Constituent Votes", sub: "and counting" },
+          { n: counters.bills > 0 ? counters.bills.toLocaleString() : "—", label: "Bills Analyzed", sub: "119th Congress" },
+          { n: counters.votes > 0 ? counters.votes.toLocaleString() : "—", label: "Constituent Votes Cast", sub: "and counting" },
           { n: counters.reps.toLocaleString(), label: "Representatives", sub: "House + Senate" },
         ].map((s, i) => (
           <div key={i} style={{ textAlign: "center" }}>
