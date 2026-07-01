@@ -9,9 +9,9 @@
 import { sql } from "./_db.js";
 import crypto from "crypto";
 
-const MIN_SECONDS = 2.5;
-const MAX_PER_IP_HR = 8;
-const MAX_PER_SUBNET_HR = 25;
+const MIN_SECONDS = 0; // timing gate removed — humans read at their own pace
+const MAX_PER_IP_HR = 50; // raised — one vote per bill per person is fine
+const MAX_PER_SUBNET_HR = 200; // raised — households/offices share subnets
 const SALT = process.env.VOTE_IDENTITY_SALT || "change-me";
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 
