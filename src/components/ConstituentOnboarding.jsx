@@ -35,7 +35,7 @@ const TOPICS = [
   "Science, Technology, Communications","Social Welfare","Taxation","Transportation and Public Works",
 ];
 
-export default function ConstituentOnboarding({ location, district, reps = [], onCreated }) {
+export default function ConstituentOnboarding({ location, district, reps = [], onCreated, onGoVote }) {
   const [topics, setTopics]       = useState(new Set());
   const [digest, setDigest]       = useState(null);
   const [digestPhase, setDigestPhase] = useState("idle"); // idle|loading|ready|error
