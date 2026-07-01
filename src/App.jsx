@@ -18,11 +18,11 @@ const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
 const serif = "Georgia, 'Times New Roman', serif";
 const TABS = [
-  { key: "district", label: "Find District" },
-  { key: "vote",     label: "Vote on Bills" },
-  { key: "merch",    label: "👕 Merch" },
-  { key: "matrix",   label: "📊 Accountability" },
   { key: "profile",  label: "👤 My Profile" },
+  { key: "vote",     label: "Vote on Bills" },
+  { key: "district", label: "Find District" },
+  { key: "matrix",   label: "📊 Accountability" },
+  { key: "merch",    label: "👕 Merch" },
 ];
 
 // Inject mobile CSS once
@@ -49,7 +49,7 @@ if (typeof document !== "undefined" && !document.getElementById("cyr-mobile-css"
 
 export default function App() {
   const [view, setView] = useState("landing");
-  const [tab, setTab] = useState("district");
+  const [tab, setTab] = useState("profile");
   const [resolved, setResolved] = useState(null);
 
   if (view === "landing") return <Landing onEnter={() => setView("tool")} />;
