@@ -22,39 +22,7 @@ const bebas = "'Bebas Neue', 'Arial Black', Impact, sans-serif";
 const serif = "Georgia, 'Times New Roman', serif";
 const mono  = "'Courier New', Courier, monospace";
 
-// Live mock tally — replace with real /api/tally calls in production
-const MOCK_BILLS = [
-  {
-    id: "hr-1-119",
-    title: "H.R. 1 — American Sovereignty Act",
-    topic: "National Security",
-    peopleSupport: 61,
-    peopleOppose: 29,
-    repVote: "Yea",
-    repName: "Rep. Lauren Boebert (R-CO)",
-    aligned: true,
-  },
-  {
-    id: "hr-485-119",
-    title: "H.R. 485 — Medicare for All Act",
-    topic: "Healthcare",
-    peopleSupport: 58,
-    peopleOppose: 34,
-    repVote: "Nay",
-    repName: "Rep. Lauren Boebert (R-CO)",
-    aligned: false,
-  },
-  {
-    id: "s-100-119",
-    title: "S. 100 — Clean Energy Transition Act",
-    topic: "Environment",
-    peopleSupport: 54,
-    peopleOppose: 38,
-    repVote: "Nay",
-    repName: "Sen. John Hickenlooper (D-CO)",
-    aligned: false,
-  },
-];
+// No mock data — all data is real
 
 export default function Landing({ onEnter }) {
   const [scrolled, setScrolled] = useState(false);
@@ -62,7 +30,7 @@ export default function Landing({ onEnter }) {
     if (typeof window === 'undefined') return false;
     return window.innerWidth < 768;
   });
-  const [activeBill, setActiveBill] = useState(0);
+
   const [counters, setCounters] = useState({ bills: 0, votes: 0, reps: 0 });
   const statsRef = useRef(null);
   const heroRef = useRef(null);
@@ -138,11 +106,7 @@ export default function Landing({ onEnter }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Cycle through bills
-  useEffect(() => {
-    const t = setInterval(() => setActiveBill(b => (b + 1) % MOCK_BILLS.length), 4000);
-    return () => clearInterval(t);
-  }, []);
+
 
   return (
     <div style={{ fontFamily: serif, background: C.white, color: C.black, overflowX: "hidden" }}>
@@ -282,34 +246,25 @@ export default function Landing({ onEnter }) {
             No spin. No excuses. Just the record.
           </div>
 
-          {/* Voting record mockup */}
+          {/* Real CTA */}
           <div style={{
-            marginTop: 32, background: C.white, border: `1px solid ${C.grayLight}`,
-            borderRadius: 4, padding: "14px 20px", width: "100%", maxWidth: 320,
+            marginTop: 32, background: C.white, border: `2px solid ${C.crimson}`,
+            borderRadius: 4, padding: "20px", width: "100%", maxWidth: 320,
+            textAlign: "center",
           }}>
-            <div style={{ fontFamily: mono, fontSize: 11, color: C.gray, marginBottom: 8 }}>
-              RECENT VOTES — YOUR REP
+            <div style={{ fontFamily: bebas, fontSize: 18, color: C.crimson, letterSpacing: 2, marginBottom: 8 }}>
+              ENTER YOUR ADDRESS
             </div>
-            {[
-              { bill: "H.R. 1", vote: "YEA", align: true },
-              { bill: "H.R. 485", vote: "NAY", align: false },
-              { bill: "S. 100", vote: "NAY", align: false },
-            ].map((v, i) => (
-              <div key={i} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "6px 0", borderTop: i > 0 ? `1px solid ${C.grayLight}` : "none",
-              }}>
-                <span style={{ fontFamily: mono, fontSize: 12, color: C.black }}>{v.bill}</span>
-                <span style={{
-                  fontFamily: bebas, fontSize: 14, letterSpacing: 1,
-                  color: v.vote === "YEA" ? "#1B5E20" : C.crimson,
-                  padding: "2px 10px", borderRadius: 2,
-                  background: v.vote === "YEA" ? "#E8F5E9" : "#FBE9E7",
-                }}>
-                  {v.vote}
-                </span>
-              </div>
-            ))}
+            <div style={{ fontFamily: mono, fontSize: 11, color: C.gray, lineHeight: 1.6 }}>
+              Find your district. See real bills. Cast your real position.
+            </div>
+            <button onClick={onEnter} style={{
+              marginTop: 14, fontFamily: bebas, fontSize: 14, letterSpacing: 2,
+              background: C.crimson, color: C.white, border: "none",
+              padding: "10px 24px", borderRadius: 2, cursor: "pointer", width: "100%",
+            }}>
+              CHECK YOUR REP →
+            </button>
           </div>
         </div>
 
@@ -326,63 +281,8 @@ export default function Landing({ onEnter }) {
         </div>}
       </div>
 
-      {/* ── LIVE ACCOUNTABILITY TICKER ── desktop only */}
-      {!isMobile && <div style={{
-        background: C.black, borderTop: `3px solid ${C.gold}`,
-        borderBottom: `3px solid ${C.gold}`,
-        padding: "0", overflow: "hidden",
-      }}>
-        <div style={{
-          display: "flex", alignItems: "center",
-        }}>
-          <div style={{
-            background: C.gold, color: C.black,
-            fontFamily: bebas, fontSize: 13, letterSpacing: 2,
-            padding: "14px 20px", whiteSpace: "nowrap", flexShrink: 0,
-          }}>
-            LIVE RECORD
-          </div>
-          <div style={{
-            display: "flex", gap: 0, overflow: "hidden", flex: 1,
-          }}>
-            {[...MOCK_BILLS, ...MOCK_BILLS].map((b, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: 16,
-                padding: "12px 28px", borderLeft: `1px solid #222`,
-                whiteSpace: "nowrap", flexShrink: 0,
-              }}>
-                <span style={{ fontFamily: mono, fontSize: 11, color: "#555" }}>
-                  {b.title.split("—")[0].trim()}
-                </span>
-                <span style={{
-                  fontFamily: bebas, fontSize: 13, letterSpacing: 1,
-                  color: b.peopleSupport > 50 ? "#4CAF50" : C.crimson,
-                }}>
-                  PEOPLE: {b.peopleSupport}% SUPPORT
-                </span>
-                <span style={{ color: "#333" }}>·</span>
-                <span style={{
-                  fontFamily: bebas, fontSize: 13, letterSpacing: 1,
-                  color: b.repVote === "Yea" ? "#4CAF50" : C.crimson,
-                }}>
-                  REP VOTED: {b.repVote.toUpperCase()}
-                </span>
-                <span style={{
-                  fontFamily: mono, fontSize: 10,
-                  color: b.aligned ? "#4CAF50" : C.gold,
-                  padding: "2px 8px",
-                  border: `1px solid ${b.aligned ? "#4CAF50" : C.gold}`,
-                  borderRadius: 2,
-                }}>
-                  {b.aligned ? "✓ ALIGNED" : "⚠ MISALIGNED"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      }
+
       {/* ── STATS BAR ── */}
       <div ref={statsRef} style={{
         background: C.cobalt, padding: "48px 32px",
@@ -405,39 +305,32 @@ export default function Landing({ onEnter }) {
         ))}
       </div>
 
-      {/* ── BILL ACCOUNTABILITY SECTION ── */}
+      {/* ── ACCOUNTABILITY CTA — real data lives in the tool ── */}
       <div style={{ background: C.white, padding: "60px 20px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 12 }}>
+            THE ACCOUNTABILITY MATRIX
+          </div>
           <div style={{
-            textAlign: "center", marginBottom: 56,
+            fontFamily: bebas, fontSize: "clamp(32px, 5vw, 56px)",
+            letterSpacing: 2, lineHeight: 1.1, marginBottom: 20,
           }}>
-            <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 12 }}>
-              THE ACCOUNTABILITY MATRIX
-            </div>
-            <div style={{
-              fontFamily: bebas, fontSize: "clamp(36px, 5vw, 64px)",
-              letterSpacing: 2, lineHeight: 1,
-            }}>
-              YOUR DISTRICT SPOKE.<br />
-              <span style={{ color: C.crimson }}>DID THEY LISTEN?</span>
-            </div>
+            YOUR DISTRICT SPOKE.<br />
+            <span style={{ color: C.crimson }}>DID THEY LISTEN?</span>
           </div>
-
-          {/* Bill cards */}
-          {MOCK_BILLS.map((bill, i) => (
-            <BillAccountabilityCard key={bill.id} bill={bill} index={i} />
-          ))}
-
-          <div style={{ textAlign: "center", marginTop: 48 }}>
-            <button onClick={onEnter} style={{
-              fontFamily: bebas, fontSize: 20, letterSpacing: 3,
-              background: C.black, color: C.gold,
-              border: `2px solid ${C.gold}`,
-              padding: "16px 48px", borderRadius: 2, cursor: "pointer",
-            }}>
-              SEE YOUR DISTRICT'S FULL RECORD →
-            </button>
-          </div>
+          <p style={{ fontSize: 17, color: "#444", fontWeight: 700, lineHeight: 1.7,
+                      maxWidth: 560, margin: "0 auto 32px" }}>
+            Enter your address to see how your representative actually voted on real bills —
+            and how your district feels about each one. No spin. Just the record.
+          </p>
+          <button onClick={onEnter} style={{
+            fontFamily: bebas, fontSize: 20, letterSpacing: 3,
+            background: C.black, color: C.gold,
+            border: `2px solid ${C.gold}`,
+            padding: "16px 48px", borderRadius: 2, cursor: "pointer",
+          }}>
+            SEE YOUR DISTRICT'S REAL RECORD →
+          </button>
         </div>
       </div>
 
@@ -599,95 +492,6 @@ export default function Landing({ onEnter }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-function BillAccountabilityCard({ bill, index }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { setVisible(true); obs.disconnect(); }
-    }, { threshold: 0.2 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const supportPct = bill.peopleSupport;
-  const opposePct  = bill.peopleOppose;
-
-  return (
-    <div ref={ref} style={{
-      background: C.white, border: `1px solid ${C.grayLight}`,
-      borderLeft: `4px solid ${bill.aligned ? "#2E7D32" : C.crimson}`,
-      borderRadius: 2, padding: "28px 32px", marginBottom: 20,
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0)" : "translateY(20px)",
-      transition: `opacity 0.5s ${index * 0.1}s, transform 0.5s ${index * 0.1}s`,
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: mono, fontSize: 10, color: C.gray, letterSpacing: 2, marginBottom: 6 }}>
-            {bill.topic.toUpperCase()}
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.black, marginBottom: 4 }}>
-            {bill.title}
-          </div>
-          <div style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>
-            {bill.repName}
-          </div>
-        </div>
-        <div style={{
-          fontFamily: bebas, fontSize: 13, letterSpacing: 2,
-          padding: "6px 16px", borderRadius: 2,
-          background: bill.aligned ? "#E8F5E9" : "#FBE9E7",
-          color: bill.aligned ? "#1B5E20" : C.crimson,
-          whiteSpace: "nowrap",
-        }}>
-          {bill.aligned ? "✓ REP ALIGNED" : "⚠ REP MISALIGNED"}
-        </div>
-      </div>
-
-      {/* Constituent bar */}
-      <div style={{ marginTop: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>THE PEOPLE</span>
-          <span style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>
-            {supportPct}% support · {opposePct}% oppose
-          </span>
-        </div>
-        <div style={{ height: 10, background: C.grayLight, borderRadius: 2, overflow: "hidden", display: "flex" }}>
-          <div style={{
-            width: visible ? `${supportPct}%` : "0%", background: C.cobalt,
-            transition: `width 0.8s 0.3s ease-out`,
-          }} />
-          <div style={{
-            width: visible ? `${opposePct}%` : "0%", background: C.crimson,
-            transition: `width 0.8s 0.4s ease-out`,
-          }} />
-        </div>
-      </div>
-
-      {/* Rep vote */}
-      <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontFamily: mono, fontSize: 11, color: C.gray }}>REP VOTED:</span>
-        <span style={{
-          fontFamily: bebas, fontSize: 16, letterSpacing: 2,
-          color: bill.repVote === "Yea" ? "#1B5E20" : C.crimson,
-          padding: "3px 14px",
-          background: bill.repVote === "Yea" ? "#E8F5E9" : "#FBE9E7",
-          borderRadius: 2,
-        }}>
-          {bill.repVote.toUpperCase()}
-        </span>
-        {!bill.aligned && (
-          <span style={{ fontFamily: mono, fontSize: 11, color: C.gold }}>
-            ← majority wanted the opposite
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 function EagleSeal({ size = 48 }) {
