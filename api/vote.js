@@ -18,7 +18,7 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   try {
-    const { billId, position, district, turnstileToken, honeypot, renderedAt, voteToken } = req.body || {};
+    const { billId, position, district, turnstileToken, honeypot, renderedAt, voteToken, sessionToken } = req.body || {};
     if (!billId || !position) return reject(res, "missing_fields");
     if (honeypot) return reject(res, "honeypot_tripped");
     const elapsed = (Date.now() - Number(renderedAt || 0)) / 1000;
@@ -27,6 +27,15 @@ export default async function handler(req, res) {
     const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "";
     const userAgent = req.headers["user-agent"] || "";
     const subnet = subnetOf(ip);
+
+    // If user is signed in, link vote to their profile email
+    let sessionEmail = null;
+    if (sessionToken) {
+      try {
+        const sess = await sql`SELECT email FROM sessions WHERE session_token=${sessionToken} AND session_expires > now()`;
+        if (sess.length) sessionEmail = sess[0].email;
+      } catch {}
+    }
 
     // rate limits (from the votes table)
     const ipCount = (await sql`SELECT count(*)::int AS n FROM votes WHERE ip=${ip} AND created_at > now() - interval '1 hour'`)[0].n;
@@ -43,7 +52,9 @@ export default async function handler(req, res) {
     // verified vs open: does the connection place in the district's state?
     const tier = await geoTier(ip, district);
 
-    const identity = voteToken
+    const identity = sessionEmail
+      ? `sess:${sessionEmail}:${billId}`
+      : voteToken
       ? `tok:${voteToken}`
       : `soft:${crypto.createHash("sha256").update(`${SALT}|${ip}|${userAgent}`).digest("hex").slice(0, 24)}`;
 
