@@ -81,16 +81,23 @@ const FEATURES = [
 
 export default function Landing({ onEnter }) {
   const [t, setT] = useState({ d: "00", h: "00", m: "00", s: "00" });
+  const [isLive, setIsLive] = useState(false);
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [btn, setBtn] = useState("Notify me");
 
   useEffect(() => {
-    const launch = new Date("2026-07-01T08:00:00").getTime();
+    // Launch time is 8:00 AM Eastern on July 1, 2026, regardless of the
+    // visitor's local timezone. "-04:00" is ET daylight saving offset.
+    const launch = new Date("2026-07-01T08:00:00-04:00").getTime();
     const pad = (n) => String(n).padStart(2, "0");
     const tick = () => {
       const diff = launch - Date.now();
-      if (diff <= 0) { setT({ d: "00", h: "00", m: "00", s: "00" }); return; }
+      if (diff <= 0) {
+        setIsLive(true);
+        setT({ d: "00", h: "00", m: "00", s: "00" });
+        return;
+      }
       setT({
         d: pad(Math.floor(diff / 86400000)),
         h: pad(Math.floor((diff % 86400000) / 3600000)),
@@ -124,7 +131,7 @@ export default function Landing({ onEnter }) {
       <nav>
         <div className="nav-logo">Check<span>Your</span>Representative<span>.com</span></div>
         <div className="nav-right">
-          <div className="nav-badge">Launching July 1, 2026</div>
+          <div className="nav-badge">{isLive ? "Live Now" : "Launching July 1, 2026"}</div>
           <button className="cta-nav" onClick={onEnter}>Preview the Tool &rarr;</button>
         </div>
       </nav>
@@ -134,22 +141,29 @@ export default function Landing({ onEnter }) {
         <h1>We are tracking down the people you placed in office and <em>holding them accountable.</em></h1>
         <p className="hero-sub">Your vote put them there. Now find out if they're voting the way you expected — on every bill, every time.</p>
 
-        <div className="countdown-wrap">
-          <div className="countdown-label">Launching in</div>
-          <div className="countdown">
-            <div className="unit"><div className="unit-num">{t.d}</div><div className="unit-label">Days</div></div>
-            <div className="colon">:</div>
-            <div className="unit"><div className="unit-num">{t.h}</div><div className="unit-label">Hours</div></div>
-            <div className="colon">:</div>
-            <div className="unit"><div className="unit-num">{t.m}</div><div className="unit-label">Minutes</div></div>
-            <div className="colon">:</div>
-            <div className="unit"><div className="unit-num">{t.s}</div><div className="unit-label">Seconds</div></div>
+        {isLive ? (
+          <div className="countdown-wrap">
+            <div className="countdown-label">We're Live</div>
+            <div className="launch-date">Launched <strong>July 1, 2026 at 8:00 AM ET</strong></div>
           </div>
-          <div className="launch-date">Full launch: <strong>July 1, 2026 at 8:00 AM</strong></div>
-        </div>
+        ) : (
+          <div className="countdown-wrap">
+            <div className="countdown-label">Launching in</div>
+            <div className="countdown">
+              <div className="unit"><div className="unit-num">{t.d}</div><div className="unit-label">Days</div></div>
+              <div className="colon">:</div>
+              <div className="unit"><div className="unit-num">{t.h}</div><div className="unit-label">Hours</div></div>
+              <div className="colon">:</div>
+              <div className="unit"><div className="unit-num">{t.m}</div><div className="unit-label">Minutes</div></div>
+              <div className="colon">:</div>
+              <div className="unit"><div className="unit-num">{t.s}</div><div className="unit-label">Seconds</div></div>
+            </div>
+            <div className="launch-date">Full launch: <strong>July 1, 2026 at 8:00 AM</strong></div>
+          </div>
+        )}
 
         <button className="cta-primary" onClick={onEnter}>Find Your Representative &rarr;</button>
-        <div className="cta-note">The tool is live now — preview your district before the full July 1 launch.</div>
+        <div className="cta-note">{isLive ? "The tool is live — find your representative and see the money trail behind their votes." : "The tool is live now — preview your district before the full July 1 launch."}</div>
       </div>
 
       <div className="explainer">
