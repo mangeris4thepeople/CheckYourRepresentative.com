@@ -1,7 +1,7 @@
 // =============================================================================
 // ConstituentVoting v2 — Big YES/NO buttons + full money trail matrix
 // =============================================================================
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import ContactRep from "./ContactRep.jsx";
 
 const C = {
@@ -40,7 +40,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState(null);
   const [honeypot, setHoneypot] = useState("");
-  const [renderedAt, setRenderedAt] = useState(() => Date.now());
+  const renderedAtRef = useRef(Date.now());
   const [votePhase, setVotePhase] = useState("idle");
   const [showContact, setShowContact] = useState(false);
   const [result, setResult] = useState(null);
@@ -58,7 +58,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
         setMyDelegate(data.rep || null);
         setBills(data.items || []);
         setPhase(data.items?.length ? "ready" : "empty");
-        setRenderedAt(Date.now());
+        renderedAtRef.current = Date.now();
       })
       .catch(() => setPhase("error"));
   }, [district]);
@@ -75,7 +75,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
     setResult(null); setTally(null); setVoteError(null);
   }
 
-  function selectBill(i) { setIdx(i); reset(); setRenderedAt(Date.now()); }
+  function selectBill(i) { setIdx(i); reset(); renderedAtRef.current = Date.now(); }
 
   async function castVote(position) {
     if (!bill || votePhase === "submitting") return;
@@ -84,7 +84,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
     try {
       const res = await castVoteApi({
         billId: bill.id, position, district,
-        honeypot, renderedAt, voteToken: null,
+        honeypot, renderedAt: renderedAtRef.current, voteToken: null,
       });
       if (res.status === "rejected") {
         setVoteError(humanize(res.reason)); setVotePhase("error"); return;
