@@ -1,70 +1,210 @@
-// VoterProfile.jsx — public/private voter profiles
-import React, { useState, useEffect } from "react";
+// =============================================================================
+// VoterProfile.jsx — persistent auth via email magic link
+// Signs in → loads profile from DB → tracks votes → shareable public card
+// =============================================================================
+import React, { useState, useEffect, useCallback } from "react";
 
 const C = {
   navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
+  crimsonBright:"#B22234",
   yes:"#1B5E20", yesLight:"#E8F5E9",
   no:"#B71C1C", noLight:"#FFEBEE",
   parchment:"#FBF7EC", muted:"#5C5347", line:"#D8C9A0", panel:"#fff"
 };
-const serif = "Georgia, \'Times New Roman\', serif";
+const serif = "Georgia,'Times New Roman',serif";
 
-function getOrCreateId() {
-  let id = localStorage.getItem("cyr_voter_id");
-  if (!id) {
-    id = "v_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
-    localStorage.setItem("cyr_voter_id", id);
-  }
-  return id;
+// Session stored in localStorage — just the token, not PII
+function getStoredSession() {
+  try { return JSON.parse(localStorage.getItem("cyr_session") || "null"); } catch { return null; }
+}
+function storeSession(s) {
+  if (s) localStorage.setItem("cyr_session", JSON.stringify(s));
+  else localStorage.removeItem("cyr_session");
 }
 
-function loadProfile() {
-  try {
-    const raw = localStorage.getItem("cyr_profile");
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
+export default function VoterProfile({ district, onDistrictNeeded }) {
+  const [authPhase, setAuthPhase] = useState("loading"); // loading|signed-out|sending|sent|signed-in
+  const [email, setEmail]         = useState("");
+  const [session, setSession]     = useState(null);
+  const [profile, setProfile]     = useState(null);
+  const [tab, setTab]             = useState("profile");
+  const [saving, setSaving]       = useState(false);
+  const [saved, setSaved]         = useState(false);
+  const [copied, setCopied]       = useState(false);
+  const [draft, setDraft]         = useState({});
 
-function saveProfile(p) {
-  localStorage.setItem("cyr_profile", JSON.stringify(p));
-}
+  // On mount: check URL hash for incoming magic link redirect, then check stored session
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("session=")) {
+      const params = new URLSearchParams(hash.slice(1));
+      const token = params.get("session");
+      const em    = params.get("email");
+      // Clean the hash so it doesn't persist
+      window.history.replaceState(null, "", window.location.pathname);
+      if (token && em) {
+        storeSession({ token, email: em });
+        loadProfile({ token, email: em });
+        return;
+      }
+    }
+    const stored = getStoredSession();
+    if (stored?.token) {
+      loadProfile(stored);
+    } else {
+      setAuthPhase("signed-out");
+    }
+  }, []);
 
-function loadVoteHistory() {
-  try {
-    const raw = localStorage.getItem("cyr_votes");
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
+  const loadProfile = useCallback(async (sess) => {
+    setAuthPhase("loading");
+    try {
+      const r = await fetch(`/api/auth/session?token=${sess.token}`);
+      if (!r.ok) { storeSession(null); setAuthPhase("signed-out"); return; }
+      const data = await r.json();
+      setSession(sess);
+      setProfile(data);
+      setDraft({
+        display_name: data.display_name || "",
+        bio:          data.bio || "",
+        city:         data.city || "",
+        is_public:    data.is_public || false,
+        email_channel: data.email_channel || "off",
+      });
+      setAuthPhase("signed-in");
+    } catch {
+      storeSession(null);
+      setAuthPhase("signed-out");
+    }
+  }, []);
 
-export default function VoterProfile({ district, onClose }) {
-  const [profile, setProfile] = useState(() => loadProfile() || {
-    name: "",
-    city: "",
-    isPublic: false,
-    bio: "",
-    created: Date.now(),
-  });
-  const [votes, setVotes] = useState(() => loadVoteHistory());
-  const [tab, setTab] = useState("profile");
-  const [saved, setSaved] = useState(false);
-  const [publicUrl, setPublicUrl] = useState(null);
-  const voterId = getOrCreateId();
-
-  function handleSave() {
-    saveProfile(profile);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    if (profile.isPublic) {
-      setPublicUrl(`${window.location.origin}/voter/${voterId}`);
+  async function sendMagicLink() {
+    if (!email.includes("@")) return;
+    setAuthPhase("sending");
+    try {
+      await fetch("/api/auth/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setAuthPhase("sent");
+    } catch {
+      setAuthPhase("signed-out");
     }
   }
 
-  const positionColor = p => p === "support" ? C.yes : p === "oppose" ? C.no : C.muted;
-  const positionBg   = p => p === "support" ? C.yesLight : p === "oppose" ? C.noLight : "#f5f5f5";
-  const positionLabel= p => p === "support" ? "✓ YES" : p === "oppose" ? "✗ NO" : "Undecided";
+  async function signOut() {
+    if (session?.token) {
+      await fetch(`/api/auth/session?token=${session.token}`, { method: "DELETE" }).catch(() => {});
+    }
+    storeSession(null);
+    setSession(null);
+    setProfile(null);
+    setAuthPhase("signed-out");
+  }
 
+  async function saveProfile() {
+    if (!session?.token) return;
+    setSaving(true);
+    try {
+      await fetch(`/api/auth/session?token=${session.token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...draft, district: district || profile?.district }),
+      });
+      setProfile(p => ({ ...p, ...draft, district: district || p?.district }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {}
+    setSaving(false);
+  }
+
+  // ── LOADING ──
+  if (authPhase === "loading") {
+    return (
+      <div style={{ fontFamily: serif, maxWidth: 560, margin: "0 auto", textAlign: "center", padding: "60px 20px", color: C.muted }}>
+        <div style={{ fontSize: 28, marginBottom: 12 }}>⏳</div>
+        <div>Loading your profile…</div>
+      </div>
+    );
+  }
+
+  // ── SIGNED OUT — sign in form ──
+  if (authPhase === "signed-out" || authPhase === "sending") {
+    return (
+      <div style={{ fontFamily: serif, maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ background: C.navy, color: "#fff", padding: "24px",
+                      borderRadius: "8px 8px 0 0", borderBottom: `3px solid ${C.gold}`,
+                      textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 2, marginBottom: 8 }}>
+            MY PROFILE
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700 }}>Sign In</div>
+          <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6 }}>
+            No password needed — we'll email you a sign-in link
+          </div>
+        </div>
+        <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
+                      borderTop: "none", borderRadius: "0 0 8px 8px", padding: "28px 24px" }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
+                          display: "block", marginBottom: 8 }}>
+            YOUR EMAIL ADDRESS
+          </label>
+          <input
+            type="email" value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && sendMagicLink()}
+            placeholder="you@email.com"
+            style={{ width: "100%", padding: "12px 14px", fontFamily: serif, fontSize: 15,
+                     border: `1px solid ${C.line}`, borderRadius: 6, background: "#fff",
+                     boxSizing: "border-box", marginBottom: 14 }}
+          />
+          <button onClick={sendMagicLink} disabled={authPhase === "sending" || !email.includes("@")}
+            style={{ width: "100%", padding: "14px", fontFamily: serif, fontSize: 16,
+                     fontWeight: 700, background: email.includes("@") ? C.crimson : "#C9BFAB",
+                     color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+            {authPhase === "sending" ? "Sending…" : "Send Sign-In Link →"}
+          </button>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: 14, lineHeight: 1.6, textAlign: "center" }}>
+            We'll send a link to your inbox. Click it to sign in — no password ever.<br/>
+            Your votes and profile are saved to your email address.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SENT — check email ──
+  if (authPhase === "sent") {
+    return (
+      <div style={{ fontFamily: serif, maxWidth: 480, margin: "0 auto", textAlign: "center",
+                    padding: "48px 24px", background: C.parchment, border: `1px solid ${C.line}`,
+                    borderRadius: 8 }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: C.navy, marginBottom: 10 }}>
+          Check your inbox
+        </div>
+        <div style={{ fontSize: 15, color: C.muted, lineHeight: 1.7, marginBottom: 20 }}>
+          We sent a sign-in link to <strong style={{ color: C.navy }}>{email}</strong>.<br/>
+          Click it to sign in — the link expires in 15 minutes.
+        </div>
+        <button onClick={() => setAuthPhase("signed-out")}
+          style={{ fontFamily: serif, fontSize: 13, color: C.muted, background: "none",
+                   border: `1px solid ${C.line}`, borderRadius: 6, padding: "8px 16px", cursor: "pointer" }}>
+          ← Use a different email
+        </button>
+      </div>
+    );
+  }
+
+  // ── SIGNED IN ──
+  const votes = profile?.votes || [];
   const verifiedCount = votes.filter(v => v.tier === "verified").length;
-  const openCount = votes.length - verifiedCount;
+  const publicUrl = `${window.location.origin}/?voter=${profile?.profileId}`;
+
+  const positionColor = p => p === "support" ? C.yes : p === "oppose" ? C.no : C.muted;
+  const positionBg    = p => p === "support" ? C.yesLight : p === "oppose" ? C.noLight : "#f5f5f5";
+  const positionLabel = p => p === "support" ? "Support" : p === "oppose" ? "Oppose" : "Undecided";
 
   return (
     <div style={{ fontFamily: serif, maxWidth: 680, margin: "0 auto" }}>
@@ -72,259 +212,278 @@ export default function VoterProfile({ district, onClose }) {
       {/* Header */}
       <div style={{ background: C.navy, color: "#fff", padding: "20px 24px",
                     borderRadius: "8px 8px 0 0", borderBottom: `3px solid ${C.gold}`,
-                    display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1 }}>
-            VOTER PROFILE
+            SIGNED IN AS
           </div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>
-            {profile.name || "Anonymous Constituent"}
+          <div style={{ fontSize: 18, fontWeight: 700 }}>
+            {draft.display_name || profile?.email}
           </div>
-          {district && <div style={{ fontSize: 12, color: "#cfd6e4" }}>District {district}</div>}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ fontSize: 12, color: profile.isPublic ? C.gold : "#cfd6e4" }}>
-            {profile.isPublic ? "🌐 Public" : "🔒 Private"}
-          </div>
-          {onClose && (
-            <button onClick={onClose}
-              style={{ background: "none", border: "1px solid rgba(255,255,255,0.3)",
-                       borderRadius: 4, color: "#fff", cursor: "pointer", padding: "4px 8px",
-                       fontFamily: serif, fontSize: 12 }}>
-              ✕
-            </button>
+          {(district || profile?.district) && (
+            <div style={{ fontSize: 12, color: "#cfd6e4" }}>
+              District {district || profile?.district}
+            </div>
           )}
         </div>
+        <button onClick={signOut}
+          style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, color: "#cfd6e4",
+                   background: "none", border: "1px solid rgba(255,255,255,0.25)",
+                   borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}>
+          Sign Out
+        </button>
       </div>
 
-      {/* Verification explainer */}
-      <div style={{ background: "#FFF8E1", border: `1px solid #FFE082`,
-                    borderTop: "none", padding: "10px 24px", fontSize: 11.5,
-                    color: "#5C4400", lineHeight: 1.5 }}>
-        <strong>What "Verified" means here:</strong> your network connection's location matched your
-        claimed district at the moment you voted. It is not a confirmation of voter registration status —
-        Check Your Representative does not access state voter rolls. Verified votes carry more weight in
-        district tallies but everyone's voice is counted.
-      </div>
-
-      {/* Tabs */}
+      {/* Tab bar */}
       <div style={{ background: C.panel, borderLeft: `1px solid ${C.line}`,
-                    borderRight: `1px solid ${C.line}`, display: "flex" }}>
-        {["profile","votes","public"].map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            style={{ fontFamily: serif, flex: 1, padding: "12px", border: "none",
+                    borderRight: `1px solid ${C.line}`, display: "flex", overflowX: "auto" }}>
+        {[
+          { key: "profile", label: "👤 Profile" },
+          { key: "votes",   label: `🗳️ My Votes (${votes.length})` },
+          { key: "share",   label: "🌐 Share" },
+        ].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            style={{ fontFamily: serif, flex: 1, padding: "12px 8px", border: "none",
                      background: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
-                     color: tab === t ? C.crimson : C.muted,
-                     borderBottom: `3px solid ${tab === t ? C.crimson : "transparent"}`,
-                     textTransform: "capitalize" }}>
-            {t === "public" ? "🌐 Share" : t === "votes" ? `🗳️ My Votes (${votes.length})` : "👤 Profile"}
+                     whiteSpace: "nowrap",
+                     color: tab === t.key ? C.crimson : C.muted,
+                     borderBottom: `3px solid ${tab === t.key ? C.crimson : "transparent"}` }}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* Profile tab */}
+      {/* ── PROFILE TAB ── */}
       {tab === "profile" && (
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
                       borderTop: "none", borderRadius: "0 0 8px 8px", padding: "24px" }}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
-                            display: "block", marginBottom: 6 }}>
-              DISPLAY NAME (optional)
-            </label>
-            <input value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})}
-              placeholder="Anonymous Constituent"
-              style={{ width: "100%", padding: "10px 12px", fontFamily: serif, fontSize: 14,
-                       border: `1px solid ${C.line}`, borderRadius: 6, background: "#fff",
-                       boxSizing: "border-box" }} />
-          </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
-                            display: "block", marginBottom: 6 }}>
-              CITY / TOWN
-            </label>
-            <input value={profile.city} onChange={e => setProfile({...profile, city: e.target.value})}
-              placeholder="e.g. Loveland, CO"
-              style={{ width: "100%", padding: "10px 12px", fontFamily: serif, fontSize: 14,
-                       border: `1px solid ${C.line}`, borderRadius: 6, background: "#fff",
-                       boxSizing: "border-box" }} />
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
-                            display: "block", marginBottom: 6 }}>
-              BIO (optional)
-            </label>
-            <textarea value={profile.bio} onChange={e => setProfile({...profile, bio: e.target.value})}
-              placeholder="Why do you vote? What issues matter most to you?"
-              rows={3}
-              style={{ width: "100%", padding: "10px 12px", fontFamily: serif, fontSize: 14,
-                       border: `1px solid ${C.line}`, borderRadius: 6, background: "#fff",
-                       boxSizing: "border-box", resize: "vertical" }} />
-          </div>
-
-          {/* Public/Private toggle */}
-          <div style={{ padding: "16px", background: "#fff", border: `1px solid ${C.line}`,
-                        borderRadius: 8, marginBottom: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>
-                  {profile.isPublic ? "🌐 Public Profile" : "🔒 Private Profile"}
-                </div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                  {profile.isPublic
-                    ? "Your votes and positions are visible to everyone"
-                    : "Only you can see your vote history"}
-                </div>
+          {/* Stats row */}
+          <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+            {[
+              { n: votes.length, label: "Votes Cast" },
+              { n: verifiedCount, label: "Verified" },
+              { n: district || profile?.district || "—", label: "District" },
+            ].map((s, i) => (
+              <div key={i} style={{ flex: "1 1 100px", background: "#fff", border: `1px solid ${C.line}`,
+                                    borderRadius: 6, padding: "12px 14px", textAlign: "center" }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: C.navy }}>{s.n}</div>
+                <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{s.label}</div>
               </div>
-              <button onClick={() => setProfile({...profile, isPublic: !profile.isPublic})}
-                style={{ fontFamily: serif, padding: "8px 16px", fontWeight: 700, fontSize: 13,
-                         cursor: "pointer", borderRadius: 6, border: "none",
-                         background: profile.isPublic ? C.yes : C.muted, color: "#fff" }}>
-                {profile.isPublic ? "Make Private" : "Make Public"}
-              </button>
-            </div>
+            ))}
           </div>
 
-          <button onClick={handleSave}
+          <Field label="DISPLAY NAME (optional)">
+            <input value={draft.display_name} onChange={e => setDraft(d => ({ ...d, display_name: e.target.value }))}
+              placeholder="Anonymous Constituent" style={inp} />
+          </Field>
+
+          <Field label="CITY / TOWN">
+            <input value={draft.city} onChange={e => setDraft(d => ({ ...d, city: e.target.value }))}
+              placeholder="e.g. Windsor, CO" style={inp} />
+          </Field>
+
+          <Field label="BIO (optional)">
+            <textarea value={draft.bio} onChange={e => setDraft(d => ({ ...d, bio: e.target.value }))}
+              placeholder="Why do you vote? What issues matter most?" rows={3}
+              style={{ ...inp, resize: "vertical" }} />
+          </Field>
+
+          <Field label="EMAIL DIGEST">
+            <select value={draft.email_channel}
+              onChange={e => setDraft(d => ({ ...d, email_channel: e.target.value }))}
+              style={{ ...inp, width: "auto" }}>
+              <option value="off">Off — no emails</option>
+              <option value="pending">Weekly digest of my rep's new votes</option>
+            </select>
+          </Field>
+
+          {/* Public toggle */}
+          <div style={{ padding: "16px", background: "#fff", border: `1px solid ${C.line}`,
+                        borderRadius: 6, marginBottom: 20, display: "flex",
+                        justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>
+                {draft.is_public ? "🌐 Public Profile" : "🔒 Private Profile"}
+              </div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                {draft.is_public
+                  ? "Your votes are visible on your shareable public card"
+                  : "Only you can see your vote history"}
+              </div>
+            </div>
+            <button onClick={() => setDraft(d => ({ ...d, is_public: !d.is_public }))}
+              style={{ fontFamily: serif, padding: "8px 16px", fontWeight: 700, fontSize: 13,
+                       cursor: "pointer", borderRadius: 6, border: "none",
+                       background: draft.is_public ? C.yes : C.muted, color: "#fff" }}>
+              {draft.is_public ? "Make Private" : "Make Public"}
+            </button>
+          </div>
+
+          <button onClick={saveProfile} disabled={saving}
             style={{ width: "100%", padding: "14px", fontFamily: serif, fontSize: 16,
-                     fontWeight: 900, background: C.navy, color: "#fff", border: "none",
-                     borderRadius: 8, cursor: "pointer" }}>
-            {saved ? "✓ Saved!" : "Save Profile"}
+                     fontWeight: 900, background: saved ? C.yes : C.navy,
+                     color: "#fff", border: "none", borderRadius: 6, cursor: "pointer",
+                     transition: "background 0.2s" }}>
+            {saving ? "Saving…" : saved ? "✓ Saved!" : "Save Profile"}
           </button>
         </div>
       )}
 
-      {/* Votes tab */}
+      {/* ── VOTES TAB ── */}
       {tab === "votes" && (
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
                       borderTop: "none", borderRadius: "0 0 8px 8px" }}>
           {votes.length === 0 ? (
-            <div style={{ padding: "40px 24px", textAlign: "center", color: C.muted }}>
+            <div style={{ padding: "48px 24px", textAlign: "center", color: C.muted }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🗳️</div>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>No votes yet</div>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: C.navy }}>
+                No votes yet
+              </div>
               <div style={{ fontSize: 13 }}>
-                Go to Vote on Bills and cast your first vote. It will appear here.
+                Go to <strong>Vote on Bills</strong> and cast your first position.
+                It will appear here permanently.
               </div>
             </div>
           ) : (
-            <div>
+            <>
               <div style={{ padding: "12px 20px", borderBottom: `1px solid ${C.line}`,
                             fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
                             display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-                <span>YOUR VOTE HISTORY · {votes.length} VOTES CAST</span>
-                <span style={{ fontWeight: 400, letterSpacing: 0 }}>
-                  <span style={{ color: "#1B5E20" }}>✓ {verifiedCount} verified</span>
+                <span>YOUR VOTE HISTORY · {votes.length} POSITIONS</span>
+                <span style={{ fontWeight: 400 }}>
+                  <span style={{ color: C.yes }}>✓ {verifiedCount} verified</span>
                   {" · "}
-                  <span style={{ color: C.muted }}>{openCount} open</span>
+                  <span style={{ color: C.muted }}>{votes.length - verifiedCount} open</span>
                 </span>
               </div>
               {votes.map((v, i) => (
                 <div key={i} style={{ padding: "14px 20px",
-                                      borderBottom: i < votes.length-1 ? `1px solid ${C.line}` : "none",
+                                      borderBottom: i < votes.length - 1 ? `1px solid ${C.line}` : "none",
                                       display: "flex", justifyContent: "space-between",
-                                      alignItems: "center" }}>
-                  <div>
+                                      alignItems: "center", gap: 10 }}>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>
-                      {(v.billId||"").replace(/-119$/,"").toUpperCase()}
+                      {String(v.bill_id || "").replace(/-119$/, "").toUpperCase()}
                     </div>
                     <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-                      {v.district} · {new Date(v.ts).toLocaleDateString()}
+                      {v.district} · {new Date(v.created_at).toLocaleDateString()}
+                      {v.tier === "verified" && <span style={{ color: C.yes }}> · ✓ Verified</span>}
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                    <div style={{ padding: "6px 14px", borderRadius: 20, fontWeight: 900,
-                                  fontSize: 13, background: positionBg(v.position),
-                                  color: positionColor(v.position) }}>
-                      {positionLabel(v.position)}
-                    </div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: v.tier === "verified" ? "#1B5E20" : C.muted }}>
-                      {v.tier === "verified" ? "✓ Verified" : "○ Open"}
-                    </div>
+                  <div style={{ padding: "6px 14px", borderRadius: 20, fontWeight: 700,
+                                fontSize: 13, background: positionBg(v.position),
+                                color: positionColor(v.position), flexShrink: 0 }}>
+                    {positionLabel(v.position)}
                   </div>
                 </div>
               ))}
-            </div>
+            </>
           )}
         </div>
       )}
 
-      {/* Share tab */}
-      {tab === "public" && (
+      {/* ── SHARE TAB ── */}
+      {tab === "share" && (
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
                       borderTop: "none", borderRadius: "0 0 8px 8px", padding: "24px" }}>
-          {!profile.isPublic ? (
+          {!draft.is_public ? (
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 8 }}>
                 Your profile is private
               </div>
               <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>
-                Make your profile public to get a shareable link that shows your votes and positions.
+                Make your profile public to get a shareable link showing your voting record.
               </div>
-              <button onClick={() => { setProfile({...profile, isPublic:true}); setTab("profile"); }}
+              <button onClick={() => { setDraft(d => ({ ...d, is_public: true })); setTab("profile"); }}
                 style={{ fontFamily: serif, padding: "12px 24px", background: C.yes, color: "#fff",
-                         border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
-                Make My Profile Public
+                         border: "none", borderRadius: 6, fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
+                Make My Profile Public →
               </button>
             </div>
           ) : (
-            <div>
+            <>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 8 }}>
-                🌐 Your public profile
+                🌐 Your shareable public link
               </div>
-              <div style={{ padding: "14px", background: "#fff", border: `1px solid ${C.line}`,
+              <div style={{ padding: "12px 14px", background: "#fff", border: `1px solid ${C.line}`,
                             borderRadius: 6, fontFamily: "monospace", fontSize: 12,
-                            wordBreak: "break-all", marginBottom: 16, color: C.navy }}>
-                {`${window.location.origin}/?voter=${voterId}`}
+                            wordBreak: "break-all", marginBottom: 12, color: C.navy }}>
+                {publicUrl}
               </div>
               <button onClick={() => {
-                navigator.clipboard?.writeText(`${window.location.origin}/?voter=${voterId}`);
+                navigator.clipboard?.writeText(publicUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
               }}
                 style={{ width: "100%", padding: "12px", fontFamily: serif, fontSize: 14,
-                         fontWeight: 700, background: C.navy, color: "#fff", border: "none",
-                         borderRadius: 8, cursor: "pointer", marginBottom: 16 }}>
-                Copy Link
+                         fontWeight: 700, background: copied ? C.yes : C.navy,
+                         color: "#fff", border: "none", borderRadius: 6, cursor: "pointer",
+                         marginBottom: 20, transition: "background 0.2s" }}>
+                {copied ? "✓ Copied!" : "Copy Link"}
               </button>
-              <div style={{ padding: "16px", background: "#fff", border: `1px solid ${C.line}`,
+
+              {/* Public card preview */}
+              <div style={{ padding: "18px", background: "#fff", border: `2px solid ${C.gold}`,
                             borderRadius: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 12,
-                              letterSpacing: 1 }}>
-                  YOUR PUBLIC CARD PREVIEW
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, marginBottom: 12 }}>
+                  PUBLIC CARD PREVIEW
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: C.navy }}>
-                  {profile.name || "Anonymous Constituent"}
+                  {draft.display_name || "Anonymous Constituent"}
                 </div>
-                {district && <div style={{ fontSize: 12, color: C.muted }}>District {district}</div>}
-                {profile.bio && (
-                  <div style={{ fontSize: 13, color: C.muted, marginTop: 8, fontStyle: "italic" }}>
-                    "{profile.bio}"
+                {(district || profile?.district) && (
+                  <div style={{ fontSize: 12, color: C.muted }}>
+                    District {district || profile?.district}
                   </div>
                 )}
-                <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {votes.slice(0,5).map((v,i) => (
-                    <div key={i} style={{ padding: "4px 10px", borderRadius: 20,
+                {draft.bio && (
+                  <div style={{ fontSize: 13, color: C.muted, marginTop: 8, fontStyle: "italic" }}>
+                    "{draft.bio}"
+                  </div>
+                )}
+                <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {votes.slice(0, 6).map((v, i) => (
+                    <div key={i} style={{ padding: "5px 12px", borderRadius: 20,
                                           background: positionBg(v.position),
                                           color: positionColor(v.position),
                                           fontSize: 11, fontWeight: 700 }}>
-                      {(v.billId||"").replace(/-119$/,"").toUpperCase()} · {positionLabel(v.position)}
+                      {String(v.bill_id || "").replace(/-119$/, "").toUpperCase()}
+                      {" · "}{positionLabel(v.position)}
                       {v.tier === "verified" && " ✓"}
                     </div>
                   ))}
                   {votes.length === 0 && (
-                    <div style={{ fontSize: 12, color: C.muted }}>No votes to display yet</div>
+                    <div style={{ fontSize: 12, color: C.muted }}>
+                      No votes yet — cast some positions first
+                    </div>
                   )}
                 </div>
-                {votes.length > 0 && (
-                  <div style={{ marginTop: 10, fontSize: 10.5, color: C.muted }}>
-                    ✓ = network-verified district match at time of vote
-                  </div>
-                )}
+                <div style={{ marginTop: 14, fontSize: 11, color: C.muted }}>
+                  checkyourrepresentative.com · Paid for by We The People Inc.
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       )}
     </div>
   );
 }
+
+const inp = {
+  width: "100%", padding: "10px 12px", fontFamily: serif, fontSize: 14,
+  border: `1px solid #D8C9A0`, borderRadius: 6, background: "#fff",
+  boxSizing: "border-box",
+};
+const Field = ({ label, children }) => (
+  <div style={{ marginBottom: 16 }}>
+    <label style={{ fontSize: 11, fontWeight: 700, color: "#0A1A3F",
+                    letterSpacing: 1, display: "block", marginBottom: 6 }}>
+      {label}
+    </label>
+    {children}
+  </div>
+);
