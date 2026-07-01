@@ -40,7 +40,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState(null);
   const [honeypot, setHoneypot] = useState("");
-  const [renderedAt] = useState(() => Date.now());
+  const [renderedAt, setRenderedAt] = useState(() => Date.now());
   const [votePhase, setVotePhase] = useState("idle");
   const [showContact, setShowContact] = useState(false);
   const [result, setResult] = useState(null);
@@ -58,6 +58,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
         setMyDelegate(data.rep || null);
         setBills(data.items || []);
         setPhase(data.items?.length ? "ready" : "empty");
+        setRenderedAt(Date.now());
       })
       .catch(() => setPhase("error"));
   }, [district]);
@@ -74,7 +75,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
     setResult(null); setTally(null); setVoteError(null);
   }
 
-  function selectBill(i) { setIdx(i); reset(); }
+  function selectBill(i) { setIdx(i); reset(); setRenderedAt(Date.now()); }
 
   async function castVote(position) {
     if (!bill || votePhase === "submitting") return;
