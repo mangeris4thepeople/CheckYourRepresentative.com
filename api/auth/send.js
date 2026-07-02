@@ -11,9 +11,11 @@ import { sql } from "../_db.js";
 import crypto from "crypto";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const BASE_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "https://checkyourrepresentative.com";
+// Magic links must use the public domain. NEVER use VERCEL_URL here — on
+// Vercel that env var is the internal deployment URL (xyz-123.vercel.app),
+// which looks unprofessional in emails AND gets intercepted by deployment
+// protection, which strips the token ("Missing token" error).
+const BASE_URL = process.env.SITE_URL || "https://checkyourrepresentative.com";
 
 const MAX_SIGNUP_REQUESTS_PER_IP_HR = 8; // generous — covers a whole household signing up
 
