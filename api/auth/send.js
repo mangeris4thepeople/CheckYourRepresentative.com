@@ -1,4 +1,6 @@
 // POST /api/auth/send — send magic link email via Resend
+// Rate-limited per IP so someone can't script up dozens of throwaway
+// accounts just to get around the one-vote-per-profile rule in api/vote.js.
 import { sql } from "../_db.js";
 import crypto from "crypto";
 
@@ -7,13 +9,26 @@ const BASE_URL = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "https://checkyourrepresentative.com";
 
+const MAX_SIGNUP_REQUESTS_PER_IP_HR = 8; // generous — covers a whole household signing up
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
   const { email } = req.body || {};
   if (!email || !email.includes("@")) return res.status(400).json({ error: "valid email required" });
 
+  const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "";
+
+  const recent = (await sql`
+    SELECT count(*)::int AS n FROM auth_requests
+    WHERE ip = ${ip} AND requested_at > now() - interval '1 hour'`)[0]?.n || 0;
+  if (recent >= MAX_SIGNUP_REQUESTS_PER_IP_HR) {
+    return res.status(429).json({ error: "too_many_requests" });
+  }
+
   const token = crypto.randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+  await sql`INSERT INTO auth_requests (ip, email) VALUES (${ip}, ${email.toLowerCase()})`;
 
   // Upsert profile + store magic token
   await sql`

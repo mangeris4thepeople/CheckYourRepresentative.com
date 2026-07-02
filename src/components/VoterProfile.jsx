@@ -3,6 +3,7 @@
 // Signs in → loads profile from DB → tracks votes → shareable public card
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
+import { getStoredSession, storeSession } from "../lib/session.js";
 
 const C = {
   navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
@@ -13,16 +14,11 @@ const C = {
 };
 const serif = "Georgia,'Times New Roman',serif";
 
-// Session stored in localStorage — just the token, not PII
-function getStoredSession() {
-  try { return JSON.parse(localStorage.getItem("cyr_session") || "null"); } catch { return null; }
-}
-function storeSession(s) {
-  if (s) localStorage.setItem("cyr_session", JSON.stringify(s));
-  else localStorage.removeItem("cyr_session");
-}
-
-export default function VoterProfile({ district, onDistrictNeeded }) {
+// onProfileLoaded(profile, session) — lets App.jsx pull the saved district
+// into `resolved` so Vote / Accountability / Find District don't need the
+// visitor to re-enter their address every time they sign in.
+// onSignOut() — lets App.jsx clear its copy of the session.
+export default function VoterProfile({ district, onDistrictNeeded, onProfileLoaded, onSignOut }) {
   const [authPhase, setAuthPhase] = useState("loading"); // loading|signed-out|sending|sent|signed-in
   const [email, setEmail]         = useState("");
   const [session, setSession]     = useState(null);
@@ -72,6 +68,7 @@ export default function VoterProfile({ district, onDistrictNeeded }) {
         email_channel: data.email_channel || "off",
       });
       setAuthPhase("signed-in");
+      onProfileLoaded?.(data, sess);
     } catch {
       storeSession(null);
       setAuthPhase("signed-out");
@@ -101,6 +98,7 @@ export default function VoterProfile({ district, onDistrictNeeded }) {
     setSession(null);
     setProfile(null);
     setAuthPhase("signed-out");
+    onSignOut?.();
   }
 
   async function saveProfile() {

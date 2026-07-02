@@ -2,8 +2,15 @@
 // Check Your Representative — single unified app.
 // View 1: Landing (hero/features). View 2: the Tool (map, address,
 // district, bills, voting). The button just switches views — one site, one host.
+//
+// Voting requires a signed-in profile (see api/vote.js). "Enter the Tool"
+// lands on the Profile tab so signing in is the first thing a new visitor
+// does. Once signed in, a saved district on the profile is loaded straight
+// into `resolved` so returning visitors never have to re-enter their address
+// — and any newly-resolved district gets written back to the profile so it's
+// there next time too.
 // =============================================================================
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Landing from "./components/Landing.jsx";
 import AddressLookup from "./components/AddressLookup.jsx";
 import ConstituentMap from "./components/ConstituentMap.jsx";
@@ -13,6 +20,7 @@ import Merch from "./components/Merch.jsx";
 import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
 import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
+import { getStoredSession } from "./lib/session.js";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
@@ -51,8 +59,47 @@ export default function App() {
   const [view, setView] = useState("landing");
   const [tab, setTab] = useState("profile");
   const [resolved, setResolved] = useState(null);
+  const [session, setSession] = useState(() => getStoredSession());
 
-  if (view === "landing") return <Landing onEnter={() => setView("tool")} />;
+  // "Enter the Tool" always lands on the Profile tab — sign in first,
+  // vote second. Also covers re-entering after having browsed elsewhere.
+  function handleEnter() {
+    setTab("profile");
+    setView("tool");
+  }
+
+  // Called by VoterProfile once it has confirmed a session and loaded the
+  // profile. Pulls the saved district straight into `resolved` so Vote /
+  // Accountability / Find District all just work without re-asking for
+  // an address.
+  function handleProfileLoaded(profile, sess) {
+    setSession(sess || getStoredSession());
+    if (profile?.district) {
+      setResolved(r => ({
+        ...r,
+        district: profile.district,
+        location: profile.location || r?.location,
+      }));
+    }
+  }
+
+  function handleSignOut() {
+    setSession(null);
+  }
+
+  // Whenever we resolve a district (via address lookup or the map) and the
+  // visitor is signed in, quietly save it to their profile so it's there
+  // automatically next time they sign in — anywhere, any device.
+  useEffect(() => {
+    if (!session?.token || !resolved?.district) return;
+    fetch(`/api/auth/session?token=${session.token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ district: resolved.district, location: resolved.location }),
+    }).catch(() => {});
+  }, [session?.token, resolved?.district]);
+
+  if (view === "landing") return <Landing onEnter={handleEnter} />;
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
@@ -82,6 +129,9 @@ export default function App() {
                        color: tab === t.key ? C.crimson : C.muted,
                        borderBottom: `3px solid ${tab === t.key ? C.crimson : "transparent"}` }}>
               {t.label}
+              {t.key === "vote" && !session && (
+                <span style={{ marginLeft: 6, fontSize: 10, color: C.gold }}>🔒</span>
+              )}
             </button>
           ))}
         </div>
@@ -113,7 +163,9 @@ export default function App() {
           <ConstituentVoting
             district={resolved?.district}
             location={resolved?.location}
+            session={session}
             onNeedDistrict={() => setTab("district")}
+            onNeedSignIn={() => setTab("profile")}
           />
         )}
 
@@ -124,7 +176,11 @@ export default function App() {
         )}
 
         {tab === "profile" && (
-          <VoterProfile district={resolved?.district} />
+          <VoterProfile
+            district={resolved?.district}
+            onProfileLoaded={handleProfileLoaded}
+            onSignOut={handleSignOut}
+          />
         )}
       </main>
 

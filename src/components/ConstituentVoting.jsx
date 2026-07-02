@@ -3,6 +3,7 @@
 // =============================================================================
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ContactRep from "./ContactRep.jsx";
+import { getStoredSession } from "../lib/session.js";
 
 const C = {
   yes: "#1B5E20", yesLight: "#E8F5E9", yesBorder: "#A5D6A7",
@@ -32,8 +33,15 @@ async function fetchTally(billId) {
   if (!r.ok) throw new Error("tally_unavailable");
   return r.json();
 }
+async function fetchVoteStatus(billId, token) {
+  const url = `/api/vote-status?billId=${encodeURIComponent(billId)}` +
+    (token ? `&token=${encodeURIComponent(token)}` : "");
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("vote_status_unavailable");
+  return r.json();
+}
 
-export default function ConstituentVoting({ district, location, onNeedDistrict }) {
+export default function ConstituentVoting({ district, location, session, onNeedDistrict, onNeedSignIn }) {
   const [phase, setPhase] = useState("idle");
   const [bills, setBills] = useState([]);
   const [myDelegate, setMyDelegate] = useState(null);
@@ -41,12 +49,17 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
   const [selected, setSelected] = useState(null);
   const [honeypot, setHoneypot] = useState("");
   const renderedAtRef = useRef(Date.now());
-  const [votePhase, setVotePhase] = useState("idle");
+  const [votePhase, setVotePhase] = useState("idle"); // idle | signin | submitting | done | already | error
   const [showContact, setShowContact] = useState(false);
   const [result, setResult] = useState(null);
   const [tally, setTally] = useState(null);
   const [voteError, setVoteError] = useState(null);
   const [expanded, setExpanded] = useState({});
+  const [checkingStatus, setCheckingStatus] = useState(false);
+
+  // Fall back to localStorage directly if no session prop was passed in
+  // (defensive — App.jsx normally supplies this).
+  const activeSession = session ?? getStoredSession();
 
   const bill = bills[idx] || null;
 
@@ -70,6 +83,37 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
 
   useEffect(() => { setTally(null); loadTally(); }, [loadTally]);
 
+  // Every time the selected bill changes, check whether THIS ACCOUNT already
+  // has a position on it. Not signed in? Show the sign-in gate instead of
+  // ever rendering live buttons — no anonymous ballots.
+  useEffect(() => {
+    if (!bill?.id) return;
+    if (!activeSession?.token) { setVotePhase("signin"); return; }
+
+    let cancelled = false;
+    setCheckingStatus(true);
+    fetchVoteStatus(bill.id, activeSession.token)
+      .then(status => {
+        if (cancelled) return;
+        if (!status.signedIn) {
+          setVotePhase("signin");
+          return;
+        }
+        if (status.voted) {
+          setSelected(status.position);
+          setResult({ status: "counted" });
+          setVotePhase("already");
+        } else {
+          setSelected(null);
+          setResult(null);
+          setVotePhase("idle");
+        }
+      })
+      .catch(() => { /* fail open to idle — server still enforces the real rule */ setVotePhase("idle"); })
+      .finally(() => { if (!cancelled) setCheckingStatus(false); });
+    return () => { cancelled = true; };
+  }, [bill?.id, activeSession?.token]);
+
   function reset() {
     setSelected(null); setVotePhase("idle"); setShowContact(false);
     setResult(null); setTally(null); setVoteError(null);
@@ -78,15 +122,24 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
   function selectBill(i) { setIdx(i); reset(); renderedAtRef.current = Date.now(); }
 
   async function castVote(position) {
-    if (!bill || votePhase === "submitting") return;
+    if (!bill || votePhase === "submitting" || votePhase === "already") return;
+    if (!activeSession?.token) { setVotePhase("signin"); return; }
     setSelected(position);
     setVotePhase("submitting"); setVoteError(null);
     try {
       const res = await castVoteApi({
         billId: bill.id, position, district,
-        honeypot, renderedAt: renderedAtRef.current, voteToken: null,
+        honeypot, renderedAt: renderedAtRef.current,
+        sessionToken: activeSession.token,
       });
+      if (res.status === "already_voted") {
+        setSelected(res.position || position);
+        setResult(res);
+        setVotePhase("already");
+        return;
+      }
       if (res.status === "rejected") {
+        if (res.reason === "signin_required") { setVotePhase("signin"); return; }
         setVoteError(humanize(res.reason)); setVotePhase("error"); return;
       }
       setResult(res); setVotePhase("done"); setShowContact(true); loadTally();
@@ -288,8 +341,36 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
               {location?.city && <span style={{ color: C.muted }}> · {location.city}, {location.state}</span>}
             </div>
 
-            {/* BIG YES / NO BUTTONS */}
-            {votePhase !== "done" && (
+            {/* Checking prior vote status */}
+            {checkingStatus && (
+              <div style={{ margin: "0 24px 16px", fontSize: 12.5, color: C.muted, textAlign: "center" }}>
+                Checking your voting status on this bill...
+              </div>
+            )}
+
+            {/* Sign-in gate — no anonymous ballots, ever */}
+            {votePhase === "signin" && !checkingStatus && (
+              <div style={{ margin: "0 24px 24px", padding: "24px", background: "#fff",
+                            border: "2px solid "+C.crimson, borderRadius: 8, textAlign: "center" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🔒</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: C.navy, marginBottom: 8 }}>
+                  Sign in to vote
+                </div>
+                <div style={{ fontSize: 13, color: C.muted, marginBottom: 18, lineHeight: 1.6 }}>
+                  Every position is tied to one account, so votes stay honest — no anonymous
+                  ballots, no repeat voting. Sign-in takes 10 seconds. No password, ever.
+                </div>
+                <button onClick={() => onNeedSignIn?.()}
+                  style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, padding: "12px 28px",
+                           background: C.crimson, color: "#fff", border: "none", borderRadius: 6,
+                           cursor: "pointer" }}>
+                  Sign In to Vote →
+                </button>
+              </div>
+            )}
+
+            {/* BIG YES / NO BUTTONS — only once signed in and not already voted */}
+            {votePhase !== "done" && votePhase !== "already" && votePhase !== "signin" && !checkingStatus && (
               <div style={{ margin: "0 24px 24px" }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 10, letterSpacing: 1 }}>
                   YOUR VOTE ON THIS BILL
@@ -343,7 +424,7 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
               </div>
             )}
 
-            {/* Done state */}
+            {/* Just voted this session */}
             {votePhase === "done" && result && (
               <div style={{ margin: "0 24px 16px" }}>
                 <div style={{ padding: "14px 16px", background: C.yes, color: "#fff",
@@ -355,12 +436,21 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
                     {result.tier === "verified" ? "Network location matches your district" : "Vote counted"}
                   </div>
                 </div>
-                <button onClick={() => { reset(); }}
-                  style={{ width: "100%", padding: "10px", fontFamily: serif, fontSize: 14,
-                           fontWeight: 700, borderRadius: 4, border: "1px solid "+C.line,
-                           background: "#fff", color: C.navy, cursor: "pointer" }}>
-                  ← Vote on Another Bill
-                </button>
+              </div>
+            )}
+
+            {/* Already voted — this account has a locked-in position, no resubmission */}
+            {votePhase === "already" && (
+              <div style={{ margin: "0 24px 16px" }}>
+                <div style={{ padding: "14px 16px", background: C.navy, color: "#fff",
+                              borderRadius: 6, textAlign: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 18, fontWeight: 900 }}>
+                    You already voted {selected === "support" ? "YES" : selected === "oppose" ? "NO" : "Undecided"} on this bill
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 4, color: C.gold }}>
+                    One position per bill, per account. Votes can't be changed or resubmitted.
+                  </div>
+                </div>
               </div>
             )}
 
@@ -372,11 +462,21 @@ export default function ConstituentVoting({ district, location, onNeedDistrict }
               onChange={e => setHoneypot(e.target.value)} aria-hidden="true"
               style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
-            {/* Contact rep */}
-            {showContact && votePhase === "done" && result && bill && (
+            {/* Contact rep — available whether they just voted or had already voted */}
+            {(votePhase === "done" || votePhase === "already") && (
               <div style={{ margin: "0 24px 24px" }}>
-                <ContactRep district={district} billId={bill.id} billTitle={bill.title}
-                  position={selected} onClose={() => setShowContact(false)} />
+                {!showContact && (
+                  <button onClick={() => setShowContact(true)}
+                    style={{ width: "100%", padding: "10px", fontFamily: serif, fontSize: 14,
+                             fontWeight: 700, borderRadius: 4, border: "1px solid "+C.line,
+                             background: "#fff", color: C.navy, cursor: "pointer" }}>
+                    Contact Your Representative About This Bill
+                  </button>
+                )}
+                {showContact && bill && (
+                  <ContactRep district={district} billId={bill.id} billTitle={bill.title}
+                    position={selected} onClose={() => setShowContact(false)} />
+                )}
               </div>
             )}
           </div>
@@ -446,6 +546,7 @@ function humanize(reason) {
     rate_ip: "Too many votes from your connection. Try later.",
     rate_subnet: "Too many votes from your network. Try later.",
     missing_fields: "Please select a position.",
+    signin_required: "Please sign in to vote.",
   };
   return m[reason] || "Could not record your vote. Please try again.";
 }
