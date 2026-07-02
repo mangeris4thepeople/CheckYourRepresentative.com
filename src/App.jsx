@@ -20,17 +20,19 @@ import Merch from "./components/Merch.jsx";
 import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
 import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
+import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import { getStoredSession } from "./lib/session.js";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
 const serif = "Georgia, 'Times New Roman', serif";
 const TABS = [
-  { key: "profile",  label: "👤 My Profile" },
-  { key: "vote",     label: "Vote on Bills" },
-  { key: "district", label: "Find District" },
-  { key: "matrix",   label: "📊 Accountability" },
-  { key: "merch",    label: "👕 Merch" },
+  { key: "profile",      label: "👤 My Profile" },
+  { key: "vote",         label: "Vote on Bills" },
+  { key: "district",     label: "Find District" },
+  { key: "matrix",       label: "📊 Accountability" },
+  { key: "constituents", label: "🌐 Constituents" },
+  { key: "merch",        label: "👕 Merch" },
 ];
 
 // Inject mobile CSS once
@@ -56,8 +58,14 @@ if (typeof document !== "undefined" && !document.getElementById("cyr-mobile-css"
 }
 
 export default function App() {
-  const [view, setView] = useState("landing");
-  const [tab, setTab] = useState("profile");
+  // Shared public-card links look like /?voter=123 — if present, skip the
+  // landing page and open that constituent's card in the Constituents tab.
+  const initialVoterId = (() => {
+    try { return new URLSearchParams(window.location.search).get("voter"); } catch { return null; }
+  })();
+
+  const [view, setView] = useState(initialVoterId ? "tool" : "landing");
+  const [tab, setTab] = useState(initialVoterId ? "constituents" : "profile");
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
 
@@ -170,6 +178,13 @@ export default function App() {
         )}
 
         {tab === "merch" && <Merch />}
+
+        {tab === "constituents" && (
+          <ConstituentsDirectory
+            district={resolved?.district}
+            initialVoterId={initialVoterId}
+          />
+        )}
 
         {tab === "matrix" && (
           <AccountabilityDashboard district={resolved?.district} />
