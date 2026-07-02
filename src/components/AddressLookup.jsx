@@ -63,13 +63,13 @@ export default function AddressLookup({ onResolved }) {
           <div>
             <label style={lbl}>STREET ADDRESS</label>
             <input value={street} onChange={e=>setStreet(e.target.value)} onKeyDown={onKey}
-              placeholder="1011 Valley Drive" autoComplete="street-address" style={inp} />
+              placeholder="123 Main Street" autoComplete="street-address" style={inp} />
           </div>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
             <div style={{ flex:"1 1 160px" }}>
               <label style={lbl}>CITY</label>
               <input value={city} onChange={e=>setCity(e.target.value)} onKeyDown={onKey}
-                placeholder="Windsor" autoComplete="address-level2" style={inp} />
+                placeholder="Your city" autoComplete="address-level2" style={inp} />
             </div>
             <div>
               <label style={lbl}>STATE</label>
@@ -81,7 +81,7 @@ export default function AddressLookup({ onResolved }) {
             <div>
               <label style={lbl}>ZIP</label>
               <input value={zip} onChange={e=>setZip(e.target.value.replace(/\D/g,"").slice(0,5))}
-                onKeyDown={onKey} placeholder="80550" inputMode="numeric"
+                onKeyDown={onKey} placeholder="ZIP" inputMode="numeric"
                 autoComplete="postal-code" style={{ ...inp, width:110 }} />
             </div>
           </div>
