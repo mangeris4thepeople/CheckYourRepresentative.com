@@ -14,6 +14,15 @@ const C = {
 };
 const serif = "Georgia,'Times New Roman',serif";
 
+function humanizeSendError(code) {
+  const m = {
+    valid_email_required: "Enter a valid email address.",
+    too_many_requests: "Too many sign-in attempts from your network. Try again in a bit.",
+    email_provider_failed: "The email couldn't be sent right now. Try again shortly.",
+  };
+  return m[code] || "Something went wrong sending your sign-in link. Try again.";
+}
+
 // onProfileLoaded(profile, session) — lets App.jsx pull the saved district
 // into `resolved` so Vote / Accountability / Find District don't need the
 // visitor to re-enter their address every time they sign in.
@@ -28,6 +37,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
   const [saved, setSaved]         = useState(false);
   const [copied, setCopied]       = useState(false);
   const [draft, setDraft]         = useState({});
+  const [sendError, setSendError] = useState(null);
 
   // On mount: check URL hash for incoming magic link redirect, then check stored session
   useEffect(() => {
@@ -78,14 +88,29 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
   async function sendMagicLink() {
     if (!email.includes("@")) return;
     setAuthPhase("sending");
+    setSendError(null);
     try {
-      await fetch("/api/auth/send", {
+      const r = await fetch("/api/auth/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || data.ok === false) {
+        setSendError(humanizeSendError(data.error));
+        setAuthPhase("signed-out");
+        return;
+      }
+      if (data.sent === false) {
+        // Server accepted it but no email provider is configured yet —
+        // don't lie and say "check your email" when nothing was sent.
+        setSendError("Sign-in emails aren't configured on the server yet. Contact the site owner.");
+        setAuthPhase("signed-out");
+        return;
+      }
       setAuthPhase("sent");
     } catch {
+      setSendError("Couldn't reach the server. Check your connection and try again.");
       setAuthPhase("signed-out");
     }
   }
@@ -148,6 +173,13 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
                           display: "block", marginBottom: 8 }}>
             YOUR EMAIL ADDRESS
           </label>
+          {sendError && (
+            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 4,
+                          background: "#FBE9E7", color: C.crimson, fontSize: 12.5,
+                          border: `1px solid ${C.crimson}` }}>
+              {sendError}
+            </div>
+          )}
           <input
             type="email" value={email}
             onChange={e => setEmail(e.target.value)}
