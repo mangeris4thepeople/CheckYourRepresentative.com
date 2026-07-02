@@ -14,8 +14,22 @@ const serif = "Georgia, 'Times New Roman', serif";
 const impact = "'Arial Black', Impact, sans-serif";
 const mono = "'Courier New', Courier, monospace";
 
-// ── SWAP THIS URL when Printful store is live ──
-const STORE_URL = "https://checkyourrepresentative.com/merch";
+// ============================================================
+// CHECKOUT: powered by /api/checkout (Stripe hosted checkout).
+// Goes live automatically once STRIPE_SECRET_KEY is set in Vercel.
+// Until then the page auto-detects and stays in waitlist mode.
+// Only the first six designs are purchasable (they exist in
+// Printful). Keys must match CATALOG in api/checkout.js.
+// ============================================================
+const PRODUCT_KEYS = {
+  1: "impeachment_ballot",
+  2: "we_the_people",
+  3: "work_for_us",
+  4: "watching_your_rep",
+  5: "not_partisan",
+  6: "article_impeach",
+};
+const SIZES = ["S", "M", "L", "XL", "2XL", "3XL"];
 
 const PRODUCTS = [
   {
@@ -275,6 +289,41 @@ export default function Merch() {
   const [notify, setNotify] = useState(null);
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [storeLive, setStoreLive] = useState(false);
+  const [sizes, setSizes] = useState({});
+  const [buying, setBuying] = useState(null);
+  const [purchaseNotice, setPurchaseNotice] = useState(null);
+
+  // Detect whether payments are configured: a probe POST with no body
+  // returns 400 when Stripe is ready, 503 when it is not.
+  React.useEffect(() => {
+    fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(r => setStoreLive(r.status !== 503))
+      .catch(() => setStoreLive(false));
+    try {
+      const q = new URLSearchParams(window.location.search).get("purchase");
+      if (q === "success") setPurchaseNotice("success");
+      if (q === "cancelled") setPurchaseNotice("cancelled");
+      if (q) window.history.replaceState(null, "", window.location.pathname);
+    } catch {}
+  }, []);
+
+  async function buyNow(product) {
+    const key = PRODUCT_KEYS[product.id];
+    const size = sizes[product.id];
+    if (!key || !size) return;
+    setBuying(product.id);
+    try {
+      const r = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productKey: key, size }),
+      });
+      const data = await r.json();
+      if (data.url) { window.location.href = data.url; return; }
+      setBuying(null);
+    } catch { setBuying(null); }
+  }
 
   function handleNotify(productId) {
     setNotify(productId);
@@ -295,6 +344,21 @@ export default function Merch() {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink }}>
+
+      {purchaseNotice === "success" && (
+        <div style={{ margin: "0 0 16px", padding: "14px 18px", background: "#E8F5E9",
+                      border: "1px solid #1B5E20", borderRadius: 4, color: "#1B5E20",
+                      fontFamily: serif, fontSize: 14, fontWeight: 700 }}>
+          Order received. Check your email for the Stripe receipt. Your shirt prints and ships within a few days.
+        </div>
+      )}
+      {purchaseNotice === "cancelled" && (
+        <div style={{ margin: "0 0 16px", padding: "14px 18px", background: "#FFF8E1",
+                      border: "1px solid #C9A227", borderRadius: 4, color: "#5C4400",
+                      fontFamily: serif, fontSize: 14 }}>
+          Checkout cancelled. Your card was not charged.
+        </div>
+      )}
 
       {/* Header banner */}
       <div style={{
@@ -319,7 +383,7 @@ export default function Merch() {
           Show up. Be seen. Hold them accountable.
         </p>
         <div style={{ marginTop: 16, fontFamily: mono, fontSize: 11, color: "#444", letterSpacing: 2 }}>
-          ★ STORE LAUNCHING JULY 1, 2026 ★
+          {storeLive ? "★ STORE OPEN. PRINTED AND SHIPPED IN THE USA ★" : "★ STORE OPENING SOON ★"}
         </div>
       </div>
 
@@ -375,15 +439,40 @@ export default function Merch() {
                 <div style={{ fontFamily: impact, fontSize: 28, color: C.black, letterSpacing: 1 }}>
                   {product.price}
                 </div>
-                <button
-                  onClick={() => handleNotify(product.id)}
-                  style={{
-                    fontFamily: impact, fontSize: 13, letterSpacing: 1,
-                    background: C.crimson, color: "#fff", border: "none",
-                    padding: "10px 20px", borderRadius: 2, cursor: "pointer",
-                  }}>
-                  NOTIFY ME →
-                </button>
+                {storeLive && PRODUCT_KEYS[product.id] ? (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <select
+                      value={sizes[product.id] || ""}
+                      onChange={e => setSizes(s => ({ ...s, [product.id]: e.target.value }))}
+                      style={{ fontFamily: mono, fontSize: 12, padding: "9px 6px",
+                               border: `1px solid ${C.line}`, borderRadius: 2 }}>
+                      <option value="">Size</option>
+                      {SIZES.map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                    </select>
+                    <button
+                      onClick={() => buyNow(product)}
+                      disabled={!sizes[product.id] || buying === product.id}
+                      style={{
+                        fontFamily: impact, fontSize: 13, letterSpacing: 1,
+                        background: sizes[product.id] ? C.crimson : "#999",
+                        color: "#fff", border: "none",
+                        padding: "10px 20px", borderRadius: 2,
+                        cursor: sizes[product.id] ? "pointer" : "not-allowed",
+                      }}>
+                      {buying === product.id ? "..." : "BUY NOW →"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleNotify(product.id)}
+                    style={{
+                      fontFamily: impact, fontSize: 13, letterSpacing: 1,
+                      background: C.crimson, color: "#fff", border: "none",
+                      padding: "10px 20px", borderRadius: 2, cursor: "pointer",
+                    }}>
+                    NOTIFY ME →
+                  </button>
+                )}
               </div>
 
               {/* Notify form */}
