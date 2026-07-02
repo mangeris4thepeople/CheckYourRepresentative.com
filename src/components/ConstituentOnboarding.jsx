@@ -1,5 +1,5 @@
 // =============================================================================
-// ConstituentOnboarding — USE_MOCK = false
+// ConstituentOnboarding - USE_MOCK = false
 // Shows bill digest for district. Profile/signup hidden until July 1, 2026.
 // =============================================================================
 import React, { useState, useEffect } from "react";
@@ -102,7 +102,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
           {district && <span style={{ color: C.crimson }}> · {district}</span>}
         </h2>
         <p style={{ margin: "0 0 18px", fontSize: 13, color: C.muted }}>
-          Choose topics to filter bills from your representative — no sign-up required to browse.
+          Choose topics to filter bills from your representative - no sign-up required to browse.
         </p>
 
         {/* Topic selector */}
@@ -151,7 +151,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
           </div>
         )}
 
-        {/* Profile signup — HIDDEN until July 1 */}
+        {/* Profile signup - HIDDEN until July 1 */}
         {!PRE_LAUNCH && phase !== "done" && (
           <>
             <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${C.line}` }}>
@@ -209,7 +209,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
           <div style={{ marginTop: 18, padding: "12px 16px", background: "#fff",
                         border: `1px solid ${C.gold}`, borderRadius: 4, fontSize: 13, color: C.muted }}>
             <strong style={{ color: C.navy }}>Full profiles launch July 1, 2026.</strong>{" "}
-            Browse your district's bills above and vote on them now — your votes are recorded immediately.
+            Browse your district's bills above and vote on them now - your votes are recorded immediately.
             Email digests and saved profiles go live on launch day.
           </div>
         )}
@@ -230,7 +230,7 @@ function DigestPreview({ digest, onGoVote }) {
         Ready to vote on active legislation?
       </div>
       <p style={{ fontSize: 13.5, color: "#5C5347", marginBottom: 16, lineHeight: 1.6 }}>
-        Every active bill in Congress — explained in plain English with the full money trail.
+        Every active bill in Congress - explained in plain English with the full money trail.
         Your vote is recorded and sent to your representative daily.
       </p>
       <button

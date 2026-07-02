@@ -1,5 +1,5 @@
 // =============================================================================
-// /api/digest v2 — All active bills + sponsor + money trail via AI research
+// /api/digest v2 - All active bills + sponsor + money trail via AI research
 // =============================================================================
 const CONGRESS = 119;
 import { sql, hasDb } from "./_db.js";
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       } catch {}
     }
 
-    // Pull ALL active bills — most recent action first
+    // Pull ALL active bills - most recent action first
     const allBills = [];
     for (const offset of [0, 25]) {
       const data = await cg(`/bill/${CONGRESS}`, { sort: "latestAction", direction: "desc", limit: 25, offset });
@@ -119,6 +119,8 @@ async function summarizeFull(bill) {
 
   const prompt = `You are a nonpartisan civic research tool that exposes the money trail behind legislation. Analyze this bill and return ONLY valid JSON.
 
+WRITING STYLE RULES (strict): Never use em dashes or en dashes anywhere. Use commas, periods, or colons instead. Write like a sharp newspaper reporter, not a chatbot. No hedging filler like "it's important to note" or "delve". Short direct sentences.
+
 BILL: ${bill.title}
 BILL ID: ${bill.id}
 SPONSOR: ${sponsorInfo || "unknown"}
@@ -130,7 +132,7 @@ Return this exact JSON structure (all fields required, be specific and factual, 
 {
   "headline": "Plain-English title in 12 words or less",
   "plain": "2-3 sentences: what this bill actually does in plain English",
-  "affects": "Who specifically is affected — workers, patients, corporations, taxpayers, etc.",
+  "affects": "Who specifically is affected - workers, patients, corporations, taxpayers, etc.",
   "status": "Where it is in the legislative process right now",
   "sponsor": "${sponsorInfo || "unknown"}",
   "who_benefits": "Specific industries, companies, or groups that benefit most if this passes",

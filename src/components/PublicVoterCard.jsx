@@ -1,5 +1,5 @@
 // =============================================================================
-// PublicVoterCard.jsx — a constituent's public card: name, city, district,
+// PublicVoterCard.jsx - a constituent's public card: name, city, district,
 // bio, and their public vote record. Rendered from the Constituents directory
 // or directly via a shared /?voter=ID link.
 // =============================================================================
@@ -79,7 +79,7 @@ export default function PublicVoterCard({ voterId, onBack }) {
         )}
 
         <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1, marginBottom: 10 }}>
-          VOTE RECORD — {voter.votes.length} POSITION{voter.votes.length !== 1 ? "S" : ""}
+          VOTE RECORD - {voter.votes.length} POSITION{voter.votes.length !== 1 ? "S" : ""}
         </div>
 
         {voter.votes.length === 0 && (

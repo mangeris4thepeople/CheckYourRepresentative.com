@@ -1,5 +1,5 @@
 // =============================================================================
-// VoterProfile.jsx — persistent auth via email magic link
+// VoterProfile.jsx - persistent auth via email magic link
 // Signs in → loads profile from DB → tracks votes → shareable public card
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
@@ -23,10 +23,10 @@ function humanizeSendError(code) {
   return m[code] || "Something went wrong sending your sign-in link. Try again.";
 }
 
-// onProfileLoaded(profile, session) — lets App.jsx pull the saved district
+// onProfileLoaded(profile, session) - lets App.jsx pull the saved district
 // into `resolved` so Vote / Accountability / Find District don't need the
 // visitor to re-enter their address every time they sign in.
-// onSignOut() — lets App.jsx clear its copy of the session.
+// onSignOut() - lets App.jsx clear its copy of the session.
 export default function VoterProfile({ district, onDistrictNeeded, onProfileLoaded, onSignOut }) {
   const [authPhase, setAuthPhase] = useState("loading"); // loading|signed-out|sending|sent|signed-in
   const [email, setEmail]         = useState("");
@@ -102,7 +102,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
         return;
       }
       if (data.sent === false) {
-        // Server accepted it but no email provider is configured yet —
+        // Server accepted it but no email provider is configured yet  - 
         // don't lie and say "check your email" when nothing was sent.
         setSendError("Sign-in emails aren't configured on the server yet. Contact the site owner.");
         setAuthPhase("signed-out");
@@ -152,7 +152,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
     );
   }
 
-  // ── SIGNED OUT — sign in form ──
+  // ── SIGNED OUT - sign in form ──
   if (authPhase === "signed-out" || authPhase === "sending") {
     return (
       <div style={{ fontFamily: serif, maxWidth: 480, margin: "0 auto" }}>
@@ -164,7 +164,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
           </div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>Sign In</div>
           <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6 }}>
-            No password needed — we'll email you a sign-in link
+            No password needed - we'll email you a sign-in link
           </div>
         </div>
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
@@ -196,7 +196,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
             {authPhase === "sending" ? "Sending…" : "Send Sign-In Link →"}
           </button>
           <p style={{ fontSize: 12, color: C.muted, marginTop: 14, lineHeight: 1.6, textAlign: "center" }}>
-            We'll send a link to your inbox. Click it to sign in — no password ever.<br/>
+            We'll send a link to your inbox. Click it to sign in - no password ever.<br/>
             Your votes and profile are saved to your email address.
           </p>
         </div>
@@ -204,7 +204,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
     );
   }
 
-  // ── SENT — check email ──
+  // ── SENT - check email ──
   if (authPhase === "sent") {
     return (
       <div style={{ fontFamily: serif, maxWidth: 480, margin: "0 auto", textAlign: "center",
@@ -216,7 +216,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
         </div>
         <div style={{ fontSize: 15, color: C.muted, lineHeight: 1.7, marginBottom: 20 }}>
           We sent a sign-in link to <strong style={{ color: C.navy }}>{email}</strong>.<br/>
-          Click it to sign in — the link expires in 15 minutes.
+          Click it to sign in - the link expires in 15 minutes.
         </div>
         <button onClick={() => setAuthPhase("signed-out")}
           style={{ fontFamily: serif, fontSize: 13, color: C.muted, background: "none",
@@ -294,7 +294,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
             {[
               { n: votes.length, label: "Votes Cast" },
               { n: verifiedCount, label: "Verified" },
-              { n: district || profile?.district || "—", label: "District" },
+              { n: district || profile?.district || " - ", label: "District" },
             ].map((s, i) => (
               <div key={i} style={{ flex: "1 1 100px", background: "#fff", border: `1px solid ${C.line}`,
                                     borderRadius: 6, padding: "12px 14px", textAlign: "center" }}>
@@ -324,7 +324,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
             <select value={draft.email_channel}
               onChange={e => setDraft(d => ({ ...d, email_channel: e.target.value }))}
               style={{ ...inp, width: "auto" }}>
-              <option value="off">Off — no emails</option>
+              <option value="off">Off - no emails</option>
               <option value="pending">Weekly digest of my rep's new votes</option>
             </select>
           </Field>
@@ -487,7 +487,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
                   ))}
                   {votes.length === 0 && (
                     <div style={{ fontSize: 12, color: C.muted }}>
-                      No votes yet — cast some positions first
+                      No votes yet - cast some positions first
                     </div>
                   )}
                 </div>

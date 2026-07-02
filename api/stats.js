@@ -1,5 +1,5 @@
 // =============================================================================
-// GET /api/stats — real platform stats from the database + Congress API
+// GET /api/stats - real platform stats from the database + Congress API
 // Returns: { totalVotes, totalBills, totalReps, lastUpdated }
 // Called by the homepage to show live numbers
 // =============================================================================

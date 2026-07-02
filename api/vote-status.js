@@ -1,6 +1,6 @@
 // =============================================================================
-// GET /api/vote-status?billId=X&token=Y — has THIS SIGNED-IN PROFILE already
-// voted on this bill? Checked by account (session token), not IP — so the
+// GET /api/vote-status?billId=X&token=Y - has THIS SIGNED-IN PROFILE already
+// voted on this bill? Checked by account (session token), not IP - so the
 // frontend can lock the ballot per-person without punishing shared networks.
 // =============================================================================
 import { sql } from "./_db.js";

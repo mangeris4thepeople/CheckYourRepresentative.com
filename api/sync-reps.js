@@ -1,5 +1,5 @@
 // =============================================================================
-// /api/sync-reps.js — fetch all House members from clerk.house.gov XML
+// /api/sync-reps.js - fetch all House members from clerk.house.gov XML
 // and store them in the representatives table
 // Usage: GET /api/sync-reps
 // =============================================================================

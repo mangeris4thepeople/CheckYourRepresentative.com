@@ -1,5 +1,5 @@
 // =============================================================================
-// /api/contact  —  look up all 3 legislators for a district + draft a letter
+// /api/contact  -  look up all 3 legislators for a district + draft a letter
 // -----------------------------------------------------------------------------
 // GET /api/contact?district=CO-04&billId=hr-1234-119&position=support&billTitle=...
 //
@@ -141,11 +141,11 @@ Constituent info:
 
 Write a professional 3-paragraph constituent letter (150-200 words):
 1. Introduction: who they are and why they're writing
-2. Their position and brief reasoning (factual, civic tone — NOT partisan attack)  
+2. Their position and brief reasoning (factual, civic tone - NOT partisan attack)  
 3. Call to action: ask the legislator to vote accordingly and stay in touch
 
 Use placeholder [Your Name] and [Your Address] at the end.
-Start with "Dear [Title] [Last Name]," — use generic greeting since it goes to multiple legislators.
+Start with "Dear [Title] [Last Name]," - use generic greeting since it goes to multiple legislators.
 Do NOT include any markdown formatting. Plain text only.`;
 
   try {

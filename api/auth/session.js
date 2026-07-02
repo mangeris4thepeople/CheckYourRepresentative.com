@@ -1,6 +1,6 @@
-// GET /api/auth/session?token=xxx — validate session, return profile
-// POST /api/auth/session — update profile fields
-// DELETE /api/auth/session?token=xxx — logout
+// GET /api/auth/session?token=xxx - validate session, return profile
+// POST /api/auth/session - update profile fields
+// DELETE /api/auth/session?token=xxx - logout
 import { sql } from "../_db.js";
 
 export default async function handler(req, res) {
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  // GET — return profile + recent votes
+  // GET - return profile + recent votes
   const votes = await sql`
     SELECT bill_id, position, tier, district, created_at
     FROM votes WHERE identity LIKE ${'sess:' + user.email + '%'}

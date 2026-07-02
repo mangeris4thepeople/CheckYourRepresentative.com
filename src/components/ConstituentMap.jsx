@@ -1,5 +1,5 @@
 // =============================================================================
-// Check Your Representative — Interactive State -> County -> City selector
+// Check Your Representative - Interactive State -> County -> City selector
 // -----------------------------------------------------------------------------
 // Click a state on the map -> get that state's county list -> pick a county ->
 // get its city list. Selection fires onSelect callbacks so the profile builder

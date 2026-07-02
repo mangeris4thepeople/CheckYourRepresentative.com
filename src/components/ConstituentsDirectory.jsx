@@ -1,5 +1,5 @@
 // =============================================================================
-// ConstituentsDirectory.jsx — browse constituents who chose a public profile.
+// ConstituentsDirectory.jsx - browse constituents who chose a public profile.
 // District-first with a National toggle. Click any card to open their full
 // public voter card. Only is_public profiles ever appear (enforced server-side).
 // =============================================================================
@@ -80,7 +80,7 @@ export default function ConstituentsDirectory({ district, initialVoterId }) {
               No public profiles here yet
             </div>
             <div style={{ fontSize: 13 }}>
-              Be the first — open My Profile and switch your profile to Public.
+              Be the first - open My Profile and switch your profile to Public.
             </div>
           </div>
         )}
@@ -102,7 +102,7 @@ export default function ConstituentsDirectory({ district, initialVoterId }) {
               </div>
               <div style={{ fontSize: 12, color: C.muted, overflow: "hidden",
                             textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {p.district ? `${p.district}` : "—"}
+                {p.district ? `${p.district}` : " - "}
                 {p.city ? ` · ${p.city}` : ""}
                 {p.bio ? ` · ${p.bio}` : ""}
               </div>

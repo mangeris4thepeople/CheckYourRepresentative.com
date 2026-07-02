@@ -1,5 +1,5 @@
 // =============================================================================
-// Merch.jsx — CYR Merch Store tab
+// Merch.jsx - CYR Merch Store tab
 // Displays all shirt/hat designs with buy buttons
 // Printful store URL wired in via STORE_URL constant below
 // =============================================================================
@@ -36,7 +36,7 @@ const PRODUCTS = [
   {
     id: 2,
     name: "WE THE PEOPLE DEMAND ACCOUNTABILITY",
-    sub: "The flagship. Left, right, center — everyone wears this.",
+    sub: "The flagship. Left, right, center - everyone wears this.",
     color: "Black heavyweight tee",
     price: "$32",
     tag: "MOST POPULAR",
@@ -89,7 +89,7 @@ const PRODUCTS = [
     accentColor: C.crimson,
     goldColor: "#1A3A6B",
     design: "partisan",
-    description: "The one shirt that crosses every aisle. Blue or red — they answer to us.",
+    description: "The one shirt that crosses every aisle. Blue or red - they answer to us.",
   },
   {
     id: 6,

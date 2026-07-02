@@ -1,7 +1,7 @@
 // =============================================================================
-// Landing.jsx — CheckYourRepresentative.com homepage (launches July 1, 2026)
+// Landing.jsx - CheckYourRepresentative.com homepage (launches July 1, 2026)
 // Dual-tone civic design: appeals across the full political spectrum.
-// "Your voice vs their vote" — the accountability platform for ALL Americans.
+// "Your voice vs their vote" - the accountability platform for ALL Americans.
 // =============================================================================
 
 import React, { useState, useEffect, useRef } from "react";
@@ -22,7 +22,7 @@ const bebas = "'Bebas Neue', 'Arial Black', Impact, sans-serif";
 const serif = "Georgia, 'Times New Roman', serif";
 const mono  = "'Courier New', Courier, monospace";
 
-// No mock data — all data is real
+// No mock data - all data is real
 
 export default function Landing({ onEnter }) {
   const [scrolled, setScrolled] = useState(false);
@@ -140,7 +140,7 @@ export default function Landing({ onEnter }) {
       {/* ── SPLIT HERO ── */}
       <div ref={heroRef} style={{ minHeight: isMobile ? "auto" : "100vh", display: "flex", flexDirection: isMobile ? "column" : "row", position: "relative", overflow: "hidden" }}>
 
-        {/* LEFT — THE PEOPLE */}
+        {/* LEFT - THE PEOPLE */}
         <div style={{
           flex: 1, background: C.black, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
@@ -166,10 +166,10 @@ export default function Landing({ onEnter }) {
             textAlign: "center", maxWidth: 320,
           }}>
             Cast your position on every bill before Congress.
-            Your ZIP code. Your district. Your opinion — counted.
+            Your ZIP code. Your district. Your opinion - counted.
           </div>
 
-          {/* Left side pills — hidden on mobile */}
+          {/* Left side pills - hidden on mobile */}
           {!isMobile && (
           <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
             {["Progressive", "Conservative", "Independent", "Libertarian", "Green", "Socialist"].map(label => (
@@ -182,7 +182,7 @@ export default function Landing({ onEnter }) {
           )}
         </div>
 
-        {/* DIVIDER — diagonal on desktop, horizontal bar on mobile */}
+        {/* DIVIDER - diagonal on desktop, horizontal bar on mobile */}
         {isMobile ? (
           <div style={{ background: C.black, display: "flex", alignItems: "center",
                         justifyContent: "center", padding: "16px 0", position: "relative", zIndex: 10 }}>
@@ -217,7 +217,7 @@ export default function Landing({ onEnter }) {
         </div>
         )}
 
-        {/* RIGHT — THEIR VOTE */}
+        {/* RIGHT - THEIR VOTE */}
         <div style={{
           flex: 1, background: C.parchment, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
@@ -268,7 +268,7 @@ export default function Landing({ onEnter }) {
           </div>
         </div>
 
-        {/* Scroll indicator — desktop only */}
+        {/* Scroll indicator - desktop only */}
         {!isMobile && <div style={{
           position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
@@ -290,8 +290,8 @@ export default function Landing({ onEnter }) {
         flexWrap: "wrap", padding: "40px 24px",
       }}>
         {[
-          { n: counters.bills > 0 ? counters.bills.toLocaleString() : "—", label: "Bills Analyzed", sub: "119th Congress" },
-          { n: counters.votes > 0 ? counters.votes.toLocaleString() : "—", label: "Constituent Votes Cast", sub: "and counting" },
+          { n: counters.bills > 0 ? counters.bills.toLocaleString() : " - ", label: "Bills Analyzed", sub: "119th Congress" },
+          { n: counters.votes > 0 ? counters.votes.toLocaleString() : " - ", label: "Constituent Votes Cast", sub: "and counting" },
           { n: counters.reps.toLocaleString(), label: "Representatives", sub: "House + Senate" },
         ].map((s, i) => (
           <div key={i} style={{ textAlign: "center" }}>
@@ -305,7 +305,7 @@ export default function Landing({ onEnter }) {
         ))}
       </div>
 
-      {/* ── ACCOUNTABILITY CTA — real data lives in the tool ── */}
+      {/* ── ACCOUNTABILITY CTA - real data lives in the tool ── */}
       <div style={{ background: C.white, padding: "60px 20px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
           <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 12 }}>
@@ -320,7 +320,7 @@ export default function Landing({ onEnter }) {
           </div>
           <p style={{ fontSize: 17, color: "#444", fontWeight: 700, lineHeight: 1.7,
                       maxWidth: 560, margin: "0 auto 32px" }}>
-            Enter your address to see how your representative actually voted on real bills —
+            Enter your address to see how your representative actually voted on real bills  - 
             and how your district feels about each one. No spin. Just the record.
           </p>
           <button onClick={onEnter} style={{
@@ -363,7 +363,7 @@ export default function Landing({ onEnter }) {
                 n: "02",
                 color: C.crimson,
                 title: "Vote on Bills",
-                body: "Read plain-language bill summaries. Cast your position — Support, Oppose, or Undecided. Anonymous. Secure.",
+                body: "Read plain-language bill summaries. Cast your position - Support, Oppose, or Undecided. Anonymous. Secure.",
                 icon: "🗳️",
               },
               {
@@ -412,12 +412,12 @@ export default function Landing({ onEnter }) {
             fontFamily: bebas, fontSize: "clamp(32px, 5vw, 56px)",
             letterSpacing: 2, lineHeight: 1.1, marginBottom: 24,
           }}>
-            WHETHER YOU'RE LEFT, RIGHT,<br />OR SICK OF BOTH —<br />
+            WHETHER YOU'RE LEFT, RIGHT,<br />OR SICK OF BOTH:<br />
             <span style={{ color: C.crimson }}>YOUR VOTE STILL COUNTS.</span>
           </div>
           <p style={{ fontSize: 16, lineHeight: 1.8, color: C.gray, maxWidth: 600, margin: "0 auto 40px" }}>
             CheckYourRepresentative.com doesn't tell you what to think.
-            It tells you what your representative is doing — and gives you the tools
+            It tells you what your representative is doing and gives you the tools
             to respond. Democrat, Republican, Independent, or anything else: your voice
             belongs in this database.
           </p>

@@ -42,7 +42,7 @@ export default function AccountabilityDashboard({ district }) {
                     borderRadius:8, border:"3px solid "+C.gold }}>
         <div style={{ fontSize:11, fontWeight:700, letterSpacing:3, color:C.gold,
                       textTransform:"uppercase", marginBottom:16 }}>
-          Constituent Accountability — Live Data
+          Constituent Accountability - Live Data
         </div>
         <div style={{ display:"flex", gap:16, flexWrap:"wrap", justifyContent:"space-between" }}>
           <StatBox num={totalVotes.toLocaleString()} label="Total Positions Cast" color="#fff" />
@@ -80,7 +80,7 @@ export default function AccountabilityDashboard({ district }) {
           Refresh
         </button>
         <div style={{ fontSize:12, color:C.muted, marginLeft:"auto" }}>
-          Updated live — every vote recorded instantly
+          Updated live - every vote recorded instantly
         </div>
       </div>
 
@@ -131,7 +131,7 @@ export default function AccountabilityDashboard({ district }) {
                       {row.bill_id?.replace(/-119$/,"").toUpperCase()}
                     </td>
                     <td style={{ padding:"12px 16px", fontWeight:700 }}>
-                      {row.district || "—"}
+                      {row.district || " - "}
                     </td>
                     <td style={{ padding:"12px 16px", textAlign:"center" }}>
                       <NumBadge n={row.support_votes} pct={supPct} color="#E8F5E9" text="#1B5E20" />

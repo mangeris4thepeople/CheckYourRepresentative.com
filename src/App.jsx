@@ -1,13 +1,13 @@
 // =============================================================================
-// Check Your Representative — single unified app.
+// Check Your Representative - single unified app.
 // View 1: Landing (hero/features). View 2: the Tool (map, address,
-// district, bills, voting). The button just switches views — one site, one host.
+// district, bills, voting). The button just switches views - one site, one host.
 //
 // Voting requires a signed-in profile (see api/vote.js). "Enter the Tool"
 // lands on the Profile tab so signing in is the first thing a new visitor
 // does. Once signed in, a saved district on the profile is loaded straight
 // into `resolved` so returning visitors never have to re-enter their address
-// — and any newly-resolved district gets written back to the profile so it's
+// - and any newly-resolved district gets written back to the profile so it's
 // there next time too.
 // =============================================================================
 import React, { useState, useEffect } from "react";
@@ -58,7 +58,7 @@ if (typeof document !== "undefined" && !document.getElementById("cyr-mobile-css"
 }
 
 export default function App() {
-  // Shared public-card links look like /?voter=123 — if present, skip the
+  // Shared public-card links look like /?voter=123 - if present, skip the
   // landing page and open that constituent's card in the Constituents tab.
   const initialVoterId = (() => {
     try { return new URLSearchParams(window.location.search).get("voter"); } catch { return null; }
@@ -69,7 +69,7 @@ export default function App() {
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
 
-  // "Enter the Tool" always lands on the Profile tab — sign in first,
+  // "Enter the Tool" always lands on the Profile tab - sign in first,
   // vote second. Also covers re-entering after having browsed elsewhere.
   function handleEnter() {
     setTab("profile");
@@ -97,7 +97,7 @@ export default function App() {
 
   // Whenever we resolve a district (via address lookup or the map) and the
   // visitor is signed in, quietly save it to their profile so it's there
-  // automatically next time they sign in — anywhere, any device.
+  // automatically next time they sign in - anywhere, any device.
   useEffect(() => {
     if (!session?.token || !resolved?.district) return;
     fetch(`/api/auth/session?token=${session.token}`, {
@@ -155,12 +155,12 @@ export default function App() {
               </div>
             ) : (
               <p style={{ textAlign: "center", color: C.muted, fontStyle: "italic", maxWidth: 680, margin: "18px auto 0", fontSize: 13.5 }}>
-                Enter your address above to confirm your district — then choose the topics you want summaries for.
+                Enter your address above to confirm your district - then choose the topics you want summaries for.
               </p>
             )}
             <div style={{ marginTop: 40 }}>
               <div style={{ maxWidth: 1040, margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
-                — OR EXPLORE THE MAP —
+                - OR EXPLORE THE MAP  - 
               </div>
               <InteractiveDistrictMap onDistrictSelect={(d) => { setResolved(r => ({...r, district: d})); setTab("vote"); }} />
             </div>
@@ -201,7 +201,7 @@ export default function App() {
 
       <footer style={{ background: C.navy, color: "#cfd6e4", borderTop: `4px solid ${C.gold}` }}>
         <div className="cyr-footer-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "22px 20px", fontSize: 12.5 }}>
-          <div style={{ fontStyle: "italic", color: C.gold, marginBottom: 8 }}>"We the People..." — a tool for an informed electorate.</div>
+          <div style={{ fontStyle: "italic", color: C.gold, marginBottom: 8 }}>"We the People..." - a tool for an informed electorate.</div>
           Check Your Representative · Non-partisan voter education · Bill data from Congress.gov.
           <span style={{ marginLeft: 16, color: "#6680aa" }}>Paid for by We The People Inc.</span>
         </div>

@@ -1,23 +1,23 @@
-// POST /api/auth/send — send magic link email via Resend
+// POST /api/auth/send - send magic link email via Resend
 // Rate-limited per IP so someone can't script up dozens of throwaway
 // accounts just to get around the one-vote-per-profile rule in api/vote.js.
 //
 // Wrapped in try/catch now: previously, if any DB call failed (e.g. the
 // sessions table not existing), this function crashed with an unhandled
-// 500 and the frontend treated it as success anyway — the exact bug that
+// 500 and the frontend treated it as success anyway - the exact bug that
 // made magic links silently never send. Now a real failure returns
 // { ok: false, error } so the UI can actually show it.
 import { sql } from "../_db.js";
 import crypto from "crypto";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-// Magic links must use the public domain. NEVER use VERCEL_URL here — on
+// Magic links must use the public domain. NEVER use VERCEL_URL here - on
 // Vercel that env var is the internal deployment URL (xyz-123.vercel.app),
 // which looks unprofessional in emails AND gets intercepted by deployment
 // protection, which strips the token ("Missing token" error).
 const BASE_URL = process.env.SITE_URL || "https://checkyourrepresentative.com";
 
-const MAX_SIGNUP_REQUESTS_PER_IP_HR = 8; // generous — covers a whole household signing up
+const MAX_SIGNUP_REQUESTS_PER_IP_HR = 8; // generous - covers a whole household signing up
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           from: "CheckYourRepresentative <noreply@checkyourrepresentative.com>",
           to: email,
-          subject: "Your sign-in link — CheckYourRepresentative.com",
+          subject: "Your sign-in link - CheckYourRepresentative.com",
           html: `
             <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#FBF7EC;border:1px solid #D8C9A0;border-radius:8px">
               <div style="text-align:center;margin-bottom:24px">
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
         return res.status(502).json({ ok: false, error: "email_provider_failed" });
       }
     } else {
-      // No RESEND_API_KEY configured — nothing was actually emailed.
+      // No RESEND_API_KEY configured - nothing was actually emailed.
       // Surface this honestly instead of pretending it worked.
       console.log("MAGIC LINK (no RESEND_API_KEY set, not sent):", link);
       return res.status(200).json({ ok: true, sent: false, dev_link: link });

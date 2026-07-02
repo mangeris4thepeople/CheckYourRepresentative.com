@@ -220,7 +220,7 @@ export default function InteractiveDistrictMap({ onDistrictSelect }) {
                 <div style={{ background:C.parchment, border:`1px solid ${C.line}`, borderTop:"none",
                               borderRadius:"0 0 8px 8px", padding:"24px 20px", textAlign:"center",
                               color:C.muted, fontSize:14 }}>
-                  No votes recorded for this district yet. Be the first —
+                  No votes recorded for this district yet. Be the first  - 
                   <button onClick={() => onDistrictSelect?.(district)}
                     style={{ fontFamily:serif, color:C.crimson, background:"none", border:"none",
                              fontWeight:700, cursor:"pointer", fontSize:14 }}>

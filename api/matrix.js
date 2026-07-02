@@ -1,5 +1,5 @@
 // =============================================================================
-// GET /api/matrix?district=CO-04 — accountability matrix for a district
+// GET /api/matrix?district=CO-04 - accountability matrix for a district
 // Returns raw vote counts + how many contacted their rep per bill
 // =============================================================================
 import { sql } from "./_db.js";
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
         LIMIT 50
       `;
     } else {
-      // Full national matrix — top 100 most active
+      // Full national matrix - top 100 most active
       rows = await sql`
         SELECT
           v.bill_id,

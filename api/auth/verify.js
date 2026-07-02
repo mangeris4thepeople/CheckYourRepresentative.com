@@ -1,4 +1,4 @@
-// GET /api/auth/verify?token=xxx — verify magic link, issue session, redirect
+// GET /api/auth/verify?token=xxx - verify magic link, issue session, redirect
 import { sql } from "../_db.js";
 import crypto from "crypto";
 

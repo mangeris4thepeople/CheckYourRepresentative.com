@@ -1,5 +1,5 @@
 // =============================================================================
-// POST /api/contact-track — record that a constituent clicked Contact My Rep
+// POST /api/contact-track - record that a constituent clicked Contact My Rep
 // Called automatically when ContactRep component is opened after voting
 // =============================================================================
 import { sql } from "./_db.js";

@@ -1,6 +1,6 @@
 // built: 1782718293
 // =============================================================================
-// /api/daily-report.js — daily accountability email to representatives
+// /api/daily-report.js - daily accountability email to representatives
 // Cron: runs every day at 11:00 UTC (6AM ET / 7AM ET daylight)
 // =============================================================================
 import { sql } from "./_db.js";
@@ -79,7 +79,7 @@ async function sendEmail(rep, district, html) {
         from: "Check Your Representative <onboarding@resend.dev>",
         to: ["mangeris4thepeople2026@gmail.com"], // Admin only for now
         reply_to: "reports@checkyourrepresentative.com",
-        subject: "District " + district + " — " + rep.name + " — Daily Constituent Report",
+        subject: "District " + district + " - " + rep.name + " - Daily Constituent Report",
         html,
       }),
     });
@@ -99,7 +99,7 @@ async function sendAdminEmail(html, count) {
       body: JSON.stringify({
         from: "Check Your Representative <onboarding@resend.dev>",
         to: ["mangeris4thepeople2026@gmail.com"],
-        subject: "CYR Daily Report — " + count + " districts with data",
+        subject: "CYR Daily Report - " + count + " districts with data",
         html: "<h2>Daily run complete</h2><p>" + count + " district reports sent.</p>" + html,
       }),
     });
@@ -108,7 +108,7 @@ async function sendAdminEmail(html, count) {
 
 function buildAdminSummary(results) {
   return results.map(r =>
-    "<div style='margin:8px 0'><strong>" + r.district + "</strong> — " + r.rep + " — " + (r.sent ? "✓ sent" : "✗ failed") + "</div>"
+    "<div style='margin:8px 0'><strong>" + r.district + "</strong> - " + r.rep + " - " + (r.sent ? "✓ sent" : "✗ failed") + "</div>"
   ).join("");
 }
 
@@ -137,8 +137,8 @@ function buildEmail(district, rep, rows) {
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f0e8;font-family:Georgia,serif;">
   <div style="max-width:700px;margin:0 auto;background:#fff;">
     <div style="background:#0A1A3F;padding:28px 32px;border-bottom:4px solid #C9A227;">
-      <div style="color:#C9A227;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;">Check Your Representative — Daily Constituent Report</div>
-      <div style="color:#fff;font-size:22px;font-weight:700;">District ${district} — ${today}</div>
+      <div style="color:#C9A227;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;">Check Your Representative - Daily Constituent Report</div>
+      <div style="color:#fff;font-size:22px;font-weight:700;">District ${district} - ${today}</div>
       <div style="color:#cfd6e4;font-size:13px;margin-top:6px;">Representative: ${rep.name} (${rep.party}) · ${rep.phone}</div>
     </div>
     <div style="background:#8B0000;padding:24px 32px;">
@@ -167,7 +167,7 @@ function buildEmail(district, rep, rows) {
       </table>
     </div>
     <div style="background:#0A1A3F;padding:20px 32px;text-align:center;">
-      <div style="color:#C9A227;font-size:12px;font-weight:700;margin-bottom:8px;">CheckYourRepresentative.com — Paid for by We The People Inc.</div>
+      <div style="color:#C9A227;font-size:12px;font-weight:700;margin-bottom:8px;">CheckYourRepresentative.com - Paid for by We The People Inc.</div>
       <a href="${rep.contact_url}" style="color:#fff;font-size:12px;">Contact page: ${rep.contact_url}</a>
     </div>
   </div></body></html>`;

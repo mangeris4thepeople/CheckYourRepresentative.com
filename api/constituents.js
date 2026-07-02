@@ -1,5 +1,5 @@
 // =============================================================================
-// /api/constituents — PUBLIC constituent directory + public voter cards
+// /api/constituents - PUBLIC constituent directory + public voter cards
 //   GET /api/constituents                    -> list of public profiles (national)
 //   GET /api/constituents?district=CO-04     -> list filtered to a district
 //   GET /api/constituents?id=123             -> one public profile + vote record
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       if (!rows.length) return res.status(404).json({ error: "not_public_or_not_found" });
       const p = rows[0];
 
-      // Votes are keyed by identity 'sess:{email}:{billId}' — resolve
+      // Votes are keyed by identity 'sess:{email}:{billId}' - resolve
       // server-side, return only bill data. Join cached summaries for a
       // human-readable headline when we have one.
       const votes = await sql`

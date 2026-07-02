@@ -1,5 +1,5 @@
 // =============================================================================
-// ConstituentVoting v2 — Big YES/NO buttons + full money trail matrix
+// ConstituentVoting v2 - Big YES/NO buttons + full money trail matrix
 // =============================================================================
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ContactRep from "./ContactRep.jsx";
@@ -58,7 +58,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
   const [checkingStatus, setCheckingStatus] = useState(false);
 
   // Fall back to localStorage directly if no session prop was passed in
-  // (defensive — App.jsx normally supplies this).
+  // (defensive - App.jsx normally supplies this).
   const activeSession = session ?? getStoredSession();
 
   const bill = bills[idx] || null;
@@ -85,7 +85,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
 
   // Every time the selected bill changes, check whether THIS ACCOUNT already
   // has a position on it. Not signed in? Show the sign-in gate instead of
-  // ever rendering live buttons — no anonymous ballots.
+  // ever rendering live buttons - no anonymous ballots.
   useEffect(() => {
     if (!bill?.id) return;
     if (!activeSession?.token) { setVotePhase("signin"); return; }
@@ -109,7 +109,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
           setVotePhase("idle");
         }
       })
-      .catch(() => { /* fail open to idle — server still enforces the real rule */ setVotePhase("idle"); })
+      .catch(() => { /* fail open to idle - server still enforces the real rule */ setVotePhase("idle"); })
       .finally(() => { if (!cancelled) setCheckingStatus(false); });
     return () => { cancelled = true; };
   }, [bill?.id, activeSession?.token]);
@@ -268,7 +268,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
               </div>
             )}
 
-            {/* MONEY MATRIX — expandable sections */}
+            {/* MONEY MATRIX - expandable sections */}
             <div style={{ margin: "0 24px 16px" }}>
 
               {/* Who Benefits */}
@@ -320,7 +320,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
                 <div style={{ marginTop: 8, padding: "12px 14px", background: "#0A1A3F",
                               borderRadius: 6, color: "#fff" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, letterSpacing: 1, marginBottom: 4 }}>
-                    IF THIS PASSES — WHAT CHANGES FOR YOU
+                    IF THIS PASSES - WHAT CHANGES FOR YOU
                   </div>
                   <div style={{ fontSize: 14, lineHeight: 1.6 }}>{bill.summary.vote_impact}</div>
                 </div>
@@ -348,7 +348,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
               </div>
             )}
 
-            {/* Sign-in gate — no anonymous ballots, ever */}
+            {/* Sign-in gate - no anonymous ballots, ever */}
             {votePhase === "signin" && !checkingStatus && (
               <div style={{ margin: "0 24px 24px", padding: "24px", background: "#fff",
                             border: "2px solid "+C.crimson, borderRadius: 8, textAlign: "center" }}>
@@ -357,7 +357,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
                   Sign in to vote
                 </div>
                 <div style={{ fontSize: 13, color: C.muted, marginBottom: 18, lineHeight: 1.6 }}>
-                  Every position is tied to one account, so votes stay honest — no anonymous
+                  Every position is tied to one account, so votes stay honest - no anonymous
                   ballots, no repeat voting. Sign-in takes 10 seconds. No password, ever.
                 </div>
                 <button onClick={() => onNeedSignIn?.()}
@@ -369,7 +369,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
               </div>
             )}
 
-            {/* BIG YES / NO BUTTONS — only once signed in and not already voted */}
+            {/* BIG YES / NO BUTTONS - only once signed in and not already voted */}
             {votePhase !== "done" && votePhase !== "already" && votePhase !== "signin" && !checkingStatus && (
               <div style={{ margin: "0 24px 24px" }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 10, letterSpacing: 1 }}>
@@ -439,7 +439,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
               </div>
             )}
 
-            {/* Already voted — this account has a locked-in position, no resubmission */}
+            {/* Already voted - this account has a locked-in position, no resubmission */}
             {votePhase === "already" && (
               <div style={{ margin: "0 24px 16px" }}>
                 <div style={{ padding: "14px 16px", background: C.navy, color: "#fff",
@@ -462,7 +462,7 @@ export default function ConstituentVoting({ district, location, session, onNeedD
               onChange={e => setHoneypot(e.target.value)} aria-hidden="true"
               style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
-            {/* Contact rep — available whether they just voted or had already voted */}
+            {/* Contact rep - available whether they just voted or had already voted */}
             {(votePhase === "done" || votePhase === "already") && (
               <div style={{ margin: "0 24px 24px" }}>
                 {!showContact && (
@@ -522,7 +522,7 @@ function TallyPanel({ tally }) {
   return (
     <div style={{ margin: "0 24px 24px", borderTop: "2px solid #C9A227", paddingTop: 16 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "#0A1A3F", letterSpacing: 1, marginBottom: 12 }}>
-        DISTRICT TALLY — {sampleSize} VOTE{sampleSize !== 1 ? "S" : ""}
+        DISTRICT TALLY - {sampleSize} VOTE{sampleSize !== 1 ? "S" : ""}
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <div style={{ flex: yPct || 1, background: "#1B5E20", height: 24, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>

@@ -1,4 +1,4 @@
-// Shared session helpers — single source of truth for "am I signed in"
+// Shared session helpers - single source of truth for "am I signed in"
 // across every tab (Profile, Vote, Accountability, etc). Both App.jsx and
 // VoterProfile.jsx read/write through here so they never drift out of sync.
 export function getStoredSession() {

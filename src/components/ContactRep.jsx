@@ -1,5 +1,5 @@
 // =============================================================================
-// ContactRep.jsx — "Make Your Voice Heard" panel
+// ContactRep.jsx - "Make Your Voice Heard" panel
 // Shows after a constituent casts their position on a bill.
 // Loads their 3 legislators (House rep + 2 Senators), displays an AI-drafted
 // letter, and gives them one-click links to each official's contact page.
@@ -28,11 +28,11 @@ const PARTY_COLOR  = { Democrat: C.navy, Republican: C.crimson, Independent: C.m
 // ---------------------------------------------------------------------------
 // Main component
 // Props:
-//   district   — e.g. "CO-04"
-//   billId     — e.g. "hr-1234-119"
-//   billTitle  — full title string
-//   position   — "support" | "oppose" | "undecided"
-//   onClose    — optional callback to dismiss
+//   district   - e.g. "CO-04"
+//   billId     - e.g. "hr-1234-119"
+//   billTitle  - full title string
+//   position   - "support" | "oppose" | "undecided"
+//   onClose    - optional callback to dismiss
 // ---------------------------------------------------------------------------
 export default function ContactRep({ district, billId, billTitle, position, onClose }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | error
@@ -155,7 +155,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
           <>
             {/* Intro */}
             <p style={{ margin: "0 0 20px", fontSize: 13.5, color: C.muted, lineHeight: 1.6 }}>
-              Your position has been recorded. Now take the next step — let your elected officials know directly.
+              Your position has been recorded. Now take the next step - let your elected officials know directly.
               We've drafted a letter for you. Edit it, then send it to each of your{" "}
               <strong style={{ color: C.navy }}>{legislators.length} legislators</strong> below.
             </p>
@@ -184,7 +184,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
                 marginBottom: 8
               }}>
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.navy }}>
-                  YOUR LETTER — EDIT AS NEEDED
+                  YOUR LETTER - EDIT AS NEEDED
                 </div>
                 <div style={{ fontSize: 11, color: C.muted, fontStyle: "italic" }}>
                   Personalize before sending
@@ -224,7 +224,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
                     padding: "10px 20px", borderRadius: 4, cursor: "pointer",
                     background: C.crimson, color: "#fff", border: "none", flex: 1,
                   }}>
-                  ✉️ Open Contact Page — {legislators[activeTab].name.split(",")[0]}
+                  ✉️ Open Contact Page - {legislators[activeTab].name.split(",")[0]}
                 </button>
               )}
             </div>

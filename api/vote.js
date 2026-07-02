@@ -1,21 +1,21 @@
 // =============================================================================
-// POST /api/vote — record a constituent position
+// POST /api/vote - record a constituent position
 // -----------------------------------------------------------------------------
-// Honest voting: one vote per bill, per signed-in PROFILE — not per IP.
+// Honest voting: one vote per bill, per signed-in PROFILE - not per IP.
 // This lets multiple real people on the same network (household, office,
 // campus wifi, apartment building) each cast their own vote, while stopping
 // one person from voting twice. Voting requires a session (magic-link email
 // sign-in, from api/auth/send.js + api/auth/verify.js). Anonymous votes are
-// no longer accepted — that's the whole point.
+// no longer accepted - that's the whole point.
 //
 // IP/subnet limits below are a SPAM THROTTLE only (bot floods, scripted
-// account abuse) — they are not how we enforce "one vote." That job now
+// account abuse) - they are not how we enforce "one vote." That job now
 // belongs entirely to the account (sessions.email -> votes.identity).
 // =============================================================================
 import { sql } from "./_db.js";
 
 const MAX_PER_IP_HR = 20;       // spam/bot throttle, NOT a one-vote-per-network rule
-const MAX_PER_SUBNET_HR = 100;  // same — many honest accounts can share a subnet
+const MAX_PER_SUBNET_HR = 100;  // same - many honest accounts can share a subnet
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 
 export default async function handler(req, res) {
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "";
     const subnet = subnetOf(ip);
 
-    // Spam/bot throttle only — deliberately loose so shared networks aren't punished.
+    // Spam/bot throttle only - deliberately loose so shared networks aren't punished.
     const ipCount = (await sql`SELECT count(*)::int AS n FROM votes WHERE ip=${ip} AND created_at > now() - interval '1 hour'`)[0].n;
     if (ipCount >= MAX_PER_IP_HR) return reject(res, "rate_ip");
     const subCount = (await sql`SELECT count(*)::int AS n FROM votes WHERE subnet=${subnet} AND created_at > now() - interval '1 hour'`)[0].n;
@@ -52,13 +52,13 @@ export default async function handler(req, res) {
     }
 
     // verified vs open: does the connection place in the district's state?
-    // (Kept as a signal, not a gate — accounts are the real gate now.)
+    // (Kept as a signal, not a gate - accounts are the real gate now.)
     const tier = await geoTier(ip, district);
 
     const identity = `sess:${email}:${billId}`;
 
     // One vote per profile per bill. No overwriting, no re-voting from the
-    // same account, no re-voting from a new IP either — the account is the key.
+    // same account, no re-voting from a new IP either - the account is the key.
     const inserted = await sql`
       INSERT INTO votes (bill_id, identity, district, position, tier, ip, subnet)
       VALUES (${billId}, ${identity}, ${district || null}, ${position}, ${tier}, ${ip}, ${subnet})

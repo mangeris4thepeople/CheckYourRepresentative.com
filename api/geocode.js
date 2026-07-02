@@ -20,13 +20,13 @@ export default async function handler(req, res) {
     if (r) return res.json({ ok: true, source: "census", ...r });
   }
 
-  // Strategy 5: Google Maps Geocoding API — finds every address in America
+  // Strategy 5: Google Maps Geocoding API - finds every address in America
   const googleKey = process.env.GOOGLE_MAPS_API_KEY;
   if (googleKey) {
     const fullAddress = [clean, city, state, zip].filter(Boolean).join(", ") + ", USA";
     const coords = await tryGoogle(fullAddress, googleKey);
     if (coords) {
-      // Got coordinates from Google — now reverse geocode via Census for district
+      // Got coordinates from Google - now reverse geocode via Census for district
       const district = await censusReverse(coords.lat, coords.lng);
       if (district) {
         return res.json({

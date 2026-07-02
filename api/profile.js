@@ -1,10 +1,10 @@
 // =============================================================================
-// /api/profile  —  consent-based constituent profiles (persisted, email-keyed)
+// /api/profile  -  consent-based constituent profiles (persisted, email-keyed)
 //   POST  /api/profile                 body: { consent:true, email, district, location, topics, wantsEmail }
 //   GET   /api/profile?action=confirm&token=...
 //   GET   /api/profile?action=unsubscribe&token=...
 // Email is double opt-in: starts 'pending', becomes 'on' only after confirm.
-// (Sending the confirmation email itself is the next piece — see /api/digest
+// (Sending the confirmation email itself is the next piece - see /api/digest
 //  + an email provider. This endpoint stores everything and issues the tokens.)
 // =============================================================================
 import { sql } from "./_db.js";

@@ -1,5 +1,5 @@
 // =============================================================================
-// GET /api/tally?billId=...  —  two-tier tally from the persisted votes
+// GET /api/tally?billId=...  -  two-tier tally from the persisted votes
 // =============================================================================
 import { sql } from "./_db.js";
 
