@@ -325,6 +325,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
               onChange={e => setDraft(d => ({ ...d, email_channel: e.target.value }))}
               style={{ ...inp, width: "auto" }}>
               <option value="off">Off - no emails</option>
+              <option value="floor_alerts">Alert me when new bills hit the floor</option>
               <option value="pending">Weekly digest of my rep's new votes</option>
             </select>
           </Field>
