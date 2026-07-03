@@ -17,9 +17,10 @@ const C = {
 const serif = "Georgia,'Times New Roman',serif";
 const mono = "'Courier New',monospace";
 
-async function fetchList(offset, q) {
+async function fetchList(offset, q, token) {
   const params = new URLSearchParams({ offset: String(offset) });
   if (q) params.set("q", q);
+  if (token) params.set("token", token);
   const r = await fetch(`/api/bills-list?${params}`);
   if (!r.ok) throw new Error("list_failed");
   return r.json();
@@ -70,20 +71,27 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
   const [tally, setTally] = useState(null);
   const [showContact, setShowContact] = useState(false);
   const [voteError, setVoteError] = useState(null);
+  const [votedIds, setVotedIds] = useState(() => new Set());
+  const [navBusy, setNavBusy] = useState(false);
 
   const loadList = useCallback(async (newOffset, q, append) => {
     setListState("loading");
     try {
-      const data = await fetchList(newOffset, q);
+      const data = await fetchList(newOffset, q, session?.token);
       setBills(prev => append ? [...prev, ...data.bills] : data.bills);
       setOffset(data.offset);
       setHasMore(data.hasMore);
       setTotalCount(data.totalCount);
+      if (data.votedBillIds?.length) {
+        setVotedIds(prev => new Set([...prev, ...data.votedBillIds]));
+      }
       setListState("ready");
+      return data;
     } catch {
       setListState("error");
+      return null;
     }
-  }, []);
+  }, [session?.token]);
 
   useEffect(() => { loadList(0, search, false); }, [search, loadList]);
 
@@ -110,7 +118,10 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
     fetchVoteStatus(id, session.token)
       .then(s => {
         if (!s.signedIn) { setVotePhase("signin"); return; }
-        if (s.voted) { setSelectedPosition(s.position); setVotePhase("already"); }
+        if (s.voted) {
+          setSelectedPosition(s.position); setVotePhase("already");
+          setVotedIds(prev => new Set(prev).add(id));
+        }
         else setVotePhase("idle");
       })
       .catch(() => setVotePhase("idle"));
@@ -118,6 +129,57 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
 
   function closeBill() {
     setSelectedId(null); setDetail(null); setDetailState("idle");
+  }
+
+  const currentIndex = bills.findIndex(b => b.id === selectedId);
+  const hasPrevious = currentIndex > 0;
+
+  function goPrevious() {
+    if (!hasPrevious) return;
+    openBill(bills[currentIndex - 1].id);
+  }
+
+  async function goNext() {
+    if (currentIndex === -1) return;
+    if (currentIndex + 1 < bills.length) {
+      openBill(bills[currentIndex + 1].id);
+      return;
+    }
+    // Ran off the end of what's loaded, pull more if there's more to get.
+    if (hasMore) {
+      setNavBusy(true);
+      const data = await loadList(offset + 250, search, true);
+      setNavBusy(false);
+      if (data?.bills?.length) openBill(data.bills[0].id);
+    }
+  }
+
+  // Walk forward through loaded bills for the first one this account
+  // hasn't voted on yet. Auto-loads more pages if the current page runs
+  // out, capped so it can't loop forever on an all-voted list.
+  async function goNextUnvoted() {
+    if (!session?.token) { setVotePhase("signin"); return; }
+    setNavBusy(true);
+    let searchFrom = currentIndex + 1;
+    let currentBills = bills;
+    let currentHasMore = hasMore;
+    let currentOffset = offset;
+    let safety = 0;
+
+    while (safety < 6) {
+      const hit = currentBills.slice(searchFrom).find(b => !votedIds.has(b.id));
+      if (hit) { setNavBusy(false); openBill(hit.id); return; }
+      if (!currentHasMore) break;
+      const data = await loadList(currentOffset + 250, search, true);
+      if (!data?.bills?.length) break;
+      searchFrom = currentBills.length;
+      currentBills = [...currentBills, ...data.bills];
+      currentHasMore = data.hasMore;
+      currentOffset = data.offset;
+      safety++;
+    }
+    setNavBusy(false);
+    setVoteError("No more unvoted bills found nearby. Try Load More on the list, or search a different topic.");
   }
 
   async function castVote(position) {
@@ -132,13 +194,16 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
         renderedAt: Date.now(), sessionToken: session.token,
       });
       if (res.status === "already_voted") {
-        setSelectedPosition(res.position || position); setVotePhase("already"); return;
+        setSelectedPosition(res.position || position); setVotePhase("already");
+        setVotedIds(prev => new Set(prev).add(selectedId));
+        return;
       }
       if (res.status === "rejected") {
         if (res.reason === "signin_required") { setVotePhase("signin"); return; }
         setVoteError(humanize(res.reason)); setVotePhase("idle"); return;
       }
       setVotePhase("done"); setShowContact(true);
+      setVotedIds(prev => new Set(prev).add(selectedId));
       fetchTally(selectedId).then(setTally).catch(() => {});
     } catch {
       setVoteError("Could not reach the server. Try again."); setVotePhase("idle");
@@ -149,12 +214,33 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
   if (selectedId) {
     return (
       <div style={{ fontFamily: serif, maxWidth: 760, margin: "0 auto" }}>
-        <button onClick={closeBill}
-          style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy,
-                   background: "none", border: `1px solid ${C.line}`, borderRadius: 4,
-                   padding: "8px 14px", cursor: "pointer", marginBottom: 14 }}>
-          ← All Active Bills
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+          <button onClick={closeBill}
+            style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy,
+                     background: "none", border: `1px solid ${C.line}`, borderRadius: 4,
+                     padding: "8px 14px", cursor: "pointer" }}>
+            ← All Active Bills
+          </button>
+          <button onClick={goPrevious} disabled={!hasPrevious || navBusy}
+            style={{ fontFamily: serif, fontSize: 13, fontWeight: 700,
+                     color: hasPrevious ? C.navy : "#bbb",
+                     background: "#fff", border: `1px solid ${C.line}`, borderRadius: 4,
+                     padding: "8px 14px", cursor: hasPrevious ? "pointer" : "not-allowed" }}>
+            ↑ Previous Bill
+          </button>
+          <button onClick={goNext} disabled={navBusy || (currentIndex === bills.length - 1 && !hasMore)}
+            style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy,
+                     background: "#fff", border: `1px solid ${C.line}`, borderRadius: 4,
+                     padding: "8px 14px", cursor: "pointer" }}>
+            ↓ Next Bill
+          </button>
+          <button onClick={goNextUnvoted} disabled={navBusy}
+            style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff",
+                     background: C.crimson, border: "none", borderRadius: 4,
+                     padding: "8px 14px", cursor: "pointer" }}>
+            {navBusy ? "Searching…" : "⚡ Next You Haven't Voted On"}
+          </button>
+        </div>
 
         {detailState === "loading" && <Center>Researching this bill: sponsor, money trail, plain-English summary. First look takes a few seconds, cached forever after.</Center>}
         {detailState === "error" && <Center color={C.crimson}>Could not load this bill. Try again.</Center>}
@@ -351,7 +437,7 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
         {bills.map(b => (
           <button key={b.id} onClick={() => openBill(b.id)}
             style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left",
-                     background: "#fff", border: `1px solid ${C.line}`, borderRadius: 6,
+                     background: "#fff", border: `1px solid ${votedIds.has(b.id) ? C.gold : C.line}`, borderRadius: 6,
                      padding: "12px 16px", marginBottom: 8, cursor: "pointer", fontFamily: serif }}>
             <div style={{ fontFamily: mono, fontSize: 11, color: C.muted, minWidth: 66, flexShrink: 0 }}>
               {b.id.replace(/-119$/, "").toUpperCase()}
@@ -365,6 +451,11 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
                 {b.policyArea ? `${b.policyArea} · ` : ""}{b.actionDate}: {b.latestAction}
               </div>
             </div>
+            {votedIds.has(b.id) && (
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.gold, flexShrink: 0, letterSpacing: 0.5 }}>
+                ✓ VOTED
+              </div>
+            )}
           </button>
         ))}
 

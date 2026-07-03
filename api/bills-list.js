@@ -14,6 +14,7 @@ const CONGRESS = 119;
 const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
 const BILL_TYPES = ["hr", "s", "hjres", "sjres", "hres", "sres"];
 const PAGE_SIZE = 250; // Congress.gov's max limit per request
+import { sql, hasDb } from "./_db.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
   try {
     const offset = Math.max(0, parseInt(req.query.offset || "0", 10) || 0);
     const q = String(req.query.q || "").trim().toLowerCase();
+    const token = String(req.query.token || "").trim();
 
     const data = await cg(`/bill/${CONGRESS}`, {
       sort: "latestAction", direction: "desc", limit: PAGE_SIZE, offset,
@@ -51,12 +53,32 @@ export default async function handler(req, res) {
 
     const totalCount = data.pagination?.count ?? null;
 
+    // If signed in, batch-check which of THIS PAGE's bills already have a
+    // vote from this account, so the frontend can support "skip to next
+    // unvoted bill" without a round trip per bill.
+    let votedBillIds = [];
+    if (token && hasDb && bills.length) {
+      try {
+        const sess = await sql`
+          SELECT email FROM sessions WHERE session_token=${token} AND session_expires > now()`;
+        if (sess.length) {
+          const prefix = `sess:${sess[0].email}:`;
+          const ids = bills.map(b => b.id);
+          const rows = await sql`
+            SELECT bill_id FROM votes
+            WHERE identity LIKE ${prefix + "%"} AND bill_id = ANY(${ids})`;
+          votedBillIds = rows.map(r => r.bill_id);
+        }
+      } catch {}
+    }
+
     return res.status(200).json({
       bills,
       offset,
       pageSize: PAGE_SIZE,
       totalCount,
       hasMore: totalCount != null ? offset + PAGE_SIZE < totalCount : bills.length === PAGE_SIZE,
+      votedBillIds,
     });
   } catch (err) {
     return res.status(500).json({ error: "bills_list_failed", detail: String(err.message || err) });
