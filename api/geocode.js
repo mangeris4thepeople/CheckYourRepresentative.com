@@ -2,8 +2,12 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
 
-  const { street, city, state, zip } = req.query;
+  const { street, city, zip } = req.query;
   if (!street) return res.status(400).json({ error: "street required" });
+  // Sanitize state: the form's placeholder "-" and anything that is not a
+  // real 2-letter code must never enter a lookup string.
+  const rawState = (req.query.state || "").trim().toUpperCase();
+  const state = /^[A-Z]{2}$/.test(rawState) ? rawState : "";
 
   const clean = street.replace(/\.$/,"").replace(/\b(apt|unit|ste|suite|#)\s*[\w-]+/gi,"").trim();
 
@@ -17,7 +21,12 @@ export default async function handler(req, res) {
 
   for (const address of tries) {
     const r = await tryCensus(address);
-    if (r) return res.json({ ok: true, source: "census", ...r });
+    if (r) {
+      // Sanity check: if the visitor told us their state, a result from a
+      // different state is a mis-geocode. Skip it and keep trying.
+      if (state && r.state && r.state !== state) continue;
+      return res.json({ ok: true, source: "census", ...r });
+    }
   }
 
   // Strategy 5: Google Maps Geocoding API - finds every address in America
@@ -29,6 +38,10 @@ export default async function handler(req, res) {
       // Got coordinates from Google - now reverse geocode via Census for district
       const district = await censusReverse(coords.lat, coords.lng);
       if (district) {
+        if (state && district.state && district.state !== state) {
+          return res.json({ ok: false, reason: "state_mismatch",
+            expected: state, got: district.district });
+        }
         return res.json({
           ok: true,
           source: "google_geocode",

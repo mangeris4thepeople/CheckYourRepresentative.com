@@ -102,6 +102,7 @@ export default function App() {
   // automatically next time they sign in - anywhere, any device.
   useEffect(() => {
     if (!session?.token || !resolved?.district) return;
+    if (!resolved.confirmed) return; // map browsing never overwrites a registered district
     fetch(`/api/auth/session?token=${session.token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -150,7 +151,7 @@ export default function App() {
       <main className="cyr-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
         {tab === "district" && (
           <>
-            <AddressLookup onResolved={setResolved} />
+            <AddressLookup onResolved={(r) => setResolved({ ...r, confirmed: true })} />
             {resolved ? (
               <div style={{ marginTop: 28 }}>
                 <ConstituentOnboarding location={resolved.location} district={resolved.district} onGoVote={() => setTab('vote')} />
@@ -164,7 +165,7 @@ export default function App() {
               <div style={{ maxWidth: 1040, margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
                 - OR EXPLORE THE MAP  - 
               </div>
-              <InteractiveDistrictMap onDistrictSelect={(d) => { setResolved(r => ({...r, district: d})); setTab("vote"); }} />
+              <InteractiveDistrictMap onDistrictSelect={(d) => { setResolved(r => ({...r, district: d, confirmed: false})); setTab("vote"); }} />
             </div>
           </>
         )}
