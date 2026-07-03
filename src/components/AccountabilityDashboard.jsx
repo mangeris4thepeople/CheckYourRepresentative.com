@@ -17,6 +17,7 @@ export default function AccountabilityDashboard({ district }) {
   const [rows, setRows]   = useState([]);
   const [phase, setPhase] = useState("loading");
   const [selected, setSelected] = useState(null); // bill_id
+  const [synopses, setSynopses] = useState({});   // bill_id -> {headline, plain}
 
   useEffect(() => { load(); }, []);
 
@@ -44,6 +45,22 @@ export default function AccountabilityDashboard({ district }) {
     sumVotes(byBill[b]) - sumVotes(byBill[a]));
   const activeBill = selected && byBill[selected] ? selected : billIds[0];
   const billRows = activeBill ? byBill[activeBill] : [];
+
+  useEffect(() => {
+    if (!activeBill || synopses[activeBill]) return;
+    let cancelled = false;
+    fetch(`/api/bill-summary?billId=${encodeURIComponent(activeBill)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!cancelled && d) {
+          setSynopses(s => ({ ...s, [activeBill]: { headline: d.headline, plain: d.plain } }));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [activeBill]);
+
+  const synopsis = activeBill ? synopses[activeBill] : null;
 
   // National aggregate for the selected bill
   const nat = billRows.reduce((t, r) => ({
@@ -140,8 +157,17 @@ export default function AccountabilityDashboard({ district }) {
                   {activeBill?.replace(/-119$/,"").toUpperCase()}
                 </div>
                 <div style={{ fontSize:15, fontWeight:700, marginTop:2 }}>
-                  How America Is Voting
+                  {synopsis?.headline || "How America Is Voting"}
                 </div>
+                {synopsis?.plain ? (
+                  <div style={{ fontSize:12.5, color:"#cfd6e4", lineHeight:1.55, marginTop:6 }}>
+                    {synopsis.plain}
+                  </div>
+                ) : (
+                  <div style={{ fontSize:11, color:"#8fa0c0", marginTop:6 }}>
+                    Loading bill synopsis...
+                  </div>
+                )}
               </div>
 
               <div style={{ padding:"16px 18px" }}>
