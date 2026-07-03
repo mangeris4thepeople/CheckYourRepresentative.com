@@ -220,22 +220,31 @@ export default function ConstituentVoting({ district, location, session, onNeedD
 
       {phase === "ready" && bill && (
         <>
-          {/* Bill tabs */}
-          <div style={{ background: "#fff", borderLeft: "1px solid "+C.line, borderRight: "1px solid "+C.line }}>
-            <div style={{ padding: "10px 16px 0", fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: 1 }}>
-              SELECT A BILL
+          {/* Bill selector: big, bold, obviously clickable. The bills ARE the tool. */}
+          <div style={{ background: C.navy, borderRadius: "8px 8px 0 0",
+                        borderLeft: "1px solid "+C.line, borderRight: "1px solid "+C.line,
+                        borderBottom: "3px solid "+C.gold, padding: "14px 16px 16px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.gold, letterSpacing: 2, marginBottom: 10 }}>
+              ★ SELECT A BILL TO VOTE ON ({bills.length} ACTIVE)
             </div>
-            <div style={{ display: "flex", overflowX: "auto", padding: "8px 16px 0", gap: 6, borderBottom: "2px solid "+C.gold }}>
+            <div style={{ display: "flex", overflowX: "auto", gap: 8, paddingBottom: 4 }}>
               {bills.map((b, i) => (
                 <button key={b.id} onClick={() => selectBill(i)}
-                  style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
-                           padding: "6px 12px", border: "none", cursor: "pointer", background: "transparent",
-                           flexShrink: 0, marginBottom: -2,
-                           color: idx === i ? C.crimson : C.muted,
-                           borderBottom: "3px solid "+(idx === i ? C.crimson : "transparent") }}>
+                  style={{ fontFamily: sans, fontSize: 14, fontWeight: 900, whiteSpace: "nowrap",
+                           letterSpacing: 0.5, padding: "12px 18px", cursor: "pointer",
+                           flexShrink: 0, borderRadius: 6,
+                           border: "2px solid "+(idx === i ? C.gold : "rgba(255,255,255,0.35)"),
+                           background: idx === i ? C.crimson : "rgba(255,255,255,0.08)",
+                           color: idx === i ? "#fff" : "#E8E2D4",
+                           boxShadow: idx === i ? "0 2px 8px rgba(0,0,0,0.35)" : "none",
+                           transition: "all 0.12s" }}>
                   {b.id?.replace(/-119$/,"").toUpperCase() || "Bill "+(i+1)}
+                  {idx === i ? " ✓" : ""}
                 </button>
               ))}
+            </div>
+            <div style={{ fontSize: 10.5, color: "#8fa0c0", marginTop: 6 }}>
+              Scroll for more bills →
             </div>
           </div>
 
