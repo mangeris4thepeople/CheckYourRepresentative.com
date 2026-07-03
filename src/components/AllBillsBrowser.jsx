@@ -324,7 +324,7 @@ export default function AllBillsBrowser({ district, session: sessionProp }) {
         </div>
         <div style={{ fontSize: 20, fontWeight: 700 }}>All Active Bills</div>
         <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
-          Every bill with recent activity in the 119th Congress{totalCount ? ` · ${totalCount.toLocaleString()} total` : ""}. Not just a curated eight: all of them.
+          Every bill with recent activity in the 119th Congress{totalCount ? ` · ${totalCount.toLocaleString()} total` : ""}.
         </div>
       </div>
 
