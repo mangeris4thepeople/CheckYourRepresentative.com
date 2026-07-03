@@ -1,47 +1,82 @@
+// =============================================================================
+// AccountabilityDashboard.jsx - the accountability matrix, bill-first.
+// Left rail: every tracked bill. Click one and the main panel shows how the
+// whole nation is voting on it: national tally bar, then every district's
+// split, with the visitor's own district highlighted at the top.
+// One fetch, no filters. The bill is the story.
+// =============================================================================
 import React, { useState, useEffect } from "react";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#FBF7EC",
-  ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0", panel:"#FBF7EC", green:"#1B5E20", red:"#B71C1C" };
+  ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0", green:"#1B5E20", red:"#B71C1C",
+  greenLight:"#E8F5E9", redLight:"#FFEBEE" };
 const serif = "Georgia, 'Times New Roman', serif";
 const mono = "'Courier New', monospace";
 
 export default function AccountabilityDashboard({ district }) {
-  const [rows, setRows]     = useState([]);
-  const [phase, setPhase]   = useState("loading");
-  const [filter, setFilter] = useState(district || "");
-  const [view, setView]     = useState("district"); // district | national
+  const [rows, setRows]   = useState([]);
+  const [phase, setPhase] = useState("loading");
+  const [selected, setSelected] = useState(null); // bill_id
 
-  useEffect(() => {
-    load();
-  }, [filter, view]);
+  useEffect(() => { load(); }, []);
 
   async function load() {
     setPhase("loading");
     try {
-      const params = new URLSearchParams();
-      if (view === "district" && filter) params.set("district", filter);
-      const r = await fetch("/api/matrix?" + params.toString());
+      const r = await fetch("/api/matrix");
       const data = await r.json();
-      setRows(data.rows || []);
-      setPhase(data.rows?.length ? "ready" : "empty");
+      const all = data.rows || [];
+      setRows(all);
+      setPhase(all.length ? "ready" : "empty");
     } catch {
       setPhase("error");
     }
   }
 
+  // Group rows by bill
+  const byBill = {};
+  for (const row of rows) {
+    const id = row.bill_id;
+    if (!byBill[id]) byBill[id] = [];
+    byBill[id].push(row);
+  }
+  const billIds = Object.keys(byBill).sort((a, b) =>
+    sumVotes(byBill[b]) - sumVotes(byBill[a]));
+  const activeBill = selected && byBill[selected] ? selected : billIds[0];
+  const billRows = activeBill ? byBill[activeBill] : [];
+
+  // National aggregate for the selected bill
+  const nat = billRows.reduce((t, r) => ({
+    support: t.support + Number(r.support_votes),
+    oppose: t.oppose + Number(r.oppose_votes),
+    undecided: t.undecided + Number(r.undecided_votes),
+    total: t.total + Number(r.total_votes),
+    contacted: t.contacted + Number(r.contacted_rep),
+  }), { support: 0, oppose: 0, undecided: 0, total: 0, contacted: 0 });
+
+  // Site-wide hero numbers
   const totalVotes    = rows.reduce((s,r) => s + Number(r.total_votes), 0);
-  const totalContacts = rows.reduce((s,r) => s + Number(r.contacted_rep), 0);
   const totalSupport  = rows.reduce((s,r) => s + Number(r.support_votes), 0);
   const totalOppose   = rows.reduce((s,r) => s + Number(r.oppose_votes), 0);
+  const totalContacts = rows.reduce((s,r) => s + Number(r.contacted_rep), 0);
+
+  // District rows for the selected bill, mine first, then by volume
+  const districts = [...billRows].sort((a, b) => {
+    if (district) {
+      if (a.district === district && b.district !== district) return -1;
+      if (b.district === district && a.district !== district) return 1;
+    }
+    return Number(b.total_votes) - Number(a.total_votes);
+  });
 
   return (
     <div style={{ fontFamily:serif, color:C.ink }}>
 
       {/* HERO NUMBERS */}
-      <div style={{ background:C.navy, color:"#fff", padding:"32px 24px", marginBottom:24,
+      <div style={{ background:C.navy, color:"#fff", padding:"28px 24px", marginBottom:20,
                     borderRadius:8, border:"3px solid "+C.gold }}>
         <div style={{ fontSize:11, fontWeight:700, letterSpacing:3, color:C.gold,
-                      textTransform:"uppercase", marginBottom:16 }}>
+                      textTransform:"uppercase", marginBottom:14 }}>
           Constituent Accountability - Live Data
         </div>
         <div style={{ display:"flex", gap:16, flexWrap:"wrap", justifyContent:"space-between" }}>
@@ -49,128 +84,155 @@ export default function AccountabilityDashboard({ district }) {
           <StatBox num={totalSupport.toLocaleString()} label="Support" color="#4CAF50" />
           <StatBox num={totalOppose.toLocaleString()} label="Oppose" color="#ef5350" />
           <StatBox num={totalContacts.toLocaleString()} label="Contacted Their Rep" color={C.gold} />
-          <StatBox num={rows.length.toLocaleString()} label="Bills Tracked" color="#90CAF9" />
+          <StatBox num={billIds.length.toLocaleString()} label="Bills Tracked" color="#90CAF9" />
         </div>
       </div>
 
-      {/* CONTROLS */}
-      <div style={{ display:"flex", gap:12, marginBottom:20, flexWrap:"wrap", alignItems:"center" }}>
-        <div style={{ display:"flex", gap:0, border:"2px solid "+C.navy, borderRadius:6, overflow:"hidden" }}>
-          {["district","national"].map(v => (
-            <button key={v} onClick={() => setView(v)}
-              style={{ fontFamily:serif, fontWeight:700, fontSize:13, padding:"8px 18px",
-                       border:"none", cursor:"pointer",
-                       background: view===v ? C.navy : "#fff",
-                       color: view===v ? "#fff" : C.navy }}>
-              {v === "district" ? "My District" : "National"}
-            </button>
-          ))}
-        </div>
-        {view === "district" && (
-          <input value={filter} onChange={e=>setFilter(e.target.value.toUpperCase())}
-            placeholder="CO-04"
-            style={{ fontFamily:mono, fontSize:14, fontWeight:700, padding:"8px 12px",
-                     border:"2px solid "+C.navy, borderRadius:6, width:100,
-                     textTransform:"uppercase" }} />
-        )}
-        <button onClick={load}
-          style={{ fontFamily:serif, fontWeight:700, fontSize:13, padding:"8px 16px",
-                   background:C.crimson, color:"#fff", border:"none", borderRadius:6,
-                   cursor:"pointer" }}>
-          Refresh
-        </button>
-        <div style={{ fontSize:12, color:C.muted, marginLeft:"auto" }}>
-          Updated live - every vote recorded instantly
-        </div>
-      </div>
-
-      {/* TABLE */}
-      {phase === "loading" && (
-        <div style={{ textAlign:"center", padding:48, color:C.muted, fontSize:15 }}>
-          Loading accountability data...
-        </div>
-      )}
-      {phase === "empty" && (
-        <div style={{ textAlign:"center", padding:48, color:C.muted, fontSize:15 }}>
-          No data yet for {filter || "this view"}. Be the first to cast a position.
-        </div>
-      )}
+      {phase === "loading" && <Center>Loading accountability data...</Center>}
+      {phase === "empty" && <Center>No positions cast yet. Be the first.</Center>}
       {phase === "error" && (
-        <div style={{ textAlign:"center", padding:48, color:C.crimson, fontSize:15 }}>
-          Could not load data. Please try again.
-        </div>
+        <Center color={C.crimson}>
+          Could not load data. <button onClick={load} style={{ fontFamily:serif, fontWeight:700,
+            border:"none", background:C.crimson, color:"#fff", borderRadius:4,
+            padding:"6px 14px", cursor:"pointer", marginLeft:8 }}>Try Again</button>
+        </Center>
       )}
+
       {phase === "ready" && (
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13.5,
-                          fontFamily:serif, background:"#fff", borderRadius:8,
+        <div style={{ display:"flex", gap:16, flexWrap:"wrap", alignItems:"flex-start" }}>
+
+          {/* LEFT RAIL: bills */}
+          <div style={{ flex:"0 0 170px", minWidth:150 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1,
+                          marginBottom:8 }}>
+              SELECT A BILL
+            </div>
+            {billIds.map(id => {
+              const active = id === activeBill;
+              const votes = sumVotes(byBill[id]);
+              return (
+                <button key={id} onClick={() => setSelected(id)}
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                           width:"100%", textAlign:"left", fontFamily:mono, fontSize:13,
+                           fontWeight:700, letterSpacing:0.5, padding:"11px 12px",
+                           marginBottom:6, borderRadius:6, cursor:"pointer",
+                           border:"2px solid "+(active ? C.gold : C.line),
+                           background: active ? C.crimson : "#fff",
+                           color: active ? "#fff" : C.navy,
+                           boxShadow: active ? "0 2px 8px rgba(0,0,0,0.25)" : "none" }}>
+                  <span>{id.replace(/-119$/,"").toUpperCase()}</span>
+                  <span style={{ fontSize:11, fontWeight:400,
+                                 color: active ? "rgba(255,255,255,0.8)" : C.muted }}>
+                    {votes}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* MAIN PANEL: how the nation is voting on this bill */}
+          <div style={{ flex:"1 1 340px", minWidth:300 }}>
+            <div style={{ background:"#fff", border:"1px solid "+C.line, borderRadius:8,
                           overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.08)" }}>
-            <thead>
-              <tr style={{ background:C.navy, color:"#fff" }}>
-                <TH>Bill</TH>
-                <TH>District</TH>
-                <TH align="center" color="#4CAF50">Support</TH>
-                <TH align="center" color="#ef5350">Oppose</TH>
-                <TH align="center" color="#ccc">Undecided</TH>
-                <TH align="center" color="#fff">Total</TH>
-                <TH align="center" color={C.gold}>Contacted Rep</TH>
-                <TH align="center" color={C.gold}>Contact Rate</TH>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                const total = Number(row.total_votes) || 1;
-                const supPct = Math.round(Number(row.support_votes)/total*100);
-                const oppPct = Math.round(Number(row.oppose_votes)/total*100);
-                const contactRate = Number(row.contact_rate_pct) || 0;
-                return (
-                  <tr key={i} style={{ borderBottom:"1px solid "+C.line,
-                                       background: i%2===0 ? "#fff" : C.parchment }}>
-                    <td style={{ padding:"12px 16px", fontWeight:700, color:C.navy,
-                                 fontFamily:mono, fontSize:12 }}>
-                      {row.bill_id?.replace(/-119$/,"").toUpperCase()}
-                    </td>
-                    <td style={{ padding:"12px 16px", fontWeight:700 }}>
-                      {row.district || " - "}
-                    </td>
-                    <td style={{ padding:"12px 16px", textAlign:"center" }}>
-                      <NumBadge n={row.support_votes} pct={supPct} color="#E8F5E9" text="#1B5E20" />
-                    </td>
-                    <td style={{ padding:"12px 16px", textAlign:"center" }}>
-                      <NumBadge n={row.oppose_votes} pct={oppPct} color="#FFEBEE" text="#B71C1C" />
-                    </td>
-                    <td style={{ padding:"12px 16px", textAlign:"center", color:C.muted }}>
-                      {row.undecided_votes}
-                    </td>
-                    <td style={{ padding:"12px 16px", textAlign:"center", fontWeight:700, fontSize:15 }}>
-                      {row.total_votes}
-                    </td>
-                    <td style={{ padding:"12px 16px", textAlign:"center", fontWeight:700,
-                                 color: Number(row.contacted_rep) > 0 ? C.crimson : C.muted }}>
-                      {row.contacted_rep}
-                    </td>
-                    <td style={{ padding:"12px 16px", textAlign:"center" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"center" }}>
-                        <div style={{ width:60, height:8, background:"#eee", borderRadius:4, overflow:"hidden" }}>
-                          <div style={{ width:contactRate+"%", height:"100%",
-                                        background: contactRate > 50 ? "#4CAF50" : C.gold,
-                                        borderRadius:4 }} />
-                        </div>
-                        <span style={{ fontWeight:700, fontSize:12 }}>{contactRate}%</span>
+
+              <div style={{ background:C.navy, color:"#fff", padding:"14px 18px" }}>
+                <div style={{ fontFamily:mono, fontSize:12, color:C.gold, letterSpacing:1 }}>
+                  {activeBill?.replace(/-119$/,"").toUpperCase()}
+                </div>
+                <div style={{ fontSize:15, fontWeight:700, marginTop:2 }}>
+                  How America Is Voting
+                </div>
+              </div>
+
+              <div style={{ padding:"16px 18px" }}>
+                {/* National tally bar */}
+                <NationalBar nat={nat} />
+
+                <div style={{ fontSize:11, color:C.muted, margin:"8px 0 16px" }}>
+                  {nat.total} position{nat.total !== 1 ? "s" : ""} across {billRows.length} district{billRows.length !== 1 ? "s" : ""}
+                  {nat.contacted > 0 ? ` · ${nat.contacted} contacted their rep` : ""}
+                </div>
+
+                {/* District breakdown */}
+                <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1, marginBottom:8 }}>
+                  BY DISTRICT
+                </div>
+                {districts.map((row, i) => {
+                  const total = Number(row.total_votes) || 1;
+                  const sup = Number(row.support_votes);
+                  const opp = Number(row.oppose_votes);
+                  const mine = district && row.district === district;
+                  return (
+                    <div key={i}
+                      style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 12px",
+                               marginBottom:6, borderRadius:6,
+                               background: mine ? "#FFF8E1" : C.parchment,
+                               border:"1px solid "+(mine ? C.gold : C.line) }}>
+                      <div style={{ minWidth:64, fontWeight:900, fontSize:14, color:C.navy }}>
+                        {row.district || "??"}
+                        {mine && <div style={{ fontSize:8.5, color:C.gold, fontWeight:700, letterSpacing:1 }}>YOURS</div>}
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <div style={{ flex:1, display:"flex", height:18, borderRadius:3, overflow:"hidden" }}>
+                        <div style={{ flex: sup || 0.0001, background:C.green }} />
+                        <div style={{ flex: opp || 0.0001, background:C.red }} />
+                        <div style={{ flex: (total - sup - opp) || 0.0001, background:"#ccc" }} />
+                      </div>
+                      <div style={{ minWidth:110, textAlign:"right", fontSize:12.5, whiteSpace:"nowrap" }}>
+                        <span style={{ color:C.green, fontWeight:700 }}>{sup}</span>
+                        <span style={{ color:C.muted }}> / </span>
+                        <span style={{ color:C.red, fontWeight:700 }}>{opp}</span>
+                        <span style={{ color:C.muted, fontSize:11 }}> of {row.total_votes}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:12 }}>
+              <button onClick={load}
+                style={{ fontFamily:serif, fontWeight:700, fontSize:13, padding:"8px 16px",
+                         background:C.crimson, color:"#fff", border:"none", borderRadius:6,
+                         cursor:"pointer" }}>
+                Refresh
+              </button>
+              <div style={{ fontSize:11.5, color:C.muted }}>
+                Updated live - every vote recorded instantly
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       <div style={{ marginTop:16, fontSize:11.5, color:C.muted, textAlign:"center" }}>
         All positions are anonymous. Bot and rate-limit filters applied.
-        "Contacted Rep" = constituent opened the Contact Your Rep panel after voting.
-        Data updates in real time.
+        "Contacted rep" = constituent opened the Contact Your Rep panel after voting.
+      </div>
+    </div>
+  );
+}
+
+function sumVotes(list) {
+  return list.reduce((s, r) => s + Number(r.total_votes), 0);
+}
+
+function NationalBar({ nat }) {
+  const total = nat.total || 1;
+  const supPct = Math.round(nat.support / total * 100);
+  const oppPct = Math.round(nat.oppose / total * 100);
+  return (
+    <div style={{ display:"flex", gap:6, height:34, borderRadius:5, overflow:"hidden" }}>
+      <div style={{ flex: nat.support || 0.0001, background:C.green, display:"flex",
+                    alignItems:"center", justifyContent:"center" }}>
+        <span style={{ color:"#fff", fontSize:13, fontWeight:900 }}>
+          {nat.support} SUPPORT ({supPct}%)
+        </span>
+      </div>
+      <div style={{ flex: nat.oppose || 0.0001, background:C.red, display:"flex",
+                    alignItems:"center", justifyContent:"center" }}>
+        <span style={{ color:"#fff", fontSize:13, fontWeight:900 }}>
+          {nat.oppose} OPPOSE ({oppPct}%)
+        </span>
       </div>
     </div>
   );
@@ -190,21 +252,10 @@ function StatBox({ num, label, color }) {
   );
 }
 
-function TH({ children, align, color }) {
+function Center({ children, color }) {
   return (
-    <th style={{ padding:"12px 16px", textAlign:align||"left", fontWeight:700,
-                 fontSize:11, letterSpacing:1, textTransform:"uppercase",
-                 color: color || "#fff", borderBottom:"2px solid rgba(255,255,255,0.2)" }}>
+    <div style={{ textAlign:"center", padding:48, color: color || "#5C5347", fontSize:15 }}>
       {children}
-    </th>
-  );
-}
-
-function NumBadge({ n, pct, color, text }) {
-  return (
-    <span style={{ background:color, color:text, fontWeight:700, fontSize:13,
-                   padding:"3px 10px", borderRadius:20, display:"inline-block" }}>
-      {n} <span style={{ fontWeight:400, fontSize:11 }}>({pct}%)</span>
-    </span>
+    </div>
   );
 }
