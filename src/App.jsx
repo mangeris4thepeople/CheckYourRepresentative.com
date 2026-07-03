@@ -11,6 +11,7 @@
 // there next time too.
 // =============================================================================
 import React, { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import Landing from "./components/Landing.jsx";
 import AddressLookup from "./components/AddressLookup.jsx";
 import ConstituentMap from "./components/ConstituentMap.jsx";
@@ -110,7 +111,12 @@ export default function App() {
     }).catch(() => {});
   }, [session?.token, resolved?.district]);
 
-  if (view === "landing") return <Landing onEnter={handleEnter} />;
+  if (view === "landing") return (
+    <>
+      <Landing onEnter={handleEnter} />
+      <Analytics />
+    </>
+  );
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
@@ -213,6 +219,7 @@ export default function App() {
           <span style={{ marginLeft: 16, color: "#6680aa" }}>Paid for by We The People Inc.</span>
         </div>
       </footer>
+      <Analytics />
     </div>
   );
 }
