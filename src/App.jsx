@@ -16,6 +16,7 @@ import AddressLookup from "./components/AddressLookup.jsx";
 import ConstituentMap from "./components/ConstituentMap.jsx";
 import ConstituentOnboarding from "./components/ConstituentOnboarding.jsx";
 import ConstituentVoting from "./components/ConstituentVoting.jsx";
+import AllBillsBrowser from "./components/AllBillsBrowser.jsx";
 import Merch from "./components/Merch.jsx";
 import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
 import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
@@ -30,6 +31,7 @@ const serif = "Georgia, 'Times New Roman', serif";
 const TABS = [
   { key: "profile",      label: "👤 My Profile" },
   { key: "vote",         label: "Vote on Bills" },
+  { key: "allbills",     label: "🗳️ All Active Bills" },
   { key: "district",     label: "Find District" },
   { key: "matrix",       label: "📊 Accountability" },
   { key: "rollcalls",    label: "🏛 Roll Calls" },
@@ -178,6 +180,10 @@ export default function App() {
             onNeedDistrict={() => setTab("district")}
             onNeedSignIn={() => setTab("profile")}
           />
+        )}
+
+        {tab === "allbills" && (
+          <AllBillsBrowser district={resolved?.district} session={session} />
         )}
 
         {tab === "merch" && <Merch />}
