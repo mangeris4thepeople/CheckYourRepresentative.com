@@ -10,7 +10,10 @@
 // uses). Senate publishes official XML on senate.gov, no key needed.
 // Votes never change once cast, so responses cache hard at the edge.
 // =============================================================================
+import { sql } from "./_db.js";
+
 const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const DEFAULT_CONGRESS = 119;
 const DEFAULT_SESSION = 2; // 2026
 
@@ -71,11 +74,13 @@ async function houseDetail(congress, session, voteNumber) {
     state: m.voteState || "",
     position: normalize(m.voteCast),
   }));
+  const billLabel = meta.legislationType && meta.legislationNumber ? `${meta.legislationType} ${meta.legislationNumber}` : null;
   return {
     chamber: "house", congress, session, vote: Number(voteNumber),
     question: meta.voteQuestion || "",
     result: meta.result || "",
-    bill: meta.legislationType && meta.legislationNumber ? `${meta.legislationType} ${meta.legislationNumber}` : null,
+    bill: billLabel,
+    summary: await billSummary(billLabel, congress),
     tally: tallyUp(members),
     members,
   };
@@ -121,11 +126,13 @@ async function senateDetail(congress, session, voteNumber) {
       position: normalize(tag(b, "vote_cast")),
     });
   }
+  const billLabel = decode(tag(xml, "document_name")) || null;
   return {
     chamber: "senate", congress, session, vote: Number(voteNumber),
     question: decode(tag(xml, "question")) || decode(tag(xml, "vote_question_text")),
     result: decode(tag(xml, "vote_result")),
-    bill: decode(tag(xml, "document_name")) || null,
+    bill: billLabel,
+    summary: await billSummary(billLabel, congress),
     tally: tallyUp(members),
     members,
   };
@@ -156,4 +163,87 @@ function tallyUp(members) {
     t.byParty[p][m.position]++;
   }
   return t;
+}
+
+// ---------------- plain-English bill summary ----------------
+// Reuses the same bill_summaries cache the Vote tab fills. On a miss it
+// generates a short summary once and caches it for every future viewer.
+async function billSummary(billLabel, congress) {
+  try {
+    const parsed = parseBillLabel(billLabel, congress);
+    if (!parsed) return null;
+    const { billId, type, number } = parsed;
+
+    const hit = await sql`
+      SELECT headline, plain FROM bill_summaries
+      WHERE bill_id = ${billId}
+      ORDER BY generated_at DESC LIMIT 1`;
+    if (hit.length) {
+      let headline = hit[0].headline, plain = hit[0].plain;
+      try { const j = JSON.parse(hit[0].plain); if (j && j.plain) { plain = j.plain; headline = j.headline || headline; } } catch {}
+      return { headline, plain };
+    }
+
+    // Cache miss: pull the official title, then write a short plain summary.
+    if (!CONGRESS_API_KEY) return null;
+    const br = await fetch(`https://api.congress.gov/v3/bill/${congress}/${type}/${number}?format=json&api_key=${CONGRESS_API_KEY}`);
+    if (!br.ok) return null;
+    const bdata = await br.json();
+    const title = bdata.bill?.title || billLabel;
+    const latest = bdata.bill?.latestAction?.text || "";
+
+    if (!ANTHROPIC_API_KEY) return { headline: title, plain: "" };
+
+    const ar = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 400,
+        messages: [{
+          role: "user",
+          content: `You are a nonpartisan civic research tool. Return ONLY valid JSON, no markdown fences.
+
+WRITING STYLE RULES (strict): Never use em dashes or en dashes anywhere. Use commas, periods, or colons instead. Write like a sharp newspaper reporter, not a chatbot. No hedging filler. Short direct sentences.
+
+Bill: ${billLabel}
+Official title: ${title}
+Latest action: ${latest}
+
+Return: {"headline": "plain-English title in 12 words or less", "plain": "2-3 sentences: what this bill actually does in plain English"}`,
+        }],
+      }),
+    });
+    if (!ar.ok) return { headline: title, plain: "" };
+    const adata = await ar.json();
+    const text = (adata.content || []).map(c => c.text || "").join("").replace(/```json|```/g, "").trim();
+    let out;
+    try { out = JSON.parse(text); } catch { return { headline: title, plain: "" }; }
+    const headline = out.headline || title;
+    const plain = out.plain || "";
+
+    await sql`
+      INSERT INTO bill_summaries (cache_key, bill_id, headline, plain, affects, status)
+      VALUES (${billId + ":rollcall"}, ${billId}, ${headline}, ${plain}, NULL, NULL)
+      ON CONFLICT (cache_key) DO NOTHING`;
+
+    return { headline, plain };
+  } catch (err) {
+    console.error("billSummary error:", err);
+    return null;
+  }
+}
+
+function parseBillLabel(label, congress) {
+  if (!label) return null;
+  const m = String(label).toUpperCase().replace(/\./g, "").match(/^(HR|HRES|HJRES|HCONRES|S|SRES|SJRES|SCONRES)\s*(\d+)$/);
+  if (!m) return null;
+  const typeMap = { HR: "hr", HRES: "hres", HJRES: "hjres", HCONRES: "hconres",
+                    S: "s", SRES: "sres", SJRES: "sjres", SCONRES: "sconres" };
+  const type = typeMap[m[1]];
+  return { type, number: m[2], billId: `${type}-${m[2]}-${congress}` };
 }

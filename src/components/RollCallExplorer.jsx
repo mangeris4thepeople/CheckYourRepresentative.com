@@ -103,6 +103,23 @@ export default function RollCallExplorer({ district }) {
                   <div style={{ fontSize: 13, color: detail.result?.toLowerCase().includes("pass") || detail.result?.toLowerCase().includes("agreed") ? C.yea : C.crimson, fontWeight: 700 }}>
                     Result: {detail.result || "Recorded"}
                   </div>
+                  {detail.summary && (detail.summary.headline || detail.summary.plain) && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
+                      <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>
+                        WHAT THIS BILL DOES
+                      </div>
+                      {detail.summary.headline && (
+                        <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy, marginBottom: 4 }}>
+                          {detail.summary.headline}
+                        </div>
+                      )}
+                      {detail.summary.plain && (
+                        <div style={{ fontSize: 13.5, color: "#1A1A1A", lineHeight: 1.6 }}>
+                          {detail.summary.plain}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Tally bar */}
