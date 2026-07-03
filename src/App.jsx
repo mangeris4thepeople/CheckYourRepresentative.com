@@ -21,6 +21,7 @@ import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
 import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
+import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import { getStoredSession } from "./lib/session.js";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
@@ -31,6 +32,7 @@ const TABS = [
   { key: "vote",         label: "Vote on Bills" },
   { key: "district",     label: "Find District" },
   { key: "matrix",       label: "📊 Accountability" },
+  { key: "rollcalls",    label: "🏛 Roll Calls" },
   { key: "constituents", label: "🌐 Constituents" },
   { key: "merch",        label: "👕 Merch" },
 ];
@@ -178,6 +180,10 @@ export default function App() {
         )}
 
         {tab === "merch" && <Merch />}
+
+        {tab === "rollcalls" && (
+          <RollCallExplorer district={resolved?.district} />
+        )}
 
         {tab === "constituents" && (
           <ConstituentsDirectory
