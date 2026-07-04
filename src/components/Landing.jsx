@@ -6,13 +6,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import ExplainerBanner from "./marketing/ExplainerBanner.jsx";
-
-// Marketing nav items shown before the tool opens.
-const LANDING_NAV = [
-  { key: "about",    label: "What We Are About" },
-  { key: "benefits", label: "How This Benefits You And The Country" },
-  { key: "tutorial", label: "Site Tutorial" },
-];
+import LandingNav from "./marketing/LandingNav.jsx";
+import ContactUsForm from "./ContactUsForm.jsx";
 
 const C = {
   black:    "#0D0D0D",
@@ -119,39 +114,8 @@ export default function Landing({ onEnter, onNavigate }) {
   return (
     <div style={{ fontFamily: serif, background: C.white, color: C.black, overflowX: "hidden" }}>
 
-      {/* ── NAV (sticky, four marketing items before the tool opens) ── */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(13,13,13,0.97)", backdropFilter: "blur(8px)",
-        borderBottom: `2px solid ${C.gold}`,
-        padding: "8px 20px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 12, flexWrap: "wrap",
-      }}>
-        <button onClick={() => onNavigate?.("landing")}
-          style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer" }}>
-          <EagleSeal size={30} />
-          <span style={{ fontFamily: bebas, fontSize: isMobile ? 15 : 20, letterSpacing: 2, color: C.gold }}>
-            {isMobile ? "CheckYourRep.com" : "CheckYourRepresentative.com"}
-          </span>
-        </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          {LANDING_NAV.map(item => (
-            <button key={item.key} onClick={() => onNavigate?.(item.key)}
-              style={{ fontFamily: mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase",
-                       background: "none", border: "none", color: "#bbb", cursor: "pointer", padding: "6px 6px" }}>
-              {item.label}
-            </button>
-          ))}
-          <button onClick={onEnter} style={{
-            fontFamily: bebas, fontSize: isMobile ? 12 : 15, letterSpacing: 2,
-            background: C.crimson, color: C.white, border: "none",
-            padding: isMobile ? "6px 12px" : "8px 22px", borderRadius: 2, cursor: "pointer",
-          }}>
-            ENTER THE TOOL →
-          </button>
-        </div>
-      </nav>
+      {/* ── NAV (shared with the landing-adjacent content pages) ── */}
+      <LandingNav active="landing" onNavigate={onNavigate} onEnter={onEnter} />
 
       {/* ── EXPLAINER BANNER (dismissible, directly above the hero) ── */}
       <ExplainerBanner onLearnMore={() => onNavigate?.("tutorial")} />
@@ -480,21 +444,28 @@ export default function Landing({ onEnter, onNavigate }) {
       {/* ── FOOTER ── */}
       <div style={{
         background: C.black, borderTop: `3px solid ${C.gold}`,
-        padding: "32px", textAlign: "center",
+        padding: "32px 20px",
       }}>
-        <EagleSeal size={40} />
-        <div style={{
-          fontFamily: bebas, fontSize: 18, letterSpacing: 3,
-          color: C.gold, marginTop: 12, marginBottom: 8,
-        }}>
-          CHECKYOURREPRESENTATIVE.COM
-        </div>
-        <div style={{ fontFamily: mono, fontSize: 11, color: "#444", lineHeight: 1.8 }}>
-          Non-partisan voter education · Bill data from Congress.gov · 119th Congress<br />
-          "We the People of the United States, in Order to form a more perfect Union..."
-        </div>
-        <div style={{ marginTop: 16, fontFamily: mono, fontSize: 10, color: "#333" }}>
-          Paid for by We The People Inc. · Not affiliated with any political party
+        <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", flexWrap: "wrap",
+                      gap: 28, justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ flex: "1 1 300px", textAlign: "left" }}>
+            <div style={{
+              fontFamily: bebas, fontSize: 18, letterSpacing: 3,
+              color: C.gold, marginBottom: 10,
+            }}>
+              CHECKYOURREPRESENTATIVE.COM
+            </div>
+            <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: "#cfcfcf", lineHeight: 1.8 }}>
+              Non-partisan voter education · Bill data from Congress.gov · 119th Congress<br />
+              "We the People of the United States, in Order to form a more perfect Union..."
+            </div>
+            <div style={{ marginTop: 14, fontFamily: mono, fontSize: 10, fontWeight: 700, color: "#cfcfcf" }}>
+              Paid for by We The People Inc. · Not affiliated with any political party
+            </div>
+          </div>
+          <div style={{ flex: "1 1 340px" }}>
+            <ContactUsForm />
+          </div>
         </div>
       </div>
 
@@ -508,19 +479,5 @@ export default function Landing({ onEnter, onNavigate }) {
         button:hover { opacity: 0.88; transition: opacity 0.15s; }
       `}</style>
     </div>
-  );
-}
-
-
-// ---------------------------------------------------------------------------
-function EagleSeal({ size = 48 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 52 52" aria-hidden="true">
-      <circle cx="26" cy="26" r="24" fill="none" stroke={C.gold} strokeWidth="1.5" />
-      <circle cx="26" cy="26" r="19" fill={C.crimson} opacity="0.15" />
-      <text x="26" y="32" textAnchor="middle"
-        fontFamily={bebas} fontSize="16" fontWeight="700" fill={C.gold}
-        letterSpacing="1">CYR</text>
-    </svg>
   );
 }

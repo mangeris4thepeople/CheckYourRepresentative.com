@@ -24,6 +24,7 @@ import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
+import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
 import BenefitsPage from "./components/marketing/BenefitsPage.jsx";
 import HowItWorksPage from "./components/marketing/HowItWorksPage.jsx";
@@ -56,8 +57,8 @@ const MOBILE_CSS = `
     .cyr-tagline { display: none !important; }
     .cyr-seal { width: 36px !important; height: 36px !important; }
     .cyr-home-btn { padding: 6px 10px !important; font-size: 12px !important; }
-    .cyr-nav-inner { padding: 0 8px !important; }
-    .cyr-tab { font-size: 13px !important; padding: 11px 10px !important; }
+    .cyr-nav-inner { padding: 6px 8px !important; flex-wrap: wrap !important; min-width: 0 !important; justify-content: center !important; }
+    .cyr-tab { font-size: 13px !important; padding: 9px 10px !important; }
     .cyr-main { padding: 16px 12px 48px !important; }
     .cyr-footer-inner { padding: 16px 14px !important; font-size: 12px !important; }
   }
@@ -155,7 +156,6 @@ export default function App() {
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
       <header style={{ background: C.navy, color: "#fff", borderBottom: `4px solid ${C.gold}` }}>
         <div className="cyr-header-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-          <Seal />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="cyr-site-title" style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Check Your Representative</div>
             <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW THE BILLS · KNOW YOUR VOTE · HOLD THE LINE</div>
@@ -255,17 +255,25 @@ export default function App() {
         )}
       </main>
 
-      <footer style={{ background: C.navy, color: "#cfd6e4", borderTop: `4px solid ${C.gold}` }}>
-        <div className="cyr-footer-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "22px 20px", fontSize: 12.5 }}>
-          <div style={{ fontStyle: "italic", color: C.gold, marginBottom: 8 }}>"We the People..." - a tool for an informed electorate.</div>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
-            <button onClick={() => setView("about")} style={footerLink}>What We Stand For</button>
-            <button onClick={openTutorial} style={footerLink}>Site Tutorial</button>
-            <button onClick={() => setView("howitworks")} style={footerLink}>How It Works</button>
-            <button onClick={() => setView("privacy")} style={footerLink}>Privacy</button>
+      <footer style={{ background: C.navy, color: "#fff", borderTop: `4px solid ${C.gold}` }}>
+        <div className="cyr-footer-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px", fontSize: 12.5,
+                      display: "flex", flexWrap: "wrap", gap: 28, justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ flex: "1 1 300px" }}>
+            <div style={{ fontStyle: "italic", fontWeight: 700, color: C.gold, marginBottom: 8 }}>"We the People..." - a tool for an informed electorate.</div>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
+              <button onClick={() => setView("about")} style={footerLink}>What We Stand For</button>
+              <button onClick={openTutorial} style={footerLink}>Site Tutorial</button>
+              <button onClick={() => setView("howitworks")} style={footerLink}>How It Works</button>
+              <button onClick={() => setView("privacy")} style={footerLink}>Privacy</button>
+            </div>
+            <div style={{ fontWeight: 700, color: "#fff" }}>
+              Check Your Representative · Non-partisan voter education · Bill data from Congress.gov.
+              <span style={{ marginLeft: 16, color: C.gold }}>Paid for by We The People Inc.</span>
+            </div>
           </div>
-          Check Your Representative · Non-partisan voter education · Bill data from Congress.gov.
-          <span style={{ marginLeft: 16, color: "#6680aa" }}>Paid for by We The People Inc.</span>
+          <div style={{ flex: "1 1 340px" }}>
+            <ContactUsForm />
+          </div>
         </div>
       </footer>
     </div>
@@ -285,20 +293,11 @@ function HelpLayout({ page, children }) {
 }
 
 const footerLink = {
-  fontFamily: serif, fontSize: 12.5, color: "#cfd6e4", background: "none",
-  border: "none", borderBottom: "1px solid rgba(207,214,228,0.4)", padding: 0,
+  fontFamily: serif, fontSize: 12.5, fontWeight: 700, color: "#fff", background: "none",
+  border: "none", borderBottom: `1px solid ${"#C9A227"}`, padding: 0,
   cursor: "pointer",
 };
 
-function Seal() {
-  return (
-    <svg className="cyr-seal" width="48" height="48" viewBox="0 0 52 52" aria-hidden="true" style={{ flexShrink: 0 }}>
-      <circle cx="26" cy="26" r="24" fill="#fff" stroke={C.gold} strokeWidth="2" />
-      <circle cx="26" cy="26" r="19" fill={C.crimson} />
-      <text x="26" y="33" textAnchor="middle" fontFamily={serif} fontSize="20" fontWeight="700" fill="#fff">CYR</text>
-    </svg>
-  );
-}
 function StarStrip() {
   return (
     <div style={{ background: C.crimson, padding: "5px 0", display: "flex", justifyContent: "center", gap: 10 }}>

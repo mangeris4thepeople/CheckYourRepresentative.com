@@ -28,6 +28,9 @@ export const BANNER = {
 
 export const ABOUT = {
   heading: "What We Stand For",
+  missionLine:
+    "This site exists to capture what We the People actually think, before our " +
+    "representatives ever cast a vote.",
   paragraphs: [
     "Every member of Congress works for you. Not their party, not the donors funding " +
       "their campaign, not the industries lobbying their office, you. The moment they " +

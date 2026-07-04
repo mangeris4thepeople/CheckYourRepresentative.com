@@ -20,7 +20,7 @@ check-your-representative/
 │       ├── ConstituentOnboarding.jsx
 │       └── ConstituentVoting.jsx
 ├── public/data/              map + county data the site loads
-├── server/                   backend logic (Phase 2 — needs keys + a database)
+├── server/                   backend logic (Phase 2, needs keys + a database)
 ├── .env.example              template for your secret keys
 └── package.json
 ```
@@ -37,7 +37,7 @@ npm install      # downloads the building blocks (one time, ~1 minute)
 npm run dev      # starts the site
 ```
 
-It will print a link like `http://localhost:5173` — open that in your browser.
+It will print a link like `http://localhost:5173`, open that in your browser.
 You'll see the live site. The map is clickable; counties and cities appear.
 Editing a file and saving updates the page instantly.
 
@@ -45,7 +45,7 @@ Press `Ctrl + C` in the terminal to stop it.
 
 ---
 
-## Put it on the internet (Phase 1 — the visual site)
+## Put it on the internet (Phase 1, the visual site)
 
 The easiest free host is **Vercel**. Full step-by-step is in the chat, but the
 short version:
@@ -55,12 +55,12 @@ short version:
 3. Vercel detects Vite automatically. Click **Deploy**. You get a live URL.
 4. In Vercel's **Domains** settings, add `CheckYourRepresentative.com`.
 
-Your site is now live. It still runs in demo mode — see Phase 2 to make the
+Your site is now live. It still runs in demo mode, see Phase 2 to make the
 data real.
 
 ---
 
-## Make it real (Phase 2 — keys, live bill data, voting that persists)
+## Make it real (Phase 2, keys, live bill data, voting that persists)
 
 The site currently uses built-in sample data so it works with zero setup. Each
 component has a `USE_MOCK = true` line at the top. To go real:
@@ -70,7 +70,7 @@ component has a `USE_MOCK = true` line at the top. To go real:
    (use `.env.example` as your checklist). Never paste keys into code.
 2. **Add a database.** The files in `server/` hold the vote/profile logic, but
    they use a temporary in-memory store that resets. For data that sticks
-   (votes, profiles, the summary cache) connect a real database — Vercel
+   (votes, profiles, the summary cache) connect a real database, Vercel
    Postgres or Vercel KV are the simplest to add.
 3. **Cities endpoint.** Build `/api/cities` from a free U.S. places dataset so
    county → city lists are complete (the map ships with a Colorado sample).
@@ -84,4 +84,4 @@ Do these one at a time. The site stays live the whole way.
 
 **Never commit your secret keys.** They go in environment variables on your
 host, never in the code you push to GitHub. The included `.gitignore` already
-blocks the `.env` file for you — leave it in place.
+blocks the `.env` file for you, leave it in place.

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Check Your Representative — database schema (Neon / Postgres)
+-- Check Your Representative, database schema (Neon / Postgres)
 -- Run this ONCE in the Neon SQL editor after creating the database in Vercel.
 -- (Vercel: Storage -> Create Database -> Neon. Then open the database's SQL
 --  editor, paste this whole file, Run.)

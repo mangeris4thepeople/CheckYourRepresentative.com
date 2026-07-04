@@ -1,5 +1,5 @@
 
--- Add to existing schema — run in Neon SQL editor
+-- Add to existing schema, run in Neon SQL editor
 -- Tracks when constituents click "Contact My Rep" after voting
 
 CREATE TABLE IF NOT EXISTS contact_actions (
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS contact_actions (
 );
 CREATE INDEX IF NOT EXISTS idx_contact_bill_district ON contact_actions (bill_id, district);
 
--- View: accountability matrix — votes vs contacts per bill per district
+-- View: accountability matrix, votes vs contacts per bill per district
 CREATE OR REPLACE VIEW accountability_matrix AS
 SELECT
   v.bill_id,

@@ -20,6 +20,17 @@ export default function AccountabilityDashboard({ district }) {
   const [phase, setPhase] = useState("loading");
   const [selected, setSelected] = useState(null); // bill_id
   const [synopses, setSynopses] = useState({});   // bill_id -> {headline, plain}
+  const [expandedStates, setExpandedStates] = useState(() => new Set()); // which state rows are open
+
+  const userState = district ? String(district).split("-")[0] : null;
+
+  function toggleState(st) {
+    setExpandedStates(prev => {
+      const next = new Set(prev);
+      if (next.has(st)) next.delete(st); else next.add(st);
+      return next;
+    });
+  }
 
   useEffect(() => { load(); }, []);
 
@@ -79,14 +90,43 @@ export default function AccountabilityDashboard({ district }) {
   const totalOppose   = rows.reduce((s,r) => s + Number(r.oppose_votes), 0);
   const totalContacts = rows.reduce((s,r) => s + Number(r.contacted_rep), 0);
 
-  // District rows for the selected bill, mine first, then by volume
-  const districts = [...billRows].sort((a, b) => {
-    if (district) {
-      if (a.district === district && b.district !== district) return -1;
-      if (b.district === district && a.district !== district) return 1;
+  // Group the selected bill's district rows by state. Each state gets combined
+  // totals; the individual district rows live inside it and show when expanded.
+  const stateMap = {};
+  for (const row of billRows) {
+    const st = String(row.district || "").split("-")[0] || "??";
+    if (!stateMap[st]) stateMap[st] = { state: st, rows: [], support: 0, oppose: 0, undecided: 0, total: 0 };
+    const g = stateMap[st];
+    g.rows.push(row);
+    g.support   += Number(row.support_votes);
+    g.oppose    += Number(row.oppose_votes);
+    g.undecided += Number(row.undecided_votes);
+    g.total     += Number(row.total_votes);
+  }
+  // States: the user's own state first, then by combined volume.
+  const stateGroups = Object.values(stateMap).sort((a, b) => {
+    if (userState) {
+      if (a.state === userState && b.state !== userState) return -1;
+      if (b.state === userState && a.state !== userState) return 1;
     }
-    return Number(b.total_votes) - Number(a.total_votes);
+    return b.total - a.total;
   });
+  // Districts within a state: the user's own district first, then by volume.
+  for (const g of stateGroups) {
+    g.rows.sort((a, b) => {
+      if (district) {
+        if (a.district === district && b.district !== district) return -1;
+        if (b.district === district && a.district !== district) return 1;
+      }
+      return Number(b.total_votes) - Number(a.total_votes);
+    });
+  }
+
+  // When the selected bill changes, collapse everything except the user's own
+  // state, which is what they most likely want to see first.
+  useEffect(() => {
+    setExpandedStates(new Set(userState ? [userState] : []));
+  }, [activeBill, userState]);
 
   return (
     <div style={{ fontFamily:serif, color:C.ink }}>
@@ -167,36 +207,74 @@ export default function AccountabilityDashboard({ district }) {
                   {nat.contacted > 0 ? ` · ${nat.contacted} contacted their rep` : ""}
                 </div>
 
-                {/* District breakdown */}
+                {/* District breakdown, grouped by state. Each state is a
+                    collapsible row of combined totals; click to reveal its
+                    districts. The user's own state defaults to expanded. */}
                 <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1, marginBottom:8 }}>
-                  BY DISTRICT
+                  BY STATE AND DISTRICT
                 </div>
-                {districts.map((row, i) => {
-                  const total = Number(row.total_votes) || 1;
-                  const sup = Number(row.support_votes);
-                  const opp = Number(row.oppose_votes);
-                  const mine = district && row.district === district;
+                {stateGroups.map((g) => {
+                  const open = expandedStates.has(g.state);
+                  const gTotal = g.total || 1;
+                  const mineState = userState && g.state === userState;
                   return (
-                    <div key={i}
-                      style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 12px",
-                               marginBottom:6, borderRadius:6,
-                               background: mine ? "#FFF8E1" : C.parchment,
-                               border:"1px solid "+(mine ? C.gold : C.line) }}>
-                      <div style={{ minWidth:64, fontWeight:900, fontSize:14, color:C.navy }}>
-                        {row.district || "??"}
-                        {mine && <div style={{ fontSize:8.5, color:C.gold, fontWeight:700, letterSpacing:1 }}>YOURS</div>}
-                      </div>
-                      <div style={{ flex:1, display:"flex", height:18, borderRadius:3, overflow:"hidden" }}>
-                        <div style={{ flex: sup || 0.0001, background:C.green }} />
-                        <div style={{ flex: opp || 0.0001, background:C.red }} />
-                        <div style={{ flex: (total - sup - opp) || 0.0001, background:"#ccc" }} />
-                      </div>
-                      <div style={{ minWidth:110, textAlign:"right", fontSize:12.5, whiteSpace:"nowrap" }}>
-                        <span style={{ color:C.green, fontWeight:700 }}>{sup}</span>
-                        <span style={{ color:C.muted }}> / </span>
-                        <span style={{ color:C.red, fontWeight:700 }}>{opp}</span>
-                        <span style={{ color:C.muted, fontSize:11 }}> of {row.total_votes}</span>
-                      </div>
+                    <div key={g.state} style={{ marginBottom:6 }}>
+                      {/* State header row (click to expand/collapse) */}
+                      <button onClick={() => toggleState(g.state)}
+                        style={{ width:"100%", textAlign:"left", cursor:"pointer",
+                                 display:"flex", alignItems:"center", gap:12, padding:"10px 12px",
+                                 borderRadius:6, fontFamily:serif,
+                                 background: mineState ? "#FFF8E1" : "#fff",
+                                 border:"1px solid "+(mineState ? C.gold : C.line) }}>
+                        <div style={{ minWidth:74, fontWeight:900, fontSize:14, color:C.navy }}>
+                          <span style={{ fontSize:11, color:C.muted, marginRight:4 }}>{open ? "▾" : "▸"}</span>
+                          {g.state}
+                          <span style={{ fontSize:10, color:C.muted, fontWeight:700 }}> · {g.rows.length}</span>
+                          {mineState && <div style={{ fontSize:8.5, color:C.gold, fontWeight:700, letterSpacing:1 }}>YOUR STATE</div>}
+                        </div>
+                        <div style={{ flex:1, display:"flex", height:18, borderRadius:3, overflow:"hidden" }}>
+                          <div style={{ flex: g.support || 0.0001, background:C.green }} />
+                          <div style={{ flex: g.oppose || 0.0001, background:C.red }} />
+                          <div style={{ flex: (gTotal - g.support - g.oppose) || 0.0001, background:"#ccc" }} />
+                        </div>
+                        <div style={{ minWidth:110, textAlign:"right", fontSize:12.5, whiteSpace:"nowrap" }}>
+                          <span style={{ color:C.green, fontWeight:700 }}>{g.support}</span>
+                          <span style={{ color:C.muted }}> / </span>
+                          <span style={{ color:C.red, fontWeight:700 }}>{g.oppose}</span>
+                          <span style={{ color:C.muted, fontSize:11 }}> of {g.total}</span>
+                        </div>
+                      </button>
+
+                      {/* District rows for this state, shown when expanded */}
+                      {open && g.rows.map((row, i) => {
+                        const total = Number(row.total_votes) || 1;
+                        const sup = Number(row.support_votes);
+                        const opp = Number(row.oppose_votes);
+                        const mine = district && row.district === district;
+                        return (
+                          <div key={i}
+                            style={{ display:"flex", alignItems:"center", gap:12, padding:"9px 12px",
+                                     margin:"6px 0 0 18px", borderRadius:6,
+                                     background: mine ? "#FFF8E1" : C.parchment,
+                                     border:"1px solid "+(mine ? C.gold : C.line) }}>
+                            <div style={{ minWidth:64, fontWeight:900, fontSize:13.5, color:C.navy }}>
+                              {row.district || "??"}
+                              {mine && <div style={{ fontSize:8.5, color:C.gold, fontWeight:700, letterSpacing:1 }}>YOURS</div>}
+                            </div>
+                            <div style={{ flex:1, display:"flex", height:16, borderRadius:3, overflow:"hidden" }}>
+                              <div style={{ flex: sup || 0.0001, background:C.green }} />
+                              <div style={{ flex: opp || 0.0001, background:C.red }} />
+                              <div style={{ flex: (total - sup - opp) || 0.0001, background:"#ccc" }} />
+                            </div>
+                            <div style={{ minWidth:110, textAlign:"right", fontSize:12.5, whiteSpace:"nowrap" }}>
+                              <span style={{ color:C.green, fontWeight:700 }}>{sup}</span>
+                              <span style={{ color:C.muted }}> / </span>
+                              <span style={{ color:C.red, fontWeight:700 }}>{opp}</span>
+                              <span style={{ color:C.muted, fontSize:11 }}> of {row.total_votes}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
