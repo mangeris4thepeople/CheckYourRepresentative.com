@@ -1,6 +1,7 @@
 {
   "functions": {
-    "api/*.js": { "maxDuration": 30 }
+    "api/*.js": { "maxDuration": 30 },
+    "api/sync-bills.js": { "maxDuration": 60 }
   },
   "crons": [
     {
@@ -10,6 +11,10 @@
     {
       "path": "/api/floor-alerts",
       "schedule": "0 13,19 * * 1-5"
+    },
+    {
+      "path": "/api/sync-bills",
+      "schedule": "0 6 * * *"
     }
   ]
 }

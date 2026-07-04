@@ -177,7 +177,6 @@ export default function App() {
             district={resolved?.district}
             location={resolved?.location}
             session={session}
-            onNeedDistrict={() => setTab("district")}
             onNeedSignIn={() => setTab("profile")}
           />
         )}
