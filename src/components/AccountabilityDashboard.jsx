@@ -6,6 +6,8 @@
 // One fetch, no filters. The bill is the story.
 // =============================================================================
 import React, { useState, useEffect } from "react";
+import BillSidebar from "./BillSidebar.jsx";
+import "./BillSidebar.css";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#FBF7EC",
   ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0", green:"#1B5E20", red:"#B71C1C",
@@ -119,32 +121,18 @@ export default function AccountabilityDashboard({ district }) {
         <div style={{ display:"flex", gap:16, flexWrap:"wrap", alignItems:"flex-start" }}>
 
           {/* LEFT RAIL: bills */}
-          <div style={{ flex:"0 0 170px", minWidth:150 }}>
-            <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1,
-                          marginBottom:8 }}>
-              SELECT A BILL
-            </div>
-            {billIds.map(id => {
-              const active = id === activeBill;
-              const votes = sumVotes(byBill[id]);
-              return (
-                <button key={id} onClick={() => setSelected(id)}
-                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                           width:"100%", textAlign:"left", fontFamily:mono, fontSize:13,
-                           fontWeight:700, letterSpacing:0.5, padding:"11px 12px",
-                           marginBottom:6, borderRadius:6, cursor:"pointer",
-                           border:"2px solid "+(active ? C.gold : C.line),
-                           background: active ? C.crimson : "#fff",
-                           color: active ? "#fff" : C.navy,
-                           boxShadow: active ? "0 2px 8px rgba(0,0,0,0.25)" : "none" }}>
-                  <span>{id.replace(/-119$/,"").toUpperCase()}</span>
-                  <span style={{ fontSize:11, fontWeight:400,
-                                 color: active ? "rgba(255,255,255,0.8)" : C.muted }}>
-                    {votes}
-                  </span>
-                </button>
-              );
-            })}
+          <div style={{ flex:"0 0 200px", minWidth:180 }}>
+            <BillSidebar
+              bills={billIds.map(id => ({
+                id,
+                billNumber: id.replace(/-119$/,"").toUpperCase(),
+                positionCount: sumVotes(byBill[id]),
+                isActive: true,
+              }))}
+              userVotes={{}}
+              selectedBillId={activeBill}
+              onSelectBill={setSelected}
+            />
           </div>
 
           {/* MAIN PANEL: how the nation is voting on this bill */}
