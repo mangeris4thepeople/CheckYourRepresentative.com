@@ -66,15 +66,21 @@ export default async function handler(req, res) {
       console.warn("House lookup failed:", e.message);
     }
 
-    // 2) Fetch both Senators for this state
+    // 2) Fetch both Senators for this state.
+    //
+    // The base /member endpoint does NOT filter by stateCode or chamber as
+    // query params, it silently ignores them and returns an unrelated default
+    // member list, which is what produced wrong "senators" for every state.
+    // The authoritative form is the state path /member/{state}, from which we
+    // keep only the current senators (identified by their most recent term's
+    // chamber, falling back to "no House district" if terms are absent).
     try {
-      const senateData = await cg(`/member`, {
-        stateCode: state,
-        chamber: "Senate",
+      const senateData = await cg(`/member/${state}`, {
         currentMember: "true",
-        limit: 10,
+        limit: 25,
       });
-      for (const sen of (senateData.members || []).slice(0, 2)) {
+      const senators = (senateData.members || []).filter(isSenator).slice(0, 2);
+      for (const sen of senators) {
         const senator = {
           name: sen.name,
           chamber: "Senate",
@@ -169,6 +175,21 @@ Do NOT include any markdown formatting. Plain text only.`;
   } catch {
     return fallback;
   }
+}
+
+// Most recent term's chamber for a Congress.gov member list item, or null.
+function latestChamber(m) {
+  const items = (m && m.terms && m.terms.item) || [];
+  if (!items.length) return null;
+  return items[items.length - 1].chamber || null;
+}
+
+// A current senator sits in the Senate this term. Senators also have no House
+// district, which is the fallback signal when term data is not present.
+function isSenator(m) {
+  const chamber = latestChamber(m);
+  if (chamber) return chamber === "Senate";
+  return m.district === null || m.district === undefined;
 }
 
 async function cg(path, params = {}) {
