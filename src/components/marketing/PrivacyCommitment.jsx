@@ -1,23 +1,30 @@
 import React from "react";
 import MarketingPage, { PageHeading } from "./MarketingPage.jsx";
-import { C, serif, mono } from "./theme.js";
-import { PRIVACY_COMMITMENT } from "../../content/siteCopy.js";
+import { C, bebas, serif } from "./theme.js";
+import { PRIVACY_POLICY } from "../../content/siteCopy.js";
 
 export default function PrivacyCommitment({ onNavigate, onEnter }) {
   return (
     <MarketingPage active="privacy" onNavigate={onNavigate} onEnter={onEnter}>
-      <PageHeading>{PRIVACY_COMMITMENT.heading}</PageHeading>
-      {PRIVACY_COMMITMENT.paragraphs.map((p, i) => (
-        <p key={i} style={{ fontFamily: serif, fontSize: 17, lineHeight: 1.8, color: "#222", marginBottom: 22 }}>
-          {p}
-        </p>
-      ))}
-      <div style={{ marginTop: 8, padding: "16px 18px", background: C.parchment, border: `1px solid ${C.grayLight}`,
-                    borderLeft: `3px solid ${C.gold}`, borderRadius: 3 }}>
-        <div style={{ fontFamily: mono, fontSize: 13, color: C.gray, lineHeight: 1.7 }}>
-          {PRIVACY_COMMITMENT.footnote}
-        </div>
+      <PageHeading>{PRIVACY_POLICY.title}</PageHeading>
+
+      <div style={{ fontFamily: serif, fontSize: 14, color: C.gray, marginBottom: 28 }}>
+        Effective date: {PRIVACY_POLICY.effectiveDate}
       </div>
+
+      {PRIVACY_POLICY.sections.map((section, i) => (
+        <div key={i} style={{ marginBottom: 28 }}>
+          <div style={{ fontFamily: bebas, fontSize: 24, letterSpacing: 1, color: C.navy,
+                        borderBottom: `2px solid ${C.gold}`, paddingBottom: 6, marginBottom: 14 }}>
+            {section.heading}
+          </div>
+          {section.body.map((p, j) => (
+            <p key={j} style={{ fontFamily: serif, fontSize: 16, lineHeight: 1.75, color: "#222", margin: "0 0 14px" }}>
+              {p}
+            </p>
+          ))}
+        </div>
+      ))}
     </MarketingPage>
   );
 }

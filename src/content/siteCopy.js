@@ -126,24 +126,121 @@ export const PRIVACY_SHORT =
   "Your profile can be public or private, your choice. Your information and votes are " +
   "never sold to anyone.";
 
-// The short commitment page linked as "Privacy" in the footer. This is not a
-// formal legal privacy policy, it is the plain-English promise from the About
-// section. A full policy is still to be written and reviewed separately.
-export const PRIVACY_COMMITMENT = {
-  heading: "Our Privacy Commitment",
-  paragraphs: [
-    "Your profile can be public or private. That is your choice, and you can change it " +
-      "anytime in your account settings. Public means your display name, city, bio, and " +
-      "votes appear on your shareable card. Private means only you can see them.",
-    "Your information and your votes will never be sold to anyone. Not a campaign, not a " +
-      "PAC, not a data broker, not any institution, period. This site exists to give " +
-      "power back to people, not to become another place your data gets monetized.",
-    "Your full street address is only ever used privately, to match you to your " +
-      "congressional district. It is not shown on your public card and it is not shared.",
+// The Privacy Policy shown on the footer "Privacy" page. The data storage,
+// analytics, and contact sections are filled from the real infrastructure
+// (Neon PostgreSQL, Resend, Vercel, no analytics tooling). This draft still
+// needs legal review before it is treated as final.
+export const PRIVACY_POLICY = {
+  title: "Privacy Policy",
+  // Set to the publish date. Update if the policy is approved on a later date.
+  effectiveDate: "July 4, 2026",
+  sections: [
+    {
+      heading: "What we collect",
+      body: [
+        "When you create an account, we collect your email address. There is no password, " +
+          "we use a one-time sign in link sent to your email instead.",
+        "When you use Find District, we collect the address you enter, so we can match you " +
+          "to your congressional district and representative.",
+        "If you fill in optional profile fields, we collect your display name, city or town, " +
+          "and bio, only if you choose to provide them.",
+        "We collect the positions you cast on bills, support, oppose, or undecided, and the " +
+          "time you cast them.",
+      ],
+    },
+    {
+      heading: "What we never collect",
+      body: [
+        "We do not collect your Social Security number, financial information, or any " +
+          "government identification. We do not track you across other websites.",
+      ],
+    },
+    {
+      heading: "How we use what we collect",
+      body: [
+        "Your email is used to sign you in and, if you opt in, to send you digest emails " +
+          "about new bills.",
+        "Your address is used only to match you to your congressional district. It is not " +
+          "shown publicly, not to other users, not on your shareable profile card, not " +
+          "anywhere on the site.",
+        "Your display name, city or town, bio, and votes are shown to others only if you set " +
+          "your profile to public. If your profile is private, none of this is visible to " +
+          "anyone but you. You can switch between public and private anytime in your account " +
+          "settings, and it takes effect immediately.",
+        "Aggregated, anonymized vote totals (for example, how a district voted overall on a " +
+          "bill) are shown publicly regardless of your individual profile setting, but these " +
+          "totals do not identify you individually unless you have chosen to make your own " +
+          "profile public.",
+      ],
+    },
+    {
+      heading: "What we never do",
+      body: [
+        "We never sell your information or your votes to anyone. Not a political campaign, " +
+          "not a PAC, not a data broker, not any institution, for any price, period.",
+        "We never share your full address with anyone outside the systems needed to match " +
+          "you to a district.",
+      ],
+    },
+    {
+      heading: "Data storage and security",
+      body: [
+        "Your account information, profile fields, and votes are stored in a PostgreSQL " +
+          "database hosted by Neon. Sign in links and digest emails are sent through Resend. " +
+          "The site is hosted on Vercel. Connections to the site are served over HTTPS, and " +
+          "our database and email providers encrypt data in transit and at rest.",
+        "We do not store passwords. Sign in uses a one-time link sent to your email, and " +
+          "each signed in session uses a token that expires. To keep you signed in, that " +
+          "session token is kept in your browser's local storage, not in tracking cookies.",
+        "To limit spam and automated abuse, we log the IP address and network subnet " +
+          "associated with sign in requests and vote submissions, and we apply rate limits " +
+          "based on them. When you cast a vote, your IP address is also sent to a third-party " +
+          "geolocation service to record whether the vote came from within your district's " +
+          "state. This is used only as a quality signal on the vote and is not used to " +
+          "identify you personally.",
+      ],
+    },
+    {
+      heading: "Analytics",
+      body: [
+        "We do not use Google Analytics, Vercel Web Analytics, or any other product " +
+          "analytics or user-tracking tool. We do not track your page views or tie any " +
+          "browsing activity to your account.",
+        "The only third-party resource loaded in your browser is Google Fonts, used for the " +
+          "site's typography, which is not analytics. Our hosting and database providers keep " +
+          "standard operational server logs, which can include IP addresses, for security and " +
+          "reliability.",
+      ],
+    },
+    {
+      heading: "Your rights",
+      body: [
+        "You can make your profile private or public at any time. You can request that we " +
+          "delete your account and associated data by contacting us at " +
+          "Info@checkyourrepresentative.com",
+      ],
+    },
+    {
+      heading: "Children's privacy",
+      body: [
+        "This site is not directed at children and is not intended for use by anyone under " +
+          "the legal voting age.",
+      ],
+    },
+    {
+      heading: "Changes to this policy",
+      body: [
+        "If this policy changes in a way that affects how your data is used, we will inform " +
+          "you by email, update this page, and change the effective date above.",
+      ],
+    },
+    {
+      heading: "Contact",
+      body: [
+        "Questions about this policy can be sent to Info@checkyourrepresentative.com",
+      ],
+    },
   ],
-  footnote:
-    "This is a plain-English summary of how we treat your data. A full formal privacy " +
-    "policy is being prepared and will be published here once it is reviewed.",
 };
 
 // Getting-started steps for the Site Tutorial walkthrough. District matching is
