@@ -1,17 +1,27 @@
 // =============================================================================
-// GET /api/sync-bills - daily cache refresh of every active bill in the
-// 119th Congress into our own `bills` table.
+// GET /api/sync-bills - cache refresh of every active bill in the 119th
+// Congress into our own `bills` table.
 //
 // Congress.gov has no way to ask "give me bills this account has not voted
 // on yet" since it knows nothing about our votes table. Walking its live,
 // paginated list on every click and skipping voted ones in application code
 // does not scale once someone has voted on a few hundred bills. So instead
-// we mirror the whole active bill list into Postgres once a day (this
-// function, wired up as a cron in vercel.json), and the vote queue endpoints
-// do a real NOT EXISTS join against votes at the database level.
+// we mirror the whole active bill list into Postgres (this function, wired
+// up as a daily cron in vercel.json), and the vote queue endpoints do a real
+// NOT EXISTS join against votes at the database level.
 //
-// Bulk upserts one page (250 bills) at a time via unnest(), not one row at a
-// time, so a full sync stays well under the function's time limit.
+// A full pass is thousands of bills across dozens of Congress.gov pages,
+// which does not fit inside one serverless invocation's time limit. So this
+// resumes from a persisted offset each call: process pages until close to
+// the time budget, save how far it got, and the next invocation continues
+// from there. Reaching the end resets the offset to 0, so the next call
+// starts a fresh pass instead of needing a separate reset step.
+//
+// The Vercel plan this project runs on only allows a cron to fire once a
+// day, so if a full pass needs more than one invocation's worth of time
+// (it usually will, the first time), call this endpoint by hand a few more
+// times to finish the initial catch up. After that, one daily cron call
+// keeps advancing the same resumable cursor.
 // =============================================================================
 import { sql, hasDb } from "./_db.js";
 
@@ -22,19 +32,24 @@ const PAGE_SIZE = 250; // Congress.gov's max limit per request
 const CONCURRENCY = 8; // parallel Congress.gov requests per batch
 const ACTIVE_SINCE = "2025-01-01"; // start of the 119th Congress, matches bills-list.js and digest.js
 const MAX_PAGES = 150; // safety cap, comfortably above one Congress's real page count
+const TIME_BUDGET_MS = 45000; // leaves margin below the platform's hard invocation limit
 
 export default async function handler(req, res) {
   if (!CONGRESS_API_KEY) return res.status(500).json({ error: "CONGRESS_API_KEY not set" });
   if (!hasDb) return res.status(500).json({ error: "no database configured" });
 
-  try {
-    await ensureTable();
+  const startedAt = Date.now();
+  const outOfTime = () => Date.now() - startedAt > TIME_BUDGET_MS;
 
-    const first = await cg("/bill/" + CONGRESS, { sort: "latestAction", direction: "desc", limit: PAGE_SIZE, offset: 0 });
+  try {
+    await ensureTables();
+
+    const startOffset = await getOffset();
+    const first = await cg("/bill/" + CONGRESS, { sort: "latestAction", direction: "desc", limit: PAGE_SIZE, offset: startOffset });
     const apiTotal = first.pagination?.count || 0;
     const total = Math.min(apiTotal, MAX_PAGES * PAGE_SIZE);
 
-    let scanned = 0, stored = 0;
+    let scanned = 0, stored = 0, lastOffsetDone = startOffset;
 
     const storePage = async (data) => {
       const rows = [];
@@ -58,11 +73,14 @@ export default async function handler(req, res) {
     };
 
     await storePage(first);
+    lastOffsetDone = startOffset + PAGE_SIZE;
 
     const remainingOffsets = [];
-    for (let o = PAGE_SIZE; o < total; o += PAGE_SIZE) remainingOffsets.push(o);
+    for (let o = startOffset + PAGE_SIZE; o < total; o += PAGE_SIZE) remainingOffsets.push(o);
 
-    for (let i = 0; i < remainingOffsets.length; i += CONCURRENCY) {
+    let reachedEnd = lastOffsetDone >= total;
+
+    for (let i = 0; i < remainingOffsets.length && !outOfTime(); i += CONCURRENCY) {
       const batch = remainingOffsets.slice(i, i + CONCURRENCY);
       const pages = await Promise.allSettled(
         batch.map(offset => cg("/bill/" + CONGRESS, { sort: "latestAction", direction: "desc", limit: PAGE_SIZE, offset }))
@@ -70,15 +88,27 @@ export default async function handler(req, res) {
       for (const p of pages) {
         if (p.status === "fulfilled") await storePage(p.value);
       }
+      lastOffsetDone = batch[batch.length - 1] + PAGE_SIZE;
+      reachedEnd = lastOffsetDone >= total;
     }
 
-    return res.status(200).json({ ok: true, totalFromApi: apiTotal, scanned, stored });
+    await setOffset(reachedEnd ? 0 : lastOffsetDone);
+
+    return res.status(200).json({
+      ok: true,
+      totalFromApi: apiTotal,
+      startedAtOffset: startOffset,
+      resumeAtOffset: reachedEnd ? 0 : lastOffsetDone,
+      passComplete: reachedEnd,
+      scanned,
+      stored,
+    });
   } catch (err) {
     return res.status(500).json({ error: "sync_failed", detail: String(err.message || err) });
   }
 }
 
-async function ensureTable() {
+async function ensureTables() {
   await sql`
     CREATE TABLE IF NOT EXISTS bills (
       id            TEXT PRIMARY KEY,
@@ -93,6 +123,25 @@ async function ensureTable() {
       synced_at     TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
   await sql`CREATE INDEX IF NOT EXISTS idx_bills_active_action ON bills (is_active, action_date DESC, id DESC)`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS sync_state (
+      key        TEXT PRIMARY KEY,
+      value      TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
+}
+
+async function getOffset() {
+  const rows = await sql`SELECT value FROM sync_state WHERE key = 'bills_sync_offset'`;
+  const n = rows.length ? parseInt(rows[0].value, 10) : 0;
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+async function setOffset(offset) {
+  await sql`
+    INSERT INTO sync_state (key, value, updated_at)
+    VALUES ('bills_sync_offset', ${String(offset)}, now())
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`;
 }
 
 async function upsertBills(rows) {
