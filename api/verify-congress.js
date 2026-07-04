@@ -10,25 +10,32 @@
 //     (this is the exact failure that showed non-Colorado "senators" for CO),
 //   - Congress-wide totals line up: 100 senators, 435 voting House seats.
 //
-// On any mismatch it logs an error (visible in Vercel logs) and, if email is
-// configured, sends the admin a summary. A clean run returns ok:true with the
-// full state-by-state breakdown so the result can be read directly.
+// A real data problem (wrong-state member, duplicate district, too many or
+// mislabeled members) logs an error and, if email is configured, alerts the
+// admin. A genuinely vacant seat is NOT a data problem, it is reported as a
+// notice so a normal special-election vacancy does not cry wolf every week.
 //
 // Runs on a weekly cron (see vercel.json) and can be called by hand anytime.
 // =============================================================================
-const CONGRESS = 119;
 const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const ADMIN_EMAIL = "mangeris4thepeople2026@gmail.com";
 const CONCURRENCY = 8;
 
-const STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
+// Apportioned U.S. House seats per state from the 2020 Census, fixed by law
+// for the 119th Congress and every Congress through the 2032 cycle. These are
+// structural seat counts, not member identities. They let the check tell a
+// real vacancy (fewer sitting members than apportioned seats) apart from a
+// silent data failure (too many members, or members from the wrong state).
+// Revisit after the 2030 Census reapportionment.
+const HOUSE_SEATS = {
+  AL:7, AK:1, AZ:9, AR:4, CA:52, CO:8, CT:5, DE:1, FL:28, GA:14,
+  HI:2, ID:2, IL:17, IN:9, IA:4, KS:4, KY:6, LA:6, ME:2, MD:8,
+  MA:9, MI:13, MN:8, MS:4, MO:8, MT:2, NE:3, NV:4, NH:2, NJ:12,
+  NM:3, NY:26, NC:14, ND:1, OH:15, OK:5, OR:6, PA:17, RI:2, SC:7,
+  SD:1, TN:9, TX:38, UT:4, VT:1, VA:11, WA:10, WV:2, WI:8, WY:1,
+};
+const STATES = Object.keys(HOUSE_SEATS);
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -44,23 +51,28 @@ export default async function handler(req, res) {
         const st = batch[idx];
         byState[st] = r.status === "fulfilled"
           ? r.value
-          : { state: st, ok: false, problems: [`lookup failed: ${String(r.reason && r.reason.message || r.reason)}`], senators: [], reps: [] };
+          : { state: st, ok: false, problems: [`lookup failed: ${String(r.reason && r.reason.message || r.reason)}`], notices: [], senators: [], reps: [], vacancies: 0 };
       });
     }
 
     // Global totals.
-    let totalSenators = 0, totalReps = 0;
+    let totalSenators = 0, totalReps = 0, totalVacancies = 0;
     const problemStates = [];
+    const vacancyStates = [];
     for (const st of STATES) {
       const s = byState[st];
       totalSenators += s.senators.length;
       totalReps += s.reps.length;
-      if (!s.ok) problemStates.push(st);
+      totalVacancies += s.vacancies || 0;
+      if (s.problems.length) problemStates.push(st);
+      if ((s.vacancies || 0) > 0 || s.senators.length < 2) vacancyStates.push(st);
     }
 
+    // Only too-many senators is a hard problem. A shortfall is a notice, since
+    // Senate seats can be legitimately vacant between a resignation and an
+    // appointment or special election.
     const globalProblems = [];
-    if (totalSenators !== 100) globalProblems.push(`expected 100 senators, found ${totalSenators}`);
-    if (totalReps !== 435) globalProblems.push(`expected 435 voting House seats, found ${totalReps}`);
+    if (totalSenators > 100) globalProblems.push(`found ${totalSenators} senators, more than the 100 seats`);
 
     const ok = problemStates.length === 0 && globalProblems.length === 0;
 
@@ -68,14 +80,17 @@ export default async function handler(req, res) {
       console.error("[verify-congress] MISMATCH", { problemStates, globalProblems });
       await alertAdmin({ problemStates, globalProblems, byState }).catch(e =>
         console.error("[verify-congress] alert failed:", e.message));
+    } else {
+      console.log(`[verify-congress] clean. senators=${totalSenators}/100 sitting reps=${totalReps} vacancies=${totalVacancies}`);
     }
 
     return res.status(200).json({
       ok,
       checkedAt: new Date().toISOString(),
-      totals: { senators: totalSenators, reps: totalReps },
+      totals: { senators: totalSenators, sittingReps: totalReps, apportionedSeats: 435, vacancies: totalVacancies },
       globalProblems,
       problemStates,
+      vacancyStates,
       states: byState,
     });
   } catch (err) {
@@ -90,7 +105,8 @@ async function checkState(state) {
 
   const senators = [];
   const reps = [];
-  const problems = [];
+  const problems = [];   // hard data errors: these alert
+  const notices = [];    // expected real-world conditions like vacancies
 
   for (const m of members) {
     // Guard against the mislabel bug directly: the API stamps each member with
@@ -107,8 +123,12 @@ async function checkState(state) {
     }
   }
 
-  if (senators.length !== 2) {
-    problems.push(`expected 2 senators, found ${senators.length}: ${senators.map(s => s.name).join(", ") || "(none)"}`);
+  // Two senators is the norm. More than two is impossible and a real error.
+  // Fewer is a vacancy, reported but not treated as data corruption.
+  if (senators.length > 2) {
+    problems.push(`found ${senators.length} senators, only 2 seats exist: ${senators.map(s => s.name).join(", ")}`);
+  } else if (senators.length < 2) {
+    notices.push(`senate vacancy: only ${senators.length} of 2 senators currently seated`);
   }
 
   // No district represented by more than one member.
@@ -119,7 +139,16 @@ async function checkState(state) {
     else seen.set(key, r.name);
   }
 
-  return { state, ok: problems.length === 0, senators, reps, problems };
+  // Sitting House members should never exceed the state's apportioned seats.
+  // Fewer means one or more vacant seats, which is normal between elections.
+  const expectedReps = HOUSE_SEATS[state];
+  if (reps.length > expectedReps) {
+    problems.push(`found ${reps.length} House members, more than the ${expectedReps} apportioned seats`);
+  }
+  const vacancies = Math.max(0, expectedReps - reps.length);
+  if (vacancies > 0) notices.push(`${vacancies} vacant House seat(s) of ${expectedReps} apportioned`);
+
+  return { state, ok: problems.length === 0, expectedReps, vacancies, senators, reps, problems, notices };
 }
 
 // Congress.gov returns full state names ("Colorado"); map back to the code.
