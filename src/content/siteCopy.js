@@ -230,8 +230,10 @@ export const PRIVACY_POLICY = {
     {
       heading: "Changes to this policy",
       body: [
-        "If this policy changes in a way that affects how your data is used, we will inform " +
-          "you by email, update this page, and change the effective date above.",
+        "If this policy changes in a way that affects how your data is used, we will update " +
+          "this page and change the effective date above. If you have opted in to email, we " +
+          "will also send you a notice. If you have opted out of email, we will respect that " +
+          "choice and will not email you, so please check this page for the current version.",
       ],
     },
     {
