@@ -23,6 +23,7 @@ import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
+import NgosDirectory from "./components/NgosDirectory.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
@@ -42,6 +43,7 @@ const TABS = [
   { key: "district",     label: "📍 Find District" },
   { key: "matrix",       label: "📊 Accountability" },
   { key: "rollcalls",    label: "📋 Roll Calls" },
+  { key: "ngos",         label: "🏦 NGOs" },
   { key: "constituents", label: "🌐 Constituents" },
   { key: "merch",        label: "👕 Merch" },
 ];
@@ -242,6 +244,8 @@ export default function App() {
         {tab === "matrix" && (
           <AccountabilityDashboard district={resolved?.district} />
         )}
+
+        {tab === "ngos" && <NgosDirectory />}
 
         {tab === "profile" && (
           <HelpLayout page="profile">
