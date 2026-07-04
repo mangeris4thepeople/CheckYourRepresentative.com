@@ -23,6 +23,12 @@ import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
+import ContextualHelp from "./components/ContextualHelp.jsx";
+import AboutPage from "./components/marketing/AboutPage.jsx";
+import BenefitsPage from "./components/marketing/BenefitsPage.jsx";
+import HowItWorksPage from "./components/marketing/HowItWorksPage.jsx";
+import PrivacyCommitment from "./components/marketing/PrivacyCommitment.jsx";
+import SiteTutorialPage, { FirstRunTutorial } from "./components/marketing/SiteTutorial.jsx";
 import { getStoredSession } from "./lib/session.js";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
@@ -30,14 +36,17 @@ const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D
 const serif = "Georgia, 'Times New Roman', serif";
 const TABS = [
   { key: "profile",      label: "👤 My Profile" },
-  { key: "vote",         label: "Vote on Bills" },
-  { key: "allbills",     label: "🗳️ All Active Bills" },
-  { key: "district",     label: "Find District" },
+  { key: "vote",         label: "🗳️ Vote on Bills" },
+  { key: "allbills",     label: "📄 All Active Bills" },
+  { key: "district",     label: "📍 Find District" },
   { key: "matrix",       label: "📊 Accountability" },
-  { key: "rollcalls",    label: "🏛 Roll Calls" },
+  { key: "rollcalls",    label: "📋 Roll Calls" },
   { key: "constituents", label: "🌐 Constituents" },
   { key: "merch",        label: "👕 Merch" },
 ];
+
+// Tabs that get a left-hand contextual help sidebar.
+const HELP_TABS = { profile: "profile", vote: "vote", district: "district" };
 
 // Inject mobile CSS once
 const MOBILE_CSS = `
@@ -68,17 +77,40 @@ export default function App() {
     try { return new URLSearchParams(window.location.search).get("voter"); } catch { return null; }
   })();
 
+  // view is one of: "landing" | "about" | "benefits" | "tutorial" |
+  // "howitworks" | "privacy" | "tool". The marketing views are the pre-tool
+  // content pages; the app has no router so they are plain state.
   const [view, setView] = useState(initialVoterId ? "tool" : "landing");
   const [tab, setTab] = useState(initialVoterId ? "constituents" : "profile");
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // "Enter the Tool" always lands on the Profile tab - sign in first,
   // vote second. Also covers re-entering after having browsed elsewhere.
+  // The very first time anyone enters, show the walkthrough automatically;
+  // after they dismiss it once we never auto-show it again (localStorage).
   function handleEnter() {
     setTab("profile");
     setView("tool");
+    try {
+      if (localStorage.getItem("cyr_tutorial_seen") !== "1") setShowTutorial(true);
+    } catch {}
   }
+
+  function dismissTutorial() {
+    try { localStorage.setItem("cyr_tutorial_seen", "1"); } catch {}
+    setShowTutorial(false);
+  }
+
+  // Reopened on demand from My Profile, so people can revisit it anytime.
+  function openTutorial() { setShowTutorial(true); }
+
+  // These views are separate full pages, so switching between them should
+  // start at the top rather than inherit the previous page's scroll position.
+  useEffect(() => {
+    try { window.scrollTo(0, 0); } catch {}
+  }, [view]);
 
   // Called by VoterProfile once it has confirmed a session and loaded the
   // profile. Pulls the saved district straight into `resolved` so Vote /
@@ -112,7 +144,12 @@ export default function App() {
     }).catch(() => {});
   }, [session?.token, resolved?.district]);
 
-  if (view === "landing") return <Landing onEnter={handleEnter} />;
+  if (view === "landing") return <Landing onEnter={handleEnter} onNavigate={setView} />;
+  if (view === "about")      return <AboutPage onNavigate={setView} onEnter={handleEnter} />;
+  if (view === "benefits")   return <BenefitsPage onNavigate={setView} onEnter={handleEnter} />;
+  if (view === "tutorial")   return <SiteTutorialPage onNavigate={setView} onEnter={handleEnter} />;
+  if (view === "howitworks") return <HowItWorksPage onNavigate={setView} onEnter={handleEnter} />;
+  if (view === "privacy")    return <PrivacyCommitment onNavigate={setView} onEnter={handleEnter} />;
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
@@ -150,9 +187,11 @@ export default function App() {
         </div>
       </nav>
 
+      {showTutorial && <FirstRunTutorial onDismiss={dismissTutorial} />}
+
       <main className="cyr-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
         {tab === "district" && (
-          <>
+          <HelpLayout page="district">
             <AddressLookup onResolved={(r) => setResolved({ ...r, confirmed: true })} />
             {resolved ? (
               <div style={{ marginTop: 28 }}>
@@ -165,20 +204,22 @@ export default function App() {
             )}
             <div style={{ marginTop: 40 }}>
               <div style={{ maxWidth: 1040, margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
-                - OR EXPLORE THE MAP  - 
+                - OR EXPLORE THE MAP  -
               </div>
               <InteractiveDistrictMap onDistrictSelect={(d) => { setResolved(r => ({...r, district: d, confirmed: false})); setTab("vote"); }} />
             </div>
-          </>
+          </HelpLayout>
         )}
 
         {tab === "vote" && (
-          <ConstituentVoting
-            district={resolved?.district}
-            location={resolved?.location}
-            session={session}
-            onNeedSignIn={() => setTab("profile")}
-          />
+          <HelpLayout page="vote">
+            <ConstituentVoting
+              district={resolved?.district}
+              location={resolved?.location}
+              session={session}
+              onNeedSignIn={() => setTab("profile")}
+            />
+          </HelpLayout>
         )}
 
         {tab === "allbills" && (
@@ -203,17 +244,26 @@ export default function App() {
         )}
 
         {tab === "profile" && (
-          <VoterProfile
-            district={resolved?.district}
-            onProfileLoaded={handleProfileLoaded}
-            onSignOut={handleSignOut}
-          />
+          <HelpLayout page="profile">
+            <VoterProfile
+              district={resolved?.district}
+              onProfileLoaded={handleProfileLoaded}
+              onSignOut={handleSignOut}
+              onShowTutorial={openTutorial}
+            />
+          </HelpLayout>
         )}
       </main>
 
       <footer style={{ background: C.navy, color: "#cfd6e4", borderTop: `4px solid ${C.gold}` }}>
         <div className="cyr-footer-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "22px 20px", fontSize: 12.5 }}>
           <div style={{ fontStyle: "italic", color: C.gold, marginBottom: 8 }}>"We the People..." - a tool for an informed electorate.</div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
+            <button onClick={() => setView("about")} style={footerLink}>What We Stand For</button>
+            <button onClick={openTutorial} style={footerLink}>Site Tutorial</button>
+            <button onClick={() => setView("howitworks")} style={footerLink}>How It Works</button>
+            <button onClick={() => setView("privacy")} style={footerLink}>Privacy</button>
+          </div>
           Check Your Representative · Non-partisan voter education · Bill data from Congress.gov.
           <span style={{ marginLeft: 16, color: "#6680aa" }}>Paid for by We The People Inc.</span>
         </div>
@@ -221,6 +271,24 @@ export default function App() {
     </div>
   );
 }
+
+// Wraps a tab's content with its contextual help sidebar. The sidebar sits on
+// the left on wide screens and collapses to a tappable header on narrow ones,
+// so it never pushes the page content down on mobile.
+function HelpLayout({ page, children }) {
+  return (
+    <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+      <ContextualHelp page={page} />
+      <div style={{ flex: "1 1 320px", minWidth: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+const footerLink = {
+  fontFamily: serif, fontSize: 12.5, color: "#cfd6e4", background: "none",
+  border: "none", borderBottom: "1px solid rgba(207,214,228,0.4)", padding: 0,
+  cursor: "pointer",
+};
 
 function Seal() {
   return (

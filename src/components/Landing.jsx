@@ -5,6 +5,14 @@
 // =============================================================================
 
 import React, { useState, useEffect, useRef } from "react";
+import ExplainerBanner from "./marketing/ExplainerBanner.jsx";
+
+// Marketing nav items shown before the tool opens.
+const LANDING_NAV = [
+  { key: "about",    label: "What We Are About" },
+  { key: "benefits", label: "How This Benefits You And The Country" },
+  { key: "tutorial", label: "Site Tutorial" },
+];
 
 const C = {
   black:    "#0D0D0D",
@@ -24,7 +32,7 @@ const mono  = "'Courier New', Courier, monospace";
 
 // No mock data - all data is real
 
-export default function Landing({ onEnter }) {
+export default function Landing({ onEnter, onNavigate }) {
   const [scrolled, setScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -111,31 +119,42 @@ export default function Landing({ onEnter }) {
   return (
     <div style={{ fontFamily: serif, background: C.white, color: C.black, overflowX: "hidden" }}>
 
-      {/* ── NAV ── */}
+      {/* ── NAV (sticky, four marketing items before the tool opens) ── */}
       <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrolled ? "rgba(13,13,13,0.97)" : "transparent",
-        backdropFilter: scrolled ? "blur(8px)" : "none",
-        transition: "background 0.3s",
-        padding: "0 32px",
+        position: "sticky", top: 0, zIndex: 100,
+        background: "rgba(13,13,13,0.97)", backdropFilter: "blur(8px)",
+        borderBottom: `2px solid ${C.gold}`,
+        padding: "8px 20px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        height: 60,
+        gap: 12, flexWrap: "wrap",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <EagleSeal size={32} />
-          <span style={{
-            fontFamily: bebas, fontSize: isMobile ? 15 : 20, letterSpacing: 2,
-            color: C.gold,
-          }}>{isMobile ? "CheckYourRep.com" : "CheckYourRepresentative.com"}</span>
-        </div>
-        <button onClick={onEnter} style={{
-          fontFamily: bebas, fontSize: isMobile ? 12 : 15, letterSpacing: 2,
-          background: C.crimson, color: C.white, border: "none",
-          padding: isMobile ? "6px 12px" : "8px 22px", borderRadius: 2, cursor: "pointer",
-        }}>
-          ENTER THE TOOL →
+        <button onClick={() => onNavigate?.("landing")}
+          style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer" }}>
+          <EagleSeal size={30} />
+          <span style={{ fontFamily: bebas, fontSize: isMobile ? 15 : 20, letterSpacing: 2, color: C.gold }}>
+            {isMobile ? "CheckYourRep.com" : "CheckYourRepresentative.com"}
+          </span>
         </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {LANDING_NAV.map(item => (
+            <button key={item.key} onClick={() => onNavigate?.(item.key)}
+              style={{ fontFamily: mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase",
+                       background: "none", border: "none", color: "#bbb", cursor: "pointer", padding: "6px 6px" }}>
+              {item.label}
+            </button>
+          ))}
+          <button onClick={onEnter} style={{
+            fontFamily: bebas, fontSize: isMobile ? 12 : 15, letterSpacing: 2,
+            background: C.crimson, color: C.white, border: "none",
+            padding: isMobile ? "6px 12px" : "8px 22px", borderRadius: 2, cursor: "pointer",
+          }}>
+            ENTER THE TOOL →
+          </button>
+        </div>
       </nav>
+
+      {/* ── EXPLAINER BANNER (dismissible, directly above the hero) ── */}
+      <ExplainerBanner onLearnMore={() => onNavigate?.("tutorial")} />
 
       {/* ── SPLIT HERO ── */}
       <div ref={heroRef} style={{ minHeight: isMobile ? "auto" : "100vh", display: "flex", flexDirection: isMobile ? "column" : "row", position: "relative", overflow: "hidden" }}>
@@ -144,7 +163,7 @@ export default function Landing({ onEnter }) {
         <div style={{
           flex: 1, background: C.black, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
-          padding: isMobile ? "80px 24px 48px" : "60px 40px 60px 60px",
+          padding: isMobile ? "48px 24px 48px" : "60px 40px 60px 60px",
           position: "relative",
         }}>
           <div style={{
@@ -285,7 +304,7 @@ export default function Landing({ onEnter }) {
 
       {/* ── STATS BAR ── */}
       <div ref={statsRef} style={{
-        background: C.cobalt, padding: "48px 32px",
+        background: C.cobalt,
         display: "flex", justifyContent: "center", gap: "clamp(20px, 4vw, 80px)",
         flexWrap: "wrap", padding: "40px 24px",
       }}>

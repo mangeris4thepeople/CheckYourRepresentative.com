@@ -4,6 +4,7 @@
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
 import { getStoredSession, storeSession } from "../lib/session.js";
+import { PRIVACY_SHORT } from "../content/siteCopy.js";
 
 const C = {
   navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
@@ -27,7 +28,7 @@ function humanizeSendError(code) {
 // into `resolved` so Vote / Accountability / Find District don't need the
 // visitor to re-enter their address every time they sign in.
 // onSignOut() - lets App.jsx clear its copy of the session.
-export default function VoterProfile({ district, onDistrictNeeded, onProfileLoaded, onSignOut }) {
+export default function VoterProfile({ district, onDistrictNeeded, onProfileLoaded, onSignOut, onShowTutorial }) {
   const [authPhase, setAuthPhase] = useState("loading"); // loading|signed-out|sending|sent|signed-in
   const [email, setEmail]         = useState("");
   const [session, setSession]     = useState(null);
@@ -199,6 +200,11 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
             We'll send a link to your inbox. Click it to sign in - no password ever.<br/>
             Your votes and profile are saved to your email address.
           </p>
+          <div style={{ marginTop: 12, padding: "10px 12px", background: "#fff",
+                        border: `1px solid ${C.line}`, borderRadius: 6,
+                        fontSize: 12, color: C.muted, lineHeight: 1.6, textAlign: "center" }}>
+            🔒 {PRIVACY_SHORT}
+          </div>
         </div>
       </div>
     );
@@ -304,6 +310,25 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
             ))}
           </div>
 
+          {/* Plain-English note on what "Verified" means. It is a location
+              signal on each vote, not an identity check, so the copy says so. */}
+          <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.6, marginBottom: 18 }}>
+            <strong style={{ color: C.navy }}>Verified</strong> counts how many of your positions were cast
+            from a network location that matched your district's state. It is a location signal on each vote,
+            not an identity check.
+            {onShowTutorial && (
+              <>
+                {" "}
+                <button onClick={onShowTutorial}
+                  style={{ background: "none", border: "none", color: C.crimson, fontFamily: serif,
+                           fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0,
+                           textDecoration: "underline" }}>
+                  View the site tutorial
+                </button>
+              </>
+            )}
+          </div>
+
           <Field label="DISPLAY NAME (optional)">
             <input value={draft.display_name} onChange={e => setDraft(d => ({ ...d, display_name: e.target.value }))}
               placeholder="Anonymous Constituent" style={inp} />
@@ -350,6 +375,12 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
                        background: draft.is_public ? C.yes : C.muted, color: "#fff" }}>
               {draft.is_public ? "Make Private" : "Make Public"}
             </button>
+          </div>
+
+          {/* Privacy promise sits right next to the control that enforces it. */}
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 20,
+                        marginTop: -8, padding: "0 2px" }}>
+            {PRIVACY_SHORT}
           </div>
 
           <button onClick={saveProfile} disabled={saving}
