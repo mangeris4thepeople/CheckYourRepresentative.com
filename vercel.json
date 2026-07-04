@@ -1,7 +1,6 @@
 {
   "functions": {
-    "api/*.js": { "maxDuration": 30 },
-    "api/sync-bills.js": { "maxDuration": 60 }
+    "api/*.js": { "maxDuration": 60 }
   },
   "crons": [
     {
