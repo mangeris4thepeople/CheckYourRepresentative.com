@@ -103,7 +103,8 @@ async function searchBills(q, offset) {
   const like = `%${q}%`;
   const rows = await sql`
     SELECT id, type, number, title,
-           policy_area AS "policyArea", latest_action AS "latestAction", action_date AS "actionDate",
+           policy_area AS "policyArea", latest_action AS "latestAction",
+           to_char(action_date, 'YYYY-MM-DD') AS "actionDate",
            COUNT(*) OVER() AS "totalCount"
     FROM bills
     WHERE is_active AND (title ILIKE ${like} OR policy_area ILIKE ${like})
