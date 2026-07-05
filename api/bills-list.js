@@ -8,7 +8,16 @@
 //
 //   GET /api/bills-list                  -> first batch, most recent activity first
 //   GET /api/bills-list?offset=250       -> next batch (Congress.gov max page size)
-//   GET /api/bills-list?q=health         -> filter current corpus by title/policy area
+//   GET /api/bills-list?q=health         -> search our own bills table instead
+//
+// A search only ever needs to search bills we already know about, and
+// Congress.gov's /bill list endpoint has no title search of its own, so a
+// live search would mean walking every page and filtering client-side one
+// page at a time. sync-bills.js already mirrors the whole active bill list
+// into Postgres for the vote queue, so a search reads that table directly
+// with ILIKE instead. The no-search default browse view is left reading
+// live from Congress.gov, so it always reflects the latest activity even
+// on days the sync cron has not run yet.
 // =============================================================================
 const CONGRESS = 119;
 const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
@@ -20,38 +29,19 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=1800");
 
-  if (!CONGRESS_API_KEY) return res.status(500).json({ error: "CONGRESS_API_KEY not set" });
-
   try {
     const offset = Math.max(0, parseInt(req.query.offset || "0", 10) || 0);
-    const q = String(req.query.q || "").trim().toLowerCase();
+    const q = String(req.query.q || "").trim();
     const token = String(req.query.token || "").trim();
 
-    const data = await cg(`/bill/${CONGRESS}`, {
-      sort: "latestAction", direction: "desc", limit: PAGE_SIZE, offset,
-    });
-
-    const bills = [];
-    for (const b of (data.bills || [])) {
-      const type = String(b.type || "").toLowerCase();
-      if (!BILL_TYPES.includes(type) || !b.number) continue;
-      if ((b.latestAction?.actionDate || "") < "2025-01-01") continue;
-
-      const title = b.title || `${b.type} ${b.number}`;
-      const policyArea = b.policyArea?.name || "";
-      if (q && !title.toLowerCase().includes(q) && !policyArea.toLowerCase().includes(q)) continue;
-
-      bills.push({
-        id: `${type}-${b.number}-${CONGRESS}`,
-        type, number: b.number,
-        title,
-        latestAction: b.latestAction?.text || "",
-        actionDate: b.latestAction?.actionDate || "",
-        policyArea,
-      });
+    let bills, totalCount;
+    if (q) {
+      if (!hasDb) return res.status(500).json({ error: "no database configured" });
+      ({ bills, totalCount } = await searchBills(q, offset));
+    } else {
+      if (!CONGRESS_API_KEY) return res.status(500).json({ error: "CONGRESS_API_KEY not set" });
+      ({ bills, totalCount } = await browseBills(offset));
     }
-
-    const totalCount = data.pagination?.count ?? null;
 
     // If signed in, batch-check which of THIS PAGE's bills already have a
     // vote from this account, so the frontend can support "skip to next
@@ -83,6 +73,46 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ error: "bills_list_failed", detail: String(err.message || err) });
   }
+}
+
+async function browseBills(offset) {
+  const data = await cg(`/bill/${CONGRESS}`, {
+    sort: "latestAction", direction: "desc", limit: PAGE_SIZE, offset,
+  });
+
+  const bills = [];
+  for (const b of (data.bills || [])) {
+    const type = String(b.type || "").toLowerCase();
+    if (!BILL_TYPES.includes(type) || !b.number) continue;
+    if ((b.latestAction?.actionDate || "") < "2025-01-01") continue;
+
+    bills.push({
+      id: `${type}-${b.number}-${CONGRESS}`,
+      type, number: b.number,
+      title: b.title || `${b.type} ${b.number}`,
+      latestAction: b.latestAction?.text || "",
+      actionDate: b.latestAction?.actionDate || "",
+      policyArea: b.policyArea?.name || "",
+    });
+  }
+
+  return { bills, totalCount: data.pagination?.count ?? null };
+}
+
+async function searchBills(q, offset) {
+  const like = `%${q}%`;
+  const rows = await sql`
+    SELECT id, type, number, title,
+           policy_area AS "policyArea", latest_action AS "latestAction", action_date AS "actionDate",
+           COUNT(*) OVER() AS "totalCount"
+    FROM bills
+    WHERE is_active AND (title ILIKE ${like} OR policy_area ILIKE ${like})
+    ORDER BY action_date DESC, id DESC
+    LIMIT ${PAGE_SIZE} OFFSET ${offset}`;
+
+  const totalCount = rows.length ? Number(rows[0].totalCount) : null;
+  const bills = rows.map(({ totalCount: _totalCount, ...b }) => b);
+  return { bills, totalCount };
 }
 
 async function cg(path, params = {}) {
