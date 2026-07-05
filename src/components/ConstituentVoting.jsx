@@ -76,7 +76,9 @@ function cursorFor(mode, item) {
 }
 
 export default function ConstituentVoting({ district, location, session, onNeedSignIn }) {
-  const [mode, setMode] = useState("all");
+  // Opens on the freshest active bill the visitor has not voted on yet,
+  // rather than "All bills" which could show something already voted on.
+  const [mode, setMode] = useState("next_queue");
   const [counts, setCounts] = useState(null);
   const [queueItem, setQueueItem] = useState(null);
   const [detail, setDetail] = useState(null);

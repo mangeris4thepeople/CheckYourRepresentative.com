@@ -26,32 +26,38 @@ const SOURCE_LABELS = {
 
 const usd = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(n) || 0);
 
+const PAGE_SIZE = 20;
+
 export default function NgosDirectory() {
-  const [phase, setPhase] = useState("loading"); // loading | ready | empty | notready | error
+  const [phase, setPhase] = useState("loading"); // loading | ready | notready | error
   const [orgs, setOrgs] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [facets, setFacets] = useState({ states: [], sourceTypes: [], fiscalYears: [] });
   const [filters, setFilters] = useState({ state: "", sourceType: "", fiscalYear: "" });
   const [selected, setSelected] = useState(null); // org id for detail
 
-  const load = useCallback(async () => {
+  const loadList = useCallback(async (newOffset, append) => {
     setPhase("loading");
     try {
-      const p = new URLSearchParams();
+      const p = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(newOffset) });
       if (filters.state) p.set("state", filters.state);
       if (filters.sourceType) p.set("sourceType", filters.sourceType);
       if (filters.fiscalYear) p.set("fiscalYear", filters.fiscalYear);
       const r = await fetch(`/api/ngos?${p}`);
       const d = await r.json();
       if (!d.ready) { setPhase("notready"); return; }
-      setOrgs(d.orgs || []);
+      setOrgs(prev => append ? [...prev, ...(d.orgs || [])] : (d.orgs || []));
+      setOffset(d.offset ?? newOffset);
+      setHasMore(!!d.hasMore);
       setFacets({ states: d.states || [], sourceTypes: d.sourceTypes || [], fiscalYears: d.fiscalYears || [] });
-      setPhase((d.orgs || []).length ? "ready" : "empty");
+      setPhase("ready");
     } catch {
       setPhase("error");
     }
   }, [filters]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadList(0, false); }, [filters, loadList]);
 
   if (selected) {
     return <NgoDetail orgId={selected} onBack={() => setSelected(null)} />;
@@ -82,9 +88,9 @@ export default function NgosDirectory() {
           options={facets.fiscalYears} />
       </div>
 
-      {phase === "loading" && <Center>Loading organizations...</Center>}
+      {phase === "loading" && orgs.length === 0 && <Center>Loading organizations...</Center>}
       {phase === "error" && (
-        <Center color={C.crimson}>Could not load organizations. <Link onClick={load}>Try again</Link></Center>
+        <Center color={C.crimson}>Could not load organizations. <Link onClick={() => loadList(0, false)}>Try again</Link></Center>
       )}
       {phase === "notready" && (
         <Center>
@@ -92,15 +98,15 @@ export default function NgosDirectory() {
           funding ETLs, then this list will populate.
         </Center>
       )}
-      {phase === "empty" && <Center>No organizations match these filters yet.</Center>}
+      {phase === "ready" && orgs.length === 0 && <Center>No organizations match these filters yet.</Center>}
 
-      {phase === "ready" && (
+      {orgs.length > 0 && (
         <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
           {orgs.map((o, i) => {
             const pct = o.pct_transparent;
             const barColor = pct == null ? "#ccc" : pct >= 75 ? C.green : pct >= 40 ? C.gold : C.red;
             return (
-              <button key={o.id + "-" + o.fiscal_year} onClick={() => setSelected(o.id)}
+              <button key={o.id} onClick={() => setSelected(o.id)}
                 style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "transparent",
                          border: "none", borderBottom: i < orgs.length - 1 ? `1px solid #ece7d5` : "none",
                          padding: "12px 16px", display: "flex", alignItems: "center", gap: 14, fontFamily: serif }}>
@@ -124,6 +130,17 @@ export default function NgosDirectory() {
             );
           })}
         </div>
+      )}
+
+      {phase === "ready" && hasMore && (
+        <button onClick={() => loadList(offset + PAGE_SIZE, true)}
+          style={{ width: "100%", padding: 12, fontFamily: serif, fontWeight: 700, fontSize: 13,
+                   background: C.navy, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", marginTop: 10 }}>
+          Load More Organizations
+        </button>
+      )}
+      {phase === "loading" && orgs.length > 0 && (
+        <div style={{ textAlign: "center", color: C.muted, fontSize: 12, padding: 8 }}>Loading more...</div>
       )}
     </div>
   );
