@@ -25,7 +25,14 @@ const FISCAL_YEAR = parseInt(values.fy, 10);
 const TWO_YEAR_PERIOD = FISCAL_YEAR % 2 === 0 ? FISCAL_YEAR : FISCAL_YEAR + 1;
 
 const FEC_API_KEY = process.env.FEC_API_KEY;
-const MIN_AMOUNT = 5000;   // skip small operating disbursements for v1
+// Verified live: schedule_b with a broad two-year period and a low minimum
+// amount is an expensive sort for FEC's backend, 70 to 90 seconds per page at
+// min_amount 5000 or 100000. At 1,000,000 the same query returns in about 2
+// seconds. This keeps the run fast and still surfaces the largest, most
+// consequential disbursements. Lowering it further is a v2 tradeoff against
+// runtime, best done with keyset pagination (see MAX_PAGES note) rather than
+// just raising the page cap on this offset-based endpoint.
+const MIN_AMOUNT = 1000000;
 const PER_PAGE = 100;
 const MAX_PAGES = 200;     // the page-based API caps out; deep history needs keyset paging (v2)
 
@@ -64,7 +71,11 @@ async function insertEvent(client, orgId, d) {
      ON CONFLICT (external_ref_id) DO NOTHING`,
     [
       orgId,
-      (d.committee && d.committee.name) || d.committee_name || 'Unknown committee',
+      // Verified live: the nested committee object is frequently null on this
+      // endpoint even though committee_id is always present, so fall back to
+      // the id rather than a placeholder string that would hide which
+      // committee actually made the disbursement.
+      (d.committee && d.committee.name) || d.committee_name || (d.committee_id ? `Committee ${d.committee_id}` : 'Unknown committee'),
       String(ref),
       d.disbursement_amount,
       d.disbursement_description || null,

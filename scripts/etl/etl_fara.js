@@ -1,26 +1,40 @@
 /**
  * ETL: FARA active foreign principals -> organizations + funding_events
- * Source: https://efile.fara.gov/api/v1/ActiveForeignPrincipals.json
  * Run: npm run etl:fara
  *
- * Requires: DATABASE_URL env var. No API key needed (public).
+ * Requires: DATABASE_URL env var. No API key needed for anything that is
+ * actually public here.
  *
- * We use the stable FARA JSON endpoint rather than the zipped bulk export so a
- * run does not depend on a filename that changes between releases. adm-zip is
- * available in the project if a future version switches to the zipped bulk file.
+ * STATUS (verified live, not assumed): efile.fara.gov is an Oracle APEX/ORDS
+ * application (it redirects to /ords/fara/f?p=2000), not a plain JSON API.
+ * The endpoint this script originally pointed at does not exist, confirmed by
+ * directly requesting it and a dozen other guessed REST paths under
+ * /ords/fara/ and /api/, all 404. There is no documented public bulk export
+ * URL for active foreign principals as of this writing. Rather than silently
+ * "succeed" with zero rows, this script checks the known candidate URLs on
+ * every run and fails loudly with FARA_ENDPOINT_NOT_FOUND if none resolve, so
+ * a scheduled run surfaces the problem instead of hiding it. Fixing this for
+ * real requires either a confirmed current bulk file location from FARA or
+ * scripting the APEX application's session-based query interface, which is a
+ * larger v2 task, not a one-line URL swap.
  *
- * KNOWN LIMITATION (do not silently paper over): FARA bulk and API data carry
- * NO dollar amount per foreign principal. The dollar figures live in the
- * individual Exhibit AB PDFs, which would have to be parsed per filing. That is
- * out of scope for v1, so amount is stored as NULL here. The record still
- * captures the disclosed relationship (which registrant represents which
- * foreign principal), just not a traceable dollar figure. compute_transparency
- * only sums non-null amounts, so these NULL rows never inflate the traced total.
+ * KNOWN LIMITATION (do not silently paper over), true regardless of which
+ * endpoint eventually works: FARA data carries NO dollar amount per foreign
+ * principal. The dollar figures live in the individual Exhibit AB PDFs, which
+ * would have to be parsed per filing. That is out of scope for v1, so amount
+ * is stored as NULL here. compute_transparency only sums non-null amounts, so
+ * NULL rows never inflate the traced total.
  */
 import pg from 'pg';
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const FARA_URL = 'https://efile.fara.gov/api/v1/ActiveForeignPrincipals.json';
+
+// Candidate URLs, checked in order. None were live as of this writing (see
+// STATUS above); kept here as documented dead ends plus the first slot for
+// whichever URL FARA actually publishes.
+const CANDIDATE_URLS = [
+  'https://efile.fara.gov/api/v1/ActiveForeignPrincipals.json',
+];
 
 async function upsertOrgByName(client, name) {
   const found = await client.query('SELECT id FROM organizations WHERE lower(name) = lower($1) LIMIT 1', [name]);
@@ -34,10 +48,31 @@ function refId(registrant, principal, date) {
   return `fara:${String(registrant || '').toLowerCase()}:${String(principal || '').toLowerCase()}:${date || ''}`.slice(0, 100);
 }
 
+async function fetchFirstWorkingSource() {
+  for (const url of CANDIDATE_URLS) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return { url, payload: await res.json() };
+      console.warn(`FARA candidate not usable (${res.status}): ${url}`);
+    } catch (e) {
+      console.warn(`FARA candidate unreachable (${e.message}): ${url}`);
+    }
+  }
+  return null;
+}
+
 async function run() {
-  const res = await fetch(FARA_URL);
-  if (!res.ok) throw new Error(`FARA API error: ${res.status}`);
-  const payload = await res.json();
+  const found = await fetchFirstWorkingSource();
+  if (!found) {
+    // Fail loudly rather than "complete" with zero rows, so a scheduled run
+    // shows up as a failed job instead of a silent no-op.
+    throw new Error(
+      'FARA_ENDPOINT_NOT_FOUND: no working public FARA endpoint. See the STATUS ' +
+      'comment at the top of this file. This is expected until a real bulk data ' +
+      'URL is confirmed, it is not a connectivity problem to retry.'
+    );
+  }
+  const payload = found.payload;
   // The endpoint returns either a bare array or an object wrapping the array.
   const rows = Array.isArray(payload) ? payload : (payload.ACTIVE_FOREIGN_PRINCIPALS || payload.results || []);
 

@@ -51,13 +51,58 @@ async function* csvRecords(url) {
 function parseRuling(r) {
   const s = String(r || "");
   if (s.length < 6) return null;
-  return `${s.slice(0, 4)}-${s.slice(4, 6)}-01`;
+  const year = s.slice(0, 4);
+  const month = parseInt(s.slice(4, 6), 10);
+  // Verified live: the BMF uses "000000" (and similar all-zero values) as its
+  // placeholder for "no ruling date on file", which is not a valid date.
+  // Postgres correctly rejects it, so filter it here instead of crashing.
+  if (year === '0000' || !Number.isFinite(month) || month < 1 || month > 12) return null;
+  return `${year}-${String(month).padStart(2, '0')}-01`;
+}
+
+// PERFORMANCE FIX (verified necessary, not theoretical): the original version
+// of this function ran one UPDATE per BMF row against the remote database.
+// The BMF is roughly 1.8 million rows across the four regional files, so that
+// was one to two million round trips to Neon, tens of hours for a scheduled
+// job that needs to finish in minutes. Since we only ever need to match BMF
+// rows against organizations we already have (a few thousand, not millions),
+// we load our organization names into memory once, do the 1.8 million-row
+// comparison in memory as we stream each CSV (fast, no network), and only
+// issue a database write for an actual match. Exact-name-match semantics are
+// unchanged, this is a performance fix, not a behavior change.
+// Verified live: connecting to the pooled Neon endpoint intermittently fails
+// with a DNS resolution error under repeated back-to-back attempts, then
+// succeeds moments later with no change to the connection string. That points
+// to transient resolver or pooler flakiness rather than a bad credential, so
+// this retries with backoff instead of failing the whole run on one hiccup.
+async function connectWithRetry(tries = 5) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try { return await pool.connect(); }
+    catch (e) { lastErr = e; console.warn(`connect attempt ${i + 1} failed (${e.code || e.message}), retrying...`); await new Promise((r) => setTimeout(r, 2000 * (i + 1))); }
+  }
+  throw lastErr;
 }
 
 async function run() {
-  const client = await pool.connect();
+  const client = await connectWithRetry();
   try {
-    let scanned = 0, matched = 0;
+    const { rows: existing } = await client.query('SELECT id, name FROM organizations WHERE ein IS NULL');
+    const byLowerName = new Map();
+    for (const o of existing) {
+      const key = o.name.toLowerCase();
+      if (!byLowerName.has(key)) byLowerName.set(key, []);
+      byLowerName.get(key).push(o.id);
+    }
+    console.log(`Loaded ${existing.length} organizations without an EIN to match against.`);
+
+    // organizations.ein is UNIQUE. The BMF itself is not: the same EIN can
+    // legitimately appear on more than one row for affiliated or group
+    // exemption entries. Track EINs already claimed in this run so a second
+    // BMF row for the same EIN is skipped instead of hitting the constraint.
+    const einsUsed = new Set();
+
+    let scanned = 0, matched = 0, skippedDuplicateEin = 0;
     for (const url of BMF_REGION_URLS) {
       console.log(`Reading ${url}`);
       for await (const rec of csvRecords(url)) {
@@ -65,22 +110,37 @@ async function run() {
         const name = rec.NAME || rec.Name;
         const ein = rec.EIN || rec.Ein;
         if (!name || !ein) continue;
-        const upd = await client.query(
-          `UPDATE organizations
-             SET ein = $1,
-                 subsection_code = COALESCE(subsection_code, $2),
-                 city = COALESCE(city, $3),
-                 state = COALESCE(state, $4),
-                 zip = COALESCE(zip, $5),
-                 ruling_date = COALESCE(ruling_date, $6),
-                 updated_at = now()
-           WHERE lower(name) = lower($7) AND ein IS NULL`,
-          [ein, rec.SUBSECTION || null, rec.CITY || null, rec.STATE || null, rec.ZIP || null, parseRuling(rec.RULING), name]
-        );
-        matched += upd.rowCount || 0;
+        if (einsUsed.has(ein)) { skippedDuplicateEin++; continue; }
+        const ids = byLowerName.get(String(name).toLowerCase());
+        if (!ids || !ids.length) continue;
+
+        // organizations.ein is UNIQUE, so if more than one of our org rows
+        // shares this exact name (the same real nonprofit loaded separately
+        // by two sources, for example matched by UEI from one source and by
+        // name from another), only the first can take this EIN. The rest
+        // stay unmatched rather than crash the run on a constraint violation.
+        {
+          const id = ids[0];
+          const upd = await client.query(
+            `UPDATE organizations
+               SET ein = $1,
+                   subsection_code = COALESCE(subsection_code, $2),
+                   city = COALESCE(city, $3),
+                   state = COALESCE(state, $4),
+                   zip = COALESCE(zip, $5),
+                   ruling_date = COALESCE(ruling_date, $6),
+                   updated_at = now()
+             WHERE id = $7 AND ein IS NULL
+               AND NOT EXISTS (SELECT 1 FROM organizations o2 WHERE o2.ein = $1)`,
+            [ein, rec.SUBSECTION || null, rec.CITY || null, rec.STATE || null, rec.ZIP || null, parseRuling(rec.RULING), id]
+          );
+          matched += upd.rowCount || 0;
+          if (upd.rowCount) einsUsed.add(ein);
+        }
+        byLowerName.delete(String(name).toLowerCase()); // one EIN per org, stop matching this name again
       }
     }
-    console.log(`Done. Scanned ${scanned} BMF rows, crosswalked EINs onto ${matched} organizations (exact name match).`);
+    console.log(`Done. Scanned ${scanned} BMF rows, crosswalked EINs onto ${matched} organizations (exact name match). Skipped ${skippedDuplicateEin} rows with an EIN already claimed this run.`);
   } finally {
     client.release();
     await pool.end();

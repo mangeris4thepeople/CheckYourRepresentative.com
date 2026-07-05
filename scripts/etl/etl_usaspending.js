@@ -17,11 +17,10 @@ const FISCAL_YEAR = parseInt(values.fy, 10);
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
-const NONPROFIT_RECIPIENT_TYPES = [
-  'nonprofit_organization',
-  'nonprofit_with_501c3',
-  'nonprofit_without_501c3'
-];
+// Verified live against the API: "nonprofit_organization" and its variants
+// return zero results, the API silently ignores unrecognized filter values
+// instead of erroring. The one working value for this facet is "nonprofit".
+const NONPROFIT_RECIPIENT_TYPES = ['nonprofit'];
 
 async function fetchAwardsPage(page) {
   const res = await fetch('https://api.usaspending.gov/api/v2/search/spending_by_award/', {
