@@ -102,6 +102,15 @@ export const HOW_IT_WORKS = {
         "record match what their district actually wanted. Contact Your Representative " +
         "lets you tell them directly when it does not.",
     },
+    {
+      n: "6",
+      title: "Follow the money.",
+      body:
+        "The NGOs section shows how much of an organization's reported revenue can be " +
+        "traced to a public, dollar-level disclosure, and how much the law leaves as an " +
+        "aggregate lump. It is a way to see who is funding the groups that shape the bills, " +
+        "using only what is already public.",
+    },
   ],
 };
 
@@ -318,6 +327,18 @@ export const TUTORIAL_PAGES = {
       { label: "Enter your address", desc: "This is how the site matches you to your congressional district and representative." },
       { label: "Why it matters", desc: "Your district is what personalizes Accountability, Roll Calls, and your own profile. Your full address is only used for this match, never shown or shared." },
       { label: "Or explore the map", desc: "Browse districts on the map to look around, without changing the district your account is registered to." },
+    ],
+  },
+  ngos: {
+    title: "NGOs",
+    intro: "Follow the money behind advocacy organizations, using only public disclosures.",
+    items: [
+      { label: "What this section is", desc: "For each organization, it shows how much of its reported revenue can be traced to a public, dollar-level disclosure, and how much the law only requires as an aggregate lump." },
+      { label: "State / Source type / Fiscal year filters", desc: "Narrow the list by state, by the kind of funding (federal award, foreign principal, PAC, and so on), or by year." },
+      { label: "The traceability bar", desc: "Each row shows what percent of that org's revenue is traceable to a named public source. Click a row to open the organization." },
+      { label: "Funding transparency score", desc: "The percent of reported revenue traced to a dollar-level disclosure. A low score usually means the org relies on donors the law does not require to be itemized, not that anything is being hidden improperly." },
+      { label: "Traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
+      { label: "Reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
     ],
   },
 };

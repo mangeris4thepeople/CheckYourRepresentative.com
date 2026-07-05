@@ -1,0 +1,35 @@
+# Weekly NGO funding refresh.
+# USASpending and FEC data update often, so they run weekly, followed by the
+# transparency recompute so disclosed totals stay current against the revenue
+# already on file. The slower sources (FARA, IRS BMF, 990 revenue) run monthly
+# in etl-monthly.yml.
+#
+# These are long-running Node scripts that stream bulk data and connect to
+# Postgres over TCP, so they run here rather than as Vercel HTTP crons.
+#
+# Required repo secrets: DATABASE_URL, FEC_API_KEY.
+name: etl-weekly
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"   # Mondays 08:00 UTC
+  workflow_dispatch: {}    # allow manual runs, useful for the first load
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: USASpending federal awards
+        run: npm run etl:usaspending -- --fy $(date +%Y)
+      - name: FEC disbursements
+        run: npm run etl:fec -- --fy $(date +%Y)
+      - name: Recompute transparency
+        run: npm run compute:transparency

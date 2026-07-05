@@ -245,7 +245,11 @@ export default function App() {
           <AccountabilityDashboard district={resolved?.district} />
         )}
 
-        {tab === "ngos" && <NgosDirectory />}
+        {tab === "ngos" && (
+          <HelpLayout page="ngos">
+            <NgosDirectory />
+          </HelpLayout>
+        )}
 
         {tab === "profile" && (
           <HelpLayout page="profile">

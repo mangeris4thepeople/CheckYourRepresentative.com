@@ -1,0 +1,44 @@
+# Monthly full NGO funding pipeline.
+# Runs every source in dependency order, then recomputes transparency:
+#   1. USASpending federal awards
+#   2. FEC disbursements
+#   3. FARA foreign principals
+#   4. IRS EO BMF (crosswalks EINs onto the orgs loaded above)
+#   5. 990 revenue (needs the EINs from step 4)
+#   6. compute transparency (needs funding events and revenue loaded)
+#
+# The slower sources (FARA, IRS BMF, 990) only need a monthly refresh; the
+# faster ones are also refreshed weekly in etl-weekly.yml.
+#
+# Required repo secrets: DATABASE_URL, FEC_API_KEY.
+name: etl-monthly
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"   # 1st of the month, 09:00 UTC
+  workflow_dispatch: {}    # allow manual runs, useful for the first full load
+
+jobs:
+  full-pipeline:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: 1. USASpending federal awards
+        run: npm run etl:usaspending -- --fy $(date +%Y)
+      - name: 2. FEC disbursements
+        run: npm run etl:fec -- --fy $(date +%Y)
+      - name: 3. FARA foreign principals
+        run: npm run etl:fara
+      - name: 4. IRS EO BMF EIN crosswalk
+        run: npm run etl:irs-bmf
+      - name: 5. 990 revenue
+        run: npm run etl:990
+      - name: 6. Compute transparency
+        run: npm run compute:transparency

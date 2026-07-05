@@ -8,10 +8,16 @@
     "build": "vite build",
     "preview": "vite preview",
     "etl:usaspending": "node scripts/etl/etl_usaspending.js",
+    "etl:fec": "node scripts/etl/etl_fec.js",
+    "etl:fara": "node scripts/etl/etl_fara.js",
+    "etl:irs-bmf": "node scripts/etl/etl_irs_bmf.js",
+    "etl:990": "node scripts/etl/etl_990_revenue.js",
     "compute:transparency": "node scripts/etl/compute_transparency_score.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "adm-zip": "^0.5.18",
+    "csv-parse": "^7.0.1",
     "d3": "^7.9.0",
     "pg": "^8.22.0",
     "react": "^18.3.1",

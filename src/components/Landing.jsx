@@ -223,10 +223,10 @@ export default function Landing({ onEnter, onNavigate }) {
           </div>
           <div style={{
             marginTop: 28, fontSize: 15, color: "#444", lineHeight: 1.7, fontWeight: 700,
-            textAlign: "center", maxWidth: 320,
+            textAlign: "center", maxWidth: 340,
           }}>
-            See how your representative actually voted on every bill.
-            No spin. No excuses. Just the record.
+            You voted. Your district voted. The nation voted. See if your representative's
+            votes actually line up with the people they represent. No spin. Just the record.
           </div>
 
           {/* Real CTA */}
@@ -246,7 +246,7 @@ export default function Landing({ onEnter, onNavigate }) {
               background: C.crimson, color: C.white, border: "none",
               padding: "10px 24px", borderRadius: 2, cursor: "pointer", width: "100%",
             }}>
-              CHECK YOUR REP →
+              FIND OUT HERE
             </button>
           </div>
         </div>
@@ -338,22 +338,22 @@ export default function Landing({ onEnter, onNavigate }) {
               {
                 n: "01",
                 color: C.gold,
-                title: "Find Your District",
-                body: "Enter your ZIP. We confirm your congressional district and find your House rep and both Senators.",
+                title: "Register",
+                body: "Enter your address and email. We confirm your congressional district and connect you to your House rep and both Senators. One vote per person, no spam, no duplicates.",
                 icon: "📍",
               },
               {
                 n: "02",
                 color: C.crimson,
                 title: "Vote on Bills",
-                body: "Read plain-language bill summaries. Cast your position - Support, Oppose, or Undecided. Anonymous. Secure.",
+                body: "Read plain-language bill summaries. Cast your position, Support, Oppose, or Undecided.",
                 icon: "🗳️",
               },
               {
                 n: "03",
                 color: C.cobalt,
                 title: "Hold Them Accountable",
-                body: "See how your rep voted vs. how your district voted. Contact them directly with one click.",
+                body: "See how your rep voted vs. how your district and the nation voted. Contact them directly with one click.",
                 icon: "⚖️",
               },
             ].map((step, i) => (
