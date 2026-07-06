@@ -365,35 +365,6 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
             )}
           </div>
 
-          {/* Find Your District - moved here from the old standalone "Find
-              District" tab. The street address only ever goes to
-              /api/geocode to resolve a district; it is never included in
-              the profile save payload below, never stored, never shown. */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1, marginBottom: 8 }}>
-              FIND YOUR DISTRICT
-            </div>
-            <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
-              Used only to look up your district. Your address is never stored and never shown to anyone.
-            </div>
-            <AddressLookup onResolved={onResolved} />
-            {resolved ? (
-              <div style={{ marginTop: 20 }}>
-                <ConstituentOnboarding location={resolved.location} district={resolved.district} />
-              </div>
-            ) : (
-              <p style={{ textAlign: "center", color: C.muted, fontStyle: "italic", maxWidth: 680, margin: "14px auto 0", fontSize: 13 }}>
-                Enter your address above to confirm your district - then choose the topics you want summaries for.
-              </p>
-            )}
-            <div style={{ marginTop: 28 }}>
-              <div style={{ margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
-                - OR EXPLORE THE MAP -
-              </div>
-              <InteractiveDistrictMap onDistrictSelect={onDistrictSelect} />
-            </div>
-          </div>
-
           <Field label="DISPLAY NAME (optional)">
             <input value={draft.display_name} onChange={e => setDraft(d => ({ ...d, display_name: e.target.value }))}
               placeholder="Anonymous Constituent" style={inp} />
@@ -455,6 +426,41 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
                      transition: "background 0.2s" }}>
             {saving ? "Saving…" : saved ? "✓ Saved!" : "Save Profile"}
           </button>
+
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, margin: "28px 0 18px" }}>
+            You don't have to register or cast a single vote to use this site. Anyone can find
+            their district, look up their representative and senator, and read every active bill
+            below, all without ever signing in or taking a position.
+          </div>
+
+          {/* Find Your District - moved here from the old standalone "Find
+              District" tab. The street address only ever goes to
+              /api/geocode to resolve a district; it is never included in
+              the profile save payload above, never stored, never shown. */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1, marginBottom: 8 }}>
+              FIND YOUR DISTRICT
+            </div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
+              Used only to look up your district. Your address is never stored and never shown to anyone.
+            </div>
+            <AddressLookup onResolved={onResolved} />
+            {resolved ? (
+              <div style={{ marginTop: 20 }}>
+                <ConstituentOnboarding location={resolved.location} district={resolved.district} />
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", color: C.muted, fontStyle: "italic", maxWidth: 680, margin: "14px auto 0", fontSize: 13 }}>
+                Enter your address above to confirm your district - then choose the topics you want summaries for.
+              </p>
+            )}
+            <div style={{ marginTop: 28 }}>
+              <div style={{ margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
+                - OR EXPLORE THE MAP -
+              </div>
+              <InteractiveDistrictMap onDistrictSelect={onDistrictSelect} />
+            </div>
+          </div>
         </div>
       )}
 
