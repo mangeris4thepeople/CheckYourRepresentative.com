@@ -1,22 +1,24 @@
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
+// Resolves a street address to a congressional district: a few Census
+// onelineaddress attempts, then a Google Maps fallback with a Census
+// reverse-geocode step, so any caller (this endpoint's own GET handler, or
+// api/representatives-list.js's address-search fallback) gets the same
+// resolution logic and the same result shape instead of a second copy of it.
+export async function resolveAddressToDistrict({ street, city, state, zip } = {}) {
+  if (!street) return { ok: false, reason: "no_match" };
 
-  const { street, city, zip } = req.query;
-  if (!street) return res.status(400).json({ error: "street required" });
   // Sanitize state: the form's placeholder "-" and anything that is not a
   // real 2-letter code must never enter a lookup string.
-  const rawState = (req.query.state || "").trim().toUpperCase();
-  const state = /^[A-Z]{2}$/.test(rawState) ? rawState : "";
+  const rawState = (state || "").trim().toUpperCase();
+  const st = /^[A-Z]{2}$/.test(rawState) ? rawState : "";
 
   const clean = street.replace(/\.$/,"").replace(/\b(apt|unit|ste|suite|#)\s*[\w-]+/gi,"").trim();
 
   // Strategy 1-4: Census onelineaddress with variations
   const tries = [
-    [clean, city, state, zip].filter(Boolean).join(", "),
-    [expand(clean), city, state, zip].filter(Boolean).join(", "),
-    [clean, state, zip].filter(Boolean).join(", "),
-    [expand(clean), state, zip].filter(Boolean).join(", "),
+    [clean, city, st, zip].filter(Boolean).join(", "),
+    [expand(clean), city, st, zip].filter(Boolean).join(", "),
+    [clean, st, zip].filter(Boolean).join(", "),
+    [expand(clean), st, zip].filter(Boolean).join(", "),
   ];
 
   for (const address of tries) {
@@ -24,35 +26,46 @@ export default async function handler(req, res) {
     if (r) {
       // Sanity check: if the visitor told us their state, a result from a
       // different state is a mis-geocode. Skip it and keep trying.
-      if (state && r.state && r.state !== state) continue;
-      return res.json({ ok: true, source: "census", ...r });
+      if (st && r.state && r.state !== st) continue;
+      return { ok: true, source: "census", ...r };
     }
   }
 
   // Strategy 5: Google Maps Geocoding API - finds every address in America
   const googleKey = process.env.GOOGLE_MAPS_API_KEY;
   if (googleKey) {
-    const fullAddress = [clean, city, state, zip].filter(Boolean).join(", ") + ", USA";
+    const fullAddress = [clean, city, st, zip].filter(Boolean).join(", ") + ", USA";
     const coords = await tryGoogle(fullAddress, googleKey);
     if (coords) {
       // Got coordinates from Google - now reverse geocode via Census for district
       const district = await censusReverse(coords.lat, coords.lng);
       if (district) {
-        if (state && district.state && district.state !== state) {
-          return res.json({ ok: false, reason: "state_mismatch",
-            expected: state, got: district.district });
+        if (st && district.state && district.state !== st) {
+          return { ok: false, reason: "state_mismatch",
+            expected: st, got: district.district };
         }
-        return res.json({
+        return {
           ok: true,
           source: "google_geocode",
           ...district,
           matchedAddress: fullAddress,
-        });
+        };
       }
     }
   }
 
-  return res.json({ ok: false, reason: "no_match" });
+  return { ok: false, reason: "no_match" };
+}
+
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
+
+  const { street, city, zip, state } = req.query;
+  if (!street) return res.status(400).json({ error: "street required" });
+
+  const result = await resolveAddressToDistrict({ street, city, state, zip });
+  return res.json(result);
 }
 
 async function tryCensus(address) {

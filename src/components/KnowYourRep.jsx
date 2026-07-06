@@ -33,6 +33,8 @@ export default function KnowYourRep() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState(null); // district
+  const [matchedVia, setMatchedVia] = useState(null);
+  const [resolvedDistrict, setResolvedDistrict] = useState(null);
 
   const loadList = useCallback(async (newOffset, append) => {
     setPhase("loading");
@@ -45,6 +47,8 @@ export default function KnowYourRep() {
       setReps(prev => append ? [...prev, ...(d.reps || [])] : (d.reps || []));
       setOffset(d.offset ?? newOffset);
       setHasMore(!!d.hasMore);
+      setMatchedVia(d.matchedVia || null);
+      setResolvedDistrict(d.resolvedDistrict || null);
       setPhase("ready");
     } catch {
       setPhase("error");
@@ -85,6 +89,13 @@ export default function KnowYourRep() {
           Search
         </button>
       </div>
+
+      {matchedVia === "address" && reps.length > 0 && (
+        <div style={{ background: C.parchment, border: `1px solid ${C.gold}`, borderRadius: 6,
+                      padding: "8px 14px", marginBottom: 12, fontSize: 12.5, color: C.muted }}>
+          Matched by address: <strong style={{ color: C.navy }}>{resolvedDistrict}</strong>
+        </div>
+      )}
 
       {phase === "loading" && reps.length === 0 && <Center>Loading representatives...</Center>}
       {phase === "error" && (

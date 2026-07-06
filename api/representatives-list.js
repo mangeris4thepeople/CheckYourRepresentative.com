@@ -5,8 +5,12 @@
 //   GET /api/representatives-list                  -> first 20, by district
 //   GET /api/representatives-list?limit=20&offset=20  -> next batch
 //   GET /api/representatives-list?q=garcia          -> filter by name, state, or district
+//   GET /api/representatives-list?q=123 Main St     -> falls back to address lookup
+//                                                       (see below) when the name/state/
+//                                                       district search comes up empty
 // =============================================================================
 import { sql, hasDb } from "./_db.js";
+import { resolveAddressToDistrict } from "./geocode.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -19,7 +23,7 @@ export default async function handler(req, res) {
     const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
 
     const like = `%${q}%`;
-    const reps = q
+    let reps = q
       ? await sql`
           SELECT district, name, party, state, phone, website, contact_url, fec_candidate_id
           FROM representatives
@@ -30,12 +34,36 @@ export default async function handler(req, res) {
           FROM representatives
           ORDER BY district ASC LIMIT ${limit} OFFSET ${offset}`;
 
+    // The name/state/district search above already covers "a few letters, in
+    // order" correctly. It only ever comes up empty on a real query string
+    // when that string was not any of those, which a digit (street number,
+    // ZIP) is a reasonable signal for, e.g. "123 Main St". In that case, try
+    // resolving it as a street address and return that district's rep(s)
+    // instead of an empty list.
+    let matchedVia = null;
+    let resolvedDistrict = null;
+    if (q && reps.length === 0 && /\d/.test(q)) {
+      const geo = await resolveAddressToDistrict({ street: q });
+      if (geo.ok && geo.district) {
+        const addrReps = await sql`
+          SELECT district, name, party, state, phone, website, contact_url, fec_candidate_id
+          FROM representatives WHERE district = ${geo.district}`;
+        if (addrReps.length) {
+          reps = addrReps;
+          matchedVia = "address";
+          resolvedDistrict = geo.district;
+        }
+      }
+    }
+
     return res.status(200).json({
       ready: true,
       reps,
       offset,
-      hasMore: reps.length === limit,
+      hasMore: matchedVia ? false : reps.length === limit,
       count: reps.length,
+      matchedVia,
+      resolvedDistrict,
     });
   } catch (err) {
     const msg = String(err.message || err);
