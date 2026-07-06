@@ -67,6 +67,31 @@ export default async function handler(req, res) {
   const outOfTime = () => Date.now() - startedAt > TIME_BUDGET_MS;
 
   try {
+    if (req.query.debugFilings) {
+      const candidateId = String(req.query.candidateId || "").trim();
+      if (!candidateId) return res.status(400).json({ error: "candidateId required" });
+      const steps = {};
+      const unfiltered = await fec(`/candidate/${candidateId}/filings/`, { sort: "-receipt_date", per_page: 40 });
+      const rows = unfiltered.results || [];
+      steps.total_count = unfiltered.pagination?.count ?? null;
+      steps.form_category_counts = rows.reduce((acc, r) => {
+        acc[r.form_category || "null"] = (acc[r.form_category || "null"] || 0) + 1;
+        return acc;
+      }, {});
+      steps.first_raw_keys = rows.length ? Object.keys(rows[0]) : [];
+      steps.first_result = rows[0] || null;
+      const firstWithReceipts = rows.find(r => r.total_receipts != null);
+      steps.first_with_nonnull_total_receipts = firstWithReceipts || null;
+      try {
+        const filtered = await fec(`/candidate/${candidateId}/filings/`, { sort: "-receipt_date", per_page: 10, form_category: "REPORT" });
+        steps.form_category_report_filter_count = filtered.results?.length ?? 0;
+        steps.form_category_report_first = filtered.results?.[0] || null;
+      } catch (e) {
+        steps.form_category_report_filter_error = e.message || String(e);
+      }
+      return res.status(200).json({ debug: true, steps });
+    }
+
     await ensureTables();
 
     const cursor = await getCursor();
