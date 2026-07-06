@@ -67,48 +67,6 @@ export default async function handler(req, res) {
   const outOfTime = () => Date.now() - startedAt > TIME_BUDGET_MS;
 
   try {
-    if (req.query.debugFilings) {
-      const candidateId = String(req.query.candidateId || "").trim();
-      if (!candidateId) return res.status(400).json({ error: "candidateId required" });
-      const steps = {};
-      const unfiltered = await fec(`/candidate/${candidateId}/filings/`, { sort: "-receipt_date", per_page: 40 });
-      const rows = unfiltered.results || [];
-      steps.total_count = unfiltered.pagination?.count ?? null;
-      steps.form_category_counts = rows.reduce((acc, r) => {
-        acc[r.form_category || "null"] = (acc[r.form_category || "null"] || 0) + 1;
-        return acc;
-      }, {});
-      steps.first_raw_keys = rows.length ? Object.keys(rows[0]) : [];
-      steps.first_result = rows[0] || null;
-      const firstWithReceipts = rows.find(r => r.total_receipts != null);
-      steps.first_with_nonnull_total_receipts = firstWithReceipts || null;
-      try {
-        const filtered = await fec(`/candidate/${candidateId}/filings/`, { sort: "-receipt_date", per_page: 10, form_category: "REPORT" });
-        steps.form_category_report_filter_count = filtered.results?.length ?? 0;
-        steps.form_category_report_first = filtered.results?.[0] || null;
-      } catch (e) {
-        steps.form_category_report_filter_error = e.message || String(e);
-      }
-      try {
-        const committees = await fec(`/candidate/${candidateId}/committees/`, { per_page: 20 });
-        const principal = (committees.results || []).find(c => c.designation === "P") || committees.results?.[0];
-        steps.principal_committee_id = principal ? principal.committee_id : null;
-        if (principal) {
-          const committeeFilings = await fec(`/committee/${principal.committee_id}/filings/`, { sort: "-receipt_date", per_page: 10 });
-          steps.committee_filings_count = committeeFilings.results?.length ?? 0;
-          steps.committee_filings_form_categories = (committeeFilings.results || []).reduce((acc, r) => {
-            acc[r.form_category || "null"] = (acc[r.form_category || "null"] || 0) + 1;
-            return acc;
-          }, {});
-          steps.committee_filings_first_with_receipts = (committeeFilings.results || []).find(r => r.total_receipts != null) || null;
-          steps.committee_filings_first_report = (committeeFilings.results || []).find(r => r.form_category === "REPORT") || null;
-        }
-      } catch (e) {
-        steps.committee_filings_error = e.message || String(e);
-      }
-      return res.status(200).json({ debug: true, steps });
-    }
-
     await ensureTables();
 
     const cursor = await getCursor();
@@ -176,10 +134,19 @@ async function processRep(rep, log) {
     const totals = await fetchTotals(candidateId);
     if (totals.length) await upsertTotals(candidateId, totals);
 
-    const filings = await fetchFilings(candidateId);
-    if (filings.length) await upsertFilings(candidateId, filings);
-
+    // Real periodic financial reports (with actual receipts and coverage
+    // dates) are filed under the candidate's principal committee, not the
+    // candidate record itself. GET /candidate/{id}/filings/ only ever
+    // returns that candidate's own statement-of-candidacy paperwork, which
+    // legitimately has null financials, verified live against production
+    // FEC data. So the committee lookup has to happen before filings.
     const committeeId = await fetchPrincipalCommitteeId(candidateId);
+
+    if (committeeId) {
+      const filings = await fetchFilings(committeeId);
+      if (filings.length) await upsertFilings(candidateId, filings);
+    }
+
     const latestCycle = totals[0]?.cycle;
     if (committeeId && latestCycle) {
       const buckets = await fetchDonorBuckets(committeeId, latestCycle);
@@ -252,8 +219,19 @@ async function fetchTotals(candidateId) {
     }));
 }
 
-async function fetchFilings(candidateId) {
-  const data = await fec(`/candidate/${candidateId}/filings/`, { sort: "-receipt_date", per_page: FILINGS_LIMIT });
+// Takes the candidate's PRINCIPAL COMMITTEE id, not the candidate_id. The
+// candidate-level filings endpoint only ever returns that candidate's own
+// statement-of-candidacy paperwork (form_category STATEMENT), which
+// legitimately has null receipts/coverage dates, that is not a field-mapping
+// bug, it is the wrong endpoint. Verified live against production FEC data:
+// the actual periodic financial reports (form_category REPORT, e.g. the
+// April Quarterly) live under the committee's own filing history instead.
+// Filtered to REPORT here so every row in the list actually has financial
+// data, rather than mixing in committee registration statements.
+async function fetchFilings(committeeId) {
+  const data = await fec(`/committee/${committeeId}/filings/`, {
+    sort: "-receipt_date", per_page: FILINGS_LIMIT, form_category: "REPORT",
+  });
   return (data.results || [])
     .filter(r => r.file_number)
     .map(r => ({

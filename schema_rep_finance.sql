@@ -33,8 +33,13 @@ CREATE TABLE IF NOT EXISTS rep_fec_totals (
   PRIMARY KEY (fec_candidate_id, cycle)
 );
 
--- One row per FEC filing on record, from GET /candidate/{id}/filings/. Capped
--- to the most recent filings per candidate (see FILINGS_LIMIT in
+-- One row per FEC filing on record, from GET /committee/{committeeId}/filings/
+-- (the candidate's principal committee, not GET /candidate/{id}/filings/,
+-- which only ever returns that candidate's own statement-of-candidacy
+-- paperwork with null financials, verified live against production FEC
+-- data). Filtered to form_category=REPORT so every row has real receipts and
+-- coverage dates. Capped to the most recent filings per candidate (see
+-- FILINGS_LIMIT in
 -- sync-rep-finances.js), the same bounded approach etl_fec.js uses for
 -- Schedule B, since a decades-long incumbent can have well over a hundred.
 CREATE TABLE IF NOT EXISTS rep_fec_filings (
