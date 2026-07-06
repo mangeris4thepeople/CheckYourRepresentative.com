@@ -41,11 +41,24 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  // GET - return profile + recent votes
+  // GET - return profile + recent votes (capped preview) + full totals
   const votes = await sql`
     SELECT bill_id, position, tier, district, created_at
     FROM votes WHERE identity LIKE ${'sess:' + user.email + '%'}
     ORDER BY created_at DESC LIMIT 50`;
+
+  // votes.identity is "sess:{email}:{billId}" (see api/vote.js), so the
+  // colon-terminated prefix below is the precise match; the preview query
+  // above is left exactly as it already was.
+  const identityPrefix = `sess:${user.email}:%`;
+  const totalVotesRows = await sql`
+    SELECT count(*)::int AS n FROM votes WHERE identity LIKE ${identityPrefix}`;
+  const totalVotes = totalVotesRows[0]?.n ?? 0;
+
+  const voteTally = await sql`
+    SELECT split_part(bill_id, '-', 1) AS bill_type, count(*)::int AS n
+    FROM votes WHERE identity LIKE ${identityPrefix}
+    GROUP BY 1 ORDER BY n DESC`;
 
   return res.status(200).json({
     email: user.email,
@@ -59,6 +72,8 @@ export default async function handler(req, res) {
     city: user.city,
     email_channel: user.email_channel,
     votes,
+    totalVotes,
+    voteTally,
     sessionExpires: user.session_expires,
   });
 }

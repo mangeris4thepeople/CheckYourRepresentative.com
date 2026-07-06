@@ -18,6 +18,14 @@
     {
       "path": "/api/verify-congress",
       "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/sync-reps",
+      "schedule": "0 5 * * 1"
+    },
+    {
+      "path": "/api/sync-rep-finances",
+      "schedule": "0 8 * * *"
     }
   ]
 }

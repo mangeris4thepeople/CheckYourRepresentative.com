@@ -39,6 +39,11 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
   const [copied, setCopied]       = useState(false);
   const [draft, setDraft]         = useState({});
   const [sendError, setSendError] = useState(null);
+  const [voteFilter, setVoteFilter]         = useState(""); // "" = All
+  const [filteredVotes, setFilteredVotes]   = useState([]);
+  const [voteOffset, setVoteOffset]         = useState(0);
+  const [voteHasMore, setVoteHasMore]       = useState(false);
+  const [voteListPhase, setVoteListPhase]   = useState("idle"); // idle|loading|ready|error
 
   // On mount: check URL hash for incoming magic link redirect, then check stored session
   useEffect(() => {
@@ -126,6 +131,29 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
     setAuthPhase("signed-out");
     onSignOut?.();
   }
+
+  const PAGE_SIZE = 20;
+  const loadMyVotes = useCallback(async (billType, newOffset, append) => {
+    if (!session?.token) return;
+    setVoteListPhase("loading");
+    try {
+      const p = new URLSearchParams({ token: session.token, limit: String(PAGE_SIZE), offset: String(newOffset) });
+      if (billType) p.set("billType", billType);
+      const r = await fetch(`/api/my-votes?${p}`);
+      const d = await r.json();
+      if (!d.ready) { setVoteListPhase("error"); return; }
+      setFilteredVotes(prev => append ? [...prev, ...(d.votes || [])] : (d.votes || []));
+      setVoteOffset(d.offset ?? newOffset);
+      setVoteHasMore(!!d.hasMore);
+      setVoteListPhase("ready");
+    } catch {
+      setVoteListPhase("error");
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (tab === "votes" && session?.token) loadMyVotes(voteFilter, 0, false);
+  }, [tab, voteFilter, session, loadMyVotes]);
 
   async function saveProfile() {
     if (!session?.token) return;
@@ -234,7 +262,9 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
   }
 
   // ── SIGNED IN ──
-  const votes = profile?.votes || [];
+  const votes = profile?.votes || []; // capped recent-activity preview, used for Share tab card
+  const totalVotes = profile?.totalVotes ?? votes.length;
+  const voteTally = profile?.voteTally || [];
   const verifiedCount = votes.filter(v => v.tier === "verified").length;
   const publicUrl = `${window.location.origin}/?voter=${profile?.profileId}`;
 
@@ -276,7 +306,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
                     borderRight: `1px solid ${C.line}`, display: "flex", overflowX: "auto" }}>
         {[
           { key: "profile", label: "👤 Profile" },
-          { key: "votes",   label: `🗳️ My Votes (${votes.length})` },
+          { key: "votes",   label: `🗳️ My Votes (${totalVotes})` },
           { key: "share",   label: "🌐 Share" },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -298,7 +328,7 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
           {/* Stats row */}
           <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
             {[
-              { n: votes.length, label: "Votes Cast" },
+              { n: totalVotes, label: "Votes Cast" },
               { n: verifiedCount, label: "Verified" },
               { n: district || profile?.district || " - ", label: "District" },
             ].map((s, i) => (
@@ -397,32 +427,54 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
       {tab === "votes" && (
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
                       borderTop: "none", borderRadius: "0 0 8px 8px" }}>
-          {votes.length === 0 ? (
+
+          {/* Bill-type tally pills */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 20px",
+                        borderBottom: `1px solid ${C.line}` }}>
+            <button onClick={() => setVoteFilter("")}
+              style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, padding: "6px 14px",
+                       borderRadius: 20, cursor: "pointer", border: `1px solid ${C.navy}`,
+                       background: voteFilter === "" ? C.navy : "#fff",
+                       color: voteFilter === "" ? "#fff" : C.navy }}>
+              All
+            </button>
+            {voteTally.map(t => (
+              <button key={t.bill_type} onClick={() => setVoteFilter(t.bill_type)}
+                style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, padding: "6px 14px",
+                         borderRadius: 20, cursor: "pointer", border: `1px solid ${C.navy}`,
+                         background: voteFilter === t.bill_type ? C.navy : "#fff",
+                         color: voteFilter === t.bill_type ? "#fff" : C.navy }}>
+                {String(t.bill_type).toUpperCase()} {t.n}
+              </button>
+            ))}
+          </div>
+
+          {voteListPhase === "loading" && filteredVotes.length === 0 && (
+            <div style={{ padding: "48px 24px", textAlign: "center", color: C.muted }}>Loading your votes…</div>
+          )}
+          {voteListPhase === "error" && (
+            <div style={{ padding: "48px 24px", textAlign: "center", color: C.crimson }}>
+              Could not load your votes. Try again shortly.
+            </div>
+          )}
+          {voteListPhase === "ready" && filteredVotes.length === 0 && (
             <div style={{ padding: "48px 24px", textAlign: "center", color: C.muted }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🗳️</div>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: C.navy }}>
-                No votes yet
+                {voteFilter ? "No votes of this bill type yet" : "No votes yet"}
               </div>
               <div style={{ fontSize: 13 }}>
                 Go to <strong>Vote on Bills</strong> and cast your first position.
                 It will appear here permanently.
               </div>
             </div>
-          ) : (
+          )}
+
+          {filteredVotes.length > 0 && (
             <>
-              <div style={{ padding: "12px 20px", borderBottom: `1px solid ${C.line}`,
-                            fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
-                            display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-                <span>YOUR VOTE HISTORY · {votes.length} POSITIONS</span>
-                <span style={{ fontWeight: 400 }}>
-                  <span style={{ color: C.yes }}>✓ {verifiedCount} verified</span>
-                  {" · "}
-                  <span style={{ color: C.muted }}>{votes.length - verifiedCount} open</span>
-                </span>
-              </div>
-              {votes.map((v, i) => (
+              {filteredVotes.map((v, i) => (
                 <div key={i} style={{ padding: "14px 20px",
-                                      borderBottom: i < votes.length - 1 ? `1px solid ${C.line}` : "none",
+                                      borderBottom: i < filteredVotes.length - 1 ? `1px solid ${C.line}` : "none",
                                       display: "flex", justifyContent: "space-between",
                                       alignItems: "center", gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
@@ -441,6 +493,14 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
                   </div>
                 </div>
               ))}
+              {voteHasMore && (
+                <button onClick={() => loadMyVotes(voteFilter, voteOffset + PAGE_SIZE, true)}
+                  disabled={voteListPhase === "loading"}
+                  style={{ width: "100%", padding: 12, fontFamily: serif, fontWeight: 700, fontSize: 13,
+                           background: C.navy, color: "#fff", border: "none", cursor: "pointer" }}>
+                  {voteListPhase === "loading" ? "Loading…" : "Load More Votes"}
+                </button>
+              )}
             </>
           )}
         </div>

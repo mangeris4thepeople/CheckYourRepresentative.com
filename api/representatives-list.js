@@ -12,6 +12,23 @@
 import { sql, hasDb } from "./_db.js";
 import { resolveAddressToDistrict } from "./geocode.js";
 
+// Full state names to their two-letter code, so a search for "Colorado"
+// matches the same rows a search for "CO" would. The existing ILIKE checks
+// already cover a substring of the code itself (e.g. "co"), just not the
+// full name.
+const STATE_CODES = {
+  alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA",
+  colorado: "CO", connecticut: "CT", delaware: "DE", florida: "FL", georgia: "GA",
+  hawaii: "HI", idaho: "ID", illinois: "IL", indiana: "IN", iowa: "IA",
+  kansas: "KS", kentucky: "KY", louisiana: "LA", maine: "ME", maryland: "MD",
+  massachusetts: "MA", michigan: "MI", minnesota: "MN", mississippi: "MS", missouri: "MO",
+  montana: "MT", nebraska: "NE", nevada: "NV", "new hampshire": "NH", "new jersey": "NJ",
+  "new mexico": "NM", "new york": "NY", "north carolina": "NC", "north dakota": "ND", ohio: "OH",
+  oklahoma: "OK", oregon: "OR", pennsylvania: "PA", "rhode island": "RI", "south carolina": "SC",
+  "south dakota": "SD", tennessee: "TN", texas: "TX", utah: "UT", vermont: "VT",
+  virginia: "VA", washington: "WA", "west virginia": "WV", wisconsin: "WI", wyoming: "WY",
+};
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=1800");
@@ -23,15 +40,22 @@ export default async function handler(req, res) {
     const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
 
     const like = `%${q}%`;
-    let reps = q
+    const stateCode = STATE_CODES[q.toLowerCase()];
+    let reps = !q
       ? await sql`
           SELECT district, name, party, state, phone, website, contact_url, fec_candidate_id
           FROM representatives
-          WHERE name ILIKE ${like} OR state ILIKE ${like} OR district ILIKE ${like}
+          ORDER BY district ASC LIMIT ${limit} OFFSET ${offset}`
+      : stateCode
+      ? await sql`
+          SELECT district, name, party, state, phone, website, contact_url, fec_candidate_id
+          FROM representatives
+          WHERE name ILIKE ${like} OR state ILIKE ${like} OR district ILIKE ${like} OR state = ${stateCode}
           ORDER BY district ASC LIMIT ${limit} OFFSET ${offset}`
       : await sql`
           SELECT district, name, party, state, phone, website, contact_url, fec_candidate_id
           FROM representatives
+          WHERE name ILIKE ${like} OR state ILIKE ${like} OR district ILIKE ${like}
           ORDER BY district ASC LIMIT ${limit} OFFSET ${offset}`;
 
     // The name/state/district search above already covers "a few letters, in
