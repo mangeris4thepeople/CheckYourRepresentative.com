@@ -26,6 +26,14 @@
     {
       "path": "/api/sync-rep-finances",
       "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/sync-senators",
+      "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/sync-senator-finances",
+      "schedule": "0 9 * * *"
     }
   ]
 }

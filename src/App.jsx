@@ -21,7 +21,7 @@ import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import NgosDirectory from "./components/NgosDirectory.jsx";
-import KnowYourRep from "./components/KnowYourRep.jsx";
+import KnowYourRepTabs from "./components/KnowYourRepTabs.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
@@ -230,7 +230,7 @@ export default function App() {
 
         {tab === "knowyourrep" && (
           <HelpLayout page="knowyourrep">
-            <KnowYourRep />
+            <KnowYourRepTabs />
           </HelpLayout>
         )}
 
