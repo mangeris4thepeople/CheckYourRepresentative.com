@@ -24,6 +24,7 @@ import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import NgosDirectory from "./components/NgosDirectory.jsx";
+import KnowYourRep from "./components/KnowYourRep.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
@@ -44,12 +45,13 @@ const TABS = [
   { key: "matrix",       label: "📊 Accountability" },
   { key: "rollcalls",    label: "📋 Roll Calls" },
   { key: "ngos",         label: "🏦 NGOs" },
+  { key: "knowyourrep",  label: "🏛️ Know Your Rep" },
   { key: "constituents", label: "🌐 Constituents" },
   { key: "merch",        label: "👕 Merch" },
 ];
 
 // Tabs that get a left-hand contextual help sidebar.
-const HELP_TABS = { profile: "profile", vote: "vote", district: "district" };
+const HELP_TABS = { profile: "profile", vote: "vote", district: "district", ngos: "ngos", knowyourrep: "knowyourrep" };
 
 // Inject mobile CSS once
 const MOBILE_CSS = `
@@ -248,6 +250,12 @@ export default function App() {
         {tab === "ngos" && (
           <HelpLayout page="ngos">
             <NgosDirectory />
+          </HelpLayout>
+        )}
+
+        {tab === "knowyourrep" && (
+          <HelpLayout page="knowyourrep">
+            <KnowYourRep />
           </HelpLayout>
         )}
 

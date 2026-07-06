@@ -111,6 +111,16 @@ export const HOW_IT_WORKS = {
         "aggregate lump. It is a way to see who is funding the groups that shape the bills, " +
         "using only what is already public.",
     },
+    {
+      n: "7",
+      title: "Know your rep.",
+      body:
+        "Know Your Rep gives you a full profile on every member of the House: their " +
+        "bio, every dollar their campaign has ever reported raising by cycle, every " +
+        "quarterly filing they have submitted to the FEC with a direct link to the " +
+        "actual filing, and their top donors ranked by dollar amount. Search by name " +
+        "or district, browse the rest, twenty at a time.",
+    },
   ],
 };
 
@@ -339,6 +349,17 @@ export const TUTORIAL_PAGES = {
       { label: "Funding transparency score", desc: "The percent of reported revenue traced to a dollar-level disclosure. A low score usually means the org relies on donors the law does not require to be itemized, not that anything is being hidden improperly." },
       { label: "Traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
       { label: "Reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
+    ],
+  },
+  knowyourrep: {
+    title: "Know Your Rep",
+    intro: "A full financial and biographical profile on every member of the House, sourced straight from the FEC and Congress.gov.",
+    items: [
+      { label: "Search bar", desc: "Search by representative name, state, or district." },
+      { label: "The list", desc: "Twenty representatives at a time. Use Load More to keep browsing rather than loading all 435 at once." },
+      { label: "Per-cycle financial totals", desc: "How much each representative's campaign has raised and spent, and how much came from individuals versus PACs versus the party, by two-year election cycle." },
+      { label: "FEC filings", desc: "Every quarterly and periodic report a representative's campaign has filed with the FEC, each with a direct link to the original filing on FEC.gov." },
+      { label: "Top donors", desc: "The largest disclosed contributors to a representative's campaign, ranked by dollar amount. This is a bounded list of the biggest sources, not every single contribution ever filed." },
     ],
   },
 };
