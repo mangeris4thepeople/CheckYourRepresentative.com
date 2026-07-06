@@ -53,6 +53,21 @@ export default async function handler(req, res) {
   const outOfTime = () => Date.now() - startedAt > TIME_BUDGET_MS;
 
   try {
+    if (req.query.debug) {
+      const steps = [];
+      try { await sql`ALTER TABLE representatives ADD COLUMN IF NOT EXISTS fec_candidate_id TEXT`; steps.push("alter:ok"); }
+      catch (e) { steps.push("alter:fail:" + (e.message || e)); }
+      try {
+        const cols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'representatives' ORDER BY ordinal_position`;
+        steps.push("columns:" + cols.map(c => c.column_name).join(","));
+      } catch (e) { steps.push("columns:fail:" + (e.message || e)); }
+      try {
+        const test = await sql`SELECT district, fec_candidate_id FROM representatives LIMIT 1`;
+        steps.push("select:ok:" + JSON.stringify(test));
+      } catch (e) { steps.push("select:fail:" + (e.message || e)); }
+      return res.status(200).json({ debug: true, steps });
+    }
+
     await ensureTables();
 
     const cursor = await getCursor();
