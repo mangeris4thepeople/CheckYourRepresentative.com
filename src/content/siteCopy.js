@@ -398,3 +398,16 @@ export const TUTORIAL_OTHER = [
     body: "Supports keeping the tool running and free for everyone to use.",
   },
 ];
+
+// Plain-English glossary of Congress.gov's bill-type prefixes, shown as a
+// collapsible legend above the Accountability page's bill-type tabs.
+export const BILL_TYPE_LEGEND = [
+  { code: "HR", name: "House Bill", desc: "Introduced in the House. If passed by both chambers and signed, it can become law." },
+  { code: "S", name: "Senate Bill", desc: "Introduced in the Senate. Same path to becoming law as an HR bill." },
+  { code: "HRES", name: "House Resolution", desc: "Addresses House-only matters, like internal rules. Cannot become law." },
+  { code: "SRES", name: "Senate Resolution", desc: "Addresses Senate-only matters. Cannot become law." },
+  { code: "HJRES", name: "House Joint Resolution", desc: "Carries the same legal force as a bill, often used for things like constitutional amendments or continuing resolutions." },
+  { code: "SJRES", name: "Senate Joint Resolution", desc: "Same as HJRES, originating in the Senate." },
+  { code: "HCONRES", name: "House Concurrent Resolution", desc: "Expresses the shared position of both chambers, but does not have the force of law." },
+  { code: "SCONRES", name: "Senate Concurrent Resolution", desc: "Same as HCONRES, originating in the Senate." },
+];

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { BILL_TYPE_LEGEND } from '../content/siteCopy.js';
 
 /*
 BillSidebar
@@ -40,6 +41,7 @@ function filterBills(bills, userVotes, filter) {
 
 export default function BillSidebar({ userVotes = {}, selectedBillId, onSelectBill }) {
   const [filter, setFilter] = useState(FILTERS.ALL);
+  const [legendOpen, setLegendOpen] = useState(false);
 
   const [prefixes, setPrefixes] = useState([]);
   const [prefixesPhase, setPrefixesPhase] = useState('loading'); // loading|ready|empty|error
@@ -102,9 +104,40 @@ export default function BillSidebar({ userVotes = {}, selectedBillId, onSelectBi
     [bills, userVotes, filter]
   );
 
+  // Only show legend entries for bill types that actually have a tab, so an
+  // empty database (or one without, say, concurrent resolutions yet) never
+  // shows rows for types that aren't present.
+  const visibleLegend = useMemo(() => {
+    const present = new Set(prefixes.map((p) => String(p.bill_type).toUpperCase()));
+    return BILL_TYPE_LEGEND.filter((item) => present.has(item.code));
+  }, [prefixes]);
+
   return (
     <div className="bs-wrapper">
       <div className="bs-heading">Select a bill</div>
+
+      {visibleLegend.length > 0 && (
+        <div className="bs-legend">
+          <button
+            type="button"
+            className="bs-legend-toggle"
+            onClick={() => setLegendOpen((o) => !o)}
+          >
+            {legendOpen ? '▾' : '▸'} What do these mean?
+          </button>
+          {legendOpen && (
+            <div className="bs-legend-body">
+              {visibleLegend.map((item) => (
+                <div key={item.code} className="bs-legend-row">
+                  <span className="bs-legend-code">{item.code}</span>
+                  <span className="bs-legend-name">{item.name}.</span>{' '}
+                  <span className="bs-legend-desc">{item.desc}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {prefixesPhase === 'ready' && (
         <div className="bs-prefix-row">
