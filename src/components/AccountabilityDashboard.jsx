@@ -17,6 +17,7 @@ const mono = "'Courier New', monospace";
 
 export default function AccountabilityDashboard({ district }) {
   const [rows, setRows]   = useState([]);
+  const [totals, setTotals] = useState(null);
   const [phase, setPhase] = useState("loading");
   const [selected, setSelected] = useState(null); // bill_id
   const [synopses, setSynopses] = useState({});   // bill_id -> {headline, plain}
@@ -41,6 +42,7 @@ export default function AccountabilityDashboard({ district }) {
       const data = await r.json();
       const all = data.rows || [];
       setRows(all);
+      setTotals(data.totals || null);
       setPhase(all.length ? "ready" : "empty");
     } catch {
       setPhase("error");
@@ -84,11 +86,13 @@ export default function AccountabilityDashboard({ district }) {
     contacted: t.contacted + Number(r.contacted_rep),
   }), { support: 0, oppose: 0, undecided: 0, total: 0, contacted: 0 });
 
-  // Site-wide hero numbers
-  const totalVotes    = rows.reduce((s,r) => s + Number(r.total_votes), 0);
-  const totalSupport  = rows.reduce((s,r) => s + Number(r.support_votes), 0);
-  const totalOppose   = rows.reduce((s,r) => s + Number(r.oppose_votes), 0);
-  const totalContacts = rows.reduce((s,r) => s + Number(r.contacted_rep), 0);
+  // Site-wide hero numbers, from the unlimited totals aggregate, not the
+  // capped bill-by-bill rows list (see api/matrix.js), since summing rows
+  // undercounts once there are more than 100 active bill/district pairs.
+  const totalVotes    = Number(totals?.total_votes) || 0;
+  const totalSupport  = Number(totals?.support_votes) || 0;
+  const totalOppose   = Number(totals?.oppose_votes) || 0;
+  const totalContacts = Number(totals?.contacted_rep) || 0;
 
   // Group the selected bill's district rows by state. Each state gets combined
   // totals; the individual district rows live inside it and show when expanded.
