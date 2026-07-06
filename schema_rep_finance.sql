@@ -7,12 +7,20 @@
 -- filings, and a bounded Schedule A donor breakdown into the tables below, so
 -- the Know Your Rep tab can show a full financial profile without hitting the
 -- FEC API on every page load.
+--
+-- NAMING NOTE: rep_filings and rep_top_donors already existed in this
+-- database (created directly against Neon, not by any script in this repo)
+-- with a different, district-keyed schema, rep_top_donors even stored named
+-- donor_name/employer/occupation rather than aggregate buckets. Both were
+-- empty, but their origin and intended shape are unknown, so the tables below
+-- are named rep_fec_totals / rep_fec_filings / rep_fec_donor_buckets instead
+-- of colliding with or repurposing them.
 -- =============================================================================
 
 ALTER TABLE representatives ADD COLUMN IF NOT EXISTS fec_candidate_id TEXT;
 
 -- One row per candidate per two-year cycle, from GET /candidate/{id}/totals/.
-CREATE TABLE IF NOT EXISTS rep_finance_totals (
+CREATE TABLE IF NOT EXISTS rep_fec_totals (
   fec_candidate_id          TEXT NOT NULL,
   cycle                     INT NOT NULL,
   receipts                  NUMERIC,
@@ -26,10 +34,10 @@ CREATE TABLE IF NOT EXISTS rep_finance_totals (
 );
 
 -- One row per FEC filing on record, from GET /candidate/{id}/filings/. Capped
--- to the most recent filings per candidate (see PER_CANDIDATE_FILINGS_LIMIT in
+-- to the most recent filings per candidate (see FILINGS_LIMIT in
 -- sync-rep-finances.js), the same bounded approach etl_fec.js uses for
 -- Schedule B, since a decades-long incumbent can have well over a hundred.
-CREATE TABLE IF NOT EXISTS rep_filings (
+CREATE TABLE IF NOT EXISTS rep_fec_filings (
   fec_candidate_id     TEXT NOT NULL,
   file_number          BIGINT NOT NULL,
   report_type          TEXT,
@@ -43,15 +51,15 @@ CREATE TABLE IF NOT EXISTS rep_filings (
   synced_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (fec_candidate_id, file_number)
 );
-CREATE INDEX IF NOT EXISTS idx_rep_filings_candidate_coverage
-  ON rep_filings (fec_candidate_id, coverage_end DESC);
+CREATE INDEX IF NOT EXISTS idx_rep_fec_filings_candidate_coverage
+  ON rep_fec_filings (fec_candidate_id, coverage_end DESC);
 
 -- Bounded donor breakdown from the Schedule A aggregate endpoints
 -- (by_size and by_state), one row per bucket per candidate per cycle. This is
 -- not itemized, named contributions, it is FEC's own pre-aggregated buckets,
 -- which is what keeps this within FEC's rate limits (see etl_fec.js for the
 -- same rate-limit-driven bounding on Schedule B).
-CREATE TABLE IF NOT EXISTS rep_top_donors (
+CREATE TABLE IF NOT EXISTS rep_fec_donor_buckets (
   fec_candidate_id  TEXT NOT NULL,
   committee_id      TEXT NOT NULL,
   cycle             INT NOT NULL,
@@ -62,5 +70,5 @@ CREATE TABLE IF NOT EXISTS rep_top_donors (
   synced_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (fec_candidate_id, cycle, bucket_type, bucket_label)
 );
-CREATE INDEX IF NOT EXISTS idx_rep_top_donors_amount
-  ON rep_top_donors (fec_candidate_id, total_amount DESC);
+CREATE INDEX IF NOT EXISTS idx_rep_fec_donor_buckets_amount
+  ON rep_fec_donor_buckets (fec_candidate_id, total_amount DESC);

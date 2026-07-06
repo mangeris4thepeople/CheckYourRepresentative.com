@@ -16,6 +16,14 @@
 // to finish the initial catch up, same as sync-bills.js, then let the daily
 // cron keep it fresh.
 //
+// TABLE NAMING NOTE: rep_filings and rep_top_donors already existed in this
+// database (created directly against Neon, not by any script in this repo)
+// with a different, district-keyed schema (rep_top_donors even stores named
+// donor_name/employer/occupation, not aggregate buckets). Both were empty, so
+// nothing of value was at risk, but their origin and intended shape are
+// unknown, so this uses rep_fec_totals / rep_fec_filings /
+// rep_fec_donor_buckets instead of colliding with or repurposing them.
+//
 // MATCHING LIMITATION (do not silently paper over): FEC has no crosswalk from
 // a House seat straight to a candidate_id, so matching is office+state+
 // district plus a name match, exact last name first, falling back to a fuzzy
@@ -53,105 +61,6 @@ export default async function handler(req, res) {
   const outOfTime = () => Date.now() - startedAt > TIME_BUDGET_MS;
 
   try {
-    if (req.query.debug) {
-      const steps = [];
-      try { await sql`ALTER TABLE representatives ADD COLUMN IF NOT EXISTS fec_candidate_id TEXT`; steps.push("alter:ok"); }
-      catch (e) { steps.push("alter:fail:" + (e.message || e)); }
-      try {
-        const cols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'representatives' ORDER BY ordinal_position`;
-        steps.push("columns:" + cols.map(c => c.column_name).join(","));
-      } catch (e) { steps.push("columns:fail:" + (e.message || e)); }
-      try {
-        const test = await sql`SELECT district, fec_candidate_id FROM representatives LIMIT 1`;
-        steps.push("select:ok:" + JSON.stringify(test));
-      } catch (e) { steps.push("select:fail:" + (e.message || e)); }
-      try {
-        const cursor = await getCursor();
-        const test2 = await sql`
-          SELECT district, name, state, fec_candidate_id FROM representatives
-          WHERE district > ${cursor} ORDER BY district ASC LIMIT ${BATCH_SIZE}`;
-        steps.push("realquery:ok:" + JSON.stringify(test2) + " cursor=" + JSON.stringify(cursor));
-      } catch (e) { steps.push("realquery:fail:" + (e.message || e)); }
-      try {
-        await sql`
-          CREATE TABLE IF NOT EXISTS rep_finance_totals (
-            fec_candidate_id          TEXT NOT NULL,
-            cycle                     INT NOT NULL,
-            receipts                  NUMERIC,
-            disbursements             NUMERIC,
-            individual_contributions  NUMERIC,
-            pac_contributions         NUMERIC,
-            party_contributions       NUMERIC,
-            cash_on_hand_end          NUMERIC,
-            synced_at                 TIMESTAMPTZ NOT NULL DEFAULT now(),
-            PRIMARY KEY (fec_candidate_id, cycle)
-          )`;
-        steps.push("create_rep_finance_totals:ok");
-      } catch (e) { steps.push("create_rep_finance_totals:fail:" + (e.message || e)); }
-      try {
-        await sql`
-          CREATE TABLE IF NOT EXISTS rep_filings (
-            fec_candidate_id     TEXT NOT NULL,
-            file_number          BIGINT NOT NULL,
-            report_type          TEXT,
-            coverage_start       DATE,
-            coverage_end         DATE,
-            total_receipts       NUMERIC,
-            total_disbursements  NUMERIC,
-            cash_on_hand_end     NUMERIC,
-            filed_date           DATE,
-            pdf_url              TEXT,
-            synced_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
-            PRIMARY KEY (fec_candidate_id, file_number)
-          )`;
-        steps.push("create_rep_filings:ok");
-      } catch (e) { steps.push("create_rep_filings:fail:" + (e.message || e)); }
-      try {
-        const filingsCols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'rep_filings' ORDER BY ordinal_position`;
-        steps.push("rep_filings_columns:" + filingsCols.map(c => c.column_name).join(","));
-      } catch (e) { steps.push("rep_filings_columns:fail:" + (e.message || e)); }
-      try {
-        await sql`CREATE INDEX IF NOT EXISTS idx_rep_filings_candidate_coverage ON rep_filings (fec_candidate_id, coverage_end DESC)`;
-        steps.push("index_rep_filings:ok");
-      } catch (e) { steps.push("index_rep_filings:fail:" + (e.message || e)); }
-      try {
-        await sql`
-          CREATE TABLE IF NOT EXISTS rep_top_donors (
-            fec_candidate_id  TEXT NOT NULL,
-            committee_id      TEXT NOT NULL,
-            cycle             INT NOT NULL,
-            bucket_type       TEXT NOT NULL,
-            bucket_label      TEXT NOT NULL,
-            total_amount      NUMERIC NOT NULL,
-            donor_count       INT,
-            synced_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
-            PRIMARY KEY (fec_candidate_id, cycle, bucket_type, bucket_label)
-          )`;
-        steps.push("create_rep_top_donors:ok");
-      } catch (e) { steps.push("create_rep_top_donors:fail:" + (e.message || e)); }
-      try {
-        const donorsCols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'rep_top_donors' ORDER BY ordinal_position`;
-        steps.push("rep_top_donors_columns:" + donorsCols.map(c => c.column_name).join(","));
-      } catch (e) { steps.push("rep_top_donors_columns:fail:" + (e.message || e)); }
-      try {
-        await sql`CREATE INDEX IF NOT EXISTS idx_rep_top_donors_amount ON rep_top_donors (fec_candidate_id, total_amount DESC)`;
-        steps.push("index_rep_top_donors:ok");
-      } catch (e) { steps.push("index_rep_top_donors:fail:" + (e.message || e)); }
-      try {
-        const c1 = await sql`SELECT count(*) FROM rep_filings`;
-        const c2 = await sql`SELECT count(*) FROM rep_top_donors`;
-        const c3 = await sql`SELECT count(*) FROM rep_finance_totals`;
-        steps.push(`row_counts: rep_filings=${c1[0].count} rep_top_donors=${c2[0].count} rep_finance_totals=${c3[0].count}`);
-      } catch (e) { steps.push("row_counts:fail:" + (e.message || e)); }
-      try {
-        const sample1 = await sql`SELECT * FROM rep_filings LIMIT 2`;
-        const sample2 = await sql`SELECT * FROM rep_top_donors LIMIT 2`;
-        steps.push("sample_rep_filings:" + JSON.stringify(sample1));
-        steps.push("sample_rep_top_donors:" + JSON.stringify(sample2));
-      } catch (e) { steps.push("sample:fail:" + (e.message || e)); }
-      return res.status(200).json({ debug: true, steps });
-    }
-
     await ensureTables();
 
     const cursor = await getCursor();
@@ -338,7 +247,7 @@ async function fetchDonorBuckets(committeeId, cycle) {
 // ---- upserts ----
 async function upsertTotals(candidateId, rows) {
   await sql.query(
-    `INSERT INTO rep_finance_totals
+    `INSERT INTO rep_fec_totals
        (fec_candidate_id, cycle, receipts, disbursements, individual_contributions,
         pac_contributions, party_contributions, cash_on_hand_end, synced_at)
      SELECT $1, *, now() FROM unnest(
@@ -364,7 +273,7 @@ async function upsertTotals(candidateId, rows) {
 
 async function upsertFilings(candidateId, rows) {
   await sql.query(
-    `INSERT INTO rep_filings
+    `INSERT INTO rep_fec_filings
        (fec_candidate_id, file_number, report_type, coverage_start, coverage_end,
         total_receipts, total_disbursements, cash_on_hand_end, filed_date, pdf_url, synced_at)
      SELECT $1, *, now() FROM unnest(
@@ -394,7 +303,7 @@ async function upsertFilings(candidateId, rows) {
 
 async function upsertDonorBuckets(candidateId, committeeId, cycle, rows) {
   await sql.query(
-    `INSERT INTO rep_top_donors (fec_candidate_id, committee_id, cycle, bucket_type, bucket_label, total_amount, donor_count, synced_at)
+    `INSERT INTO rep_fec_donor_buckets (fec_candidate_id, committee_id, cycle, bucket_type, bucket_label, total_amount, donor_count, synced_at)
      SELECT $1, $2, $3, *, now() FROM unnest(
        $4::text[], $5::text[], $6::numeric[], $7::int[]
      ) AS t(bucket_type, bucket_label, total_amount, donor_count)
@@ -414,7 +323,7 @@ async function upsertDonorBuckets(candidateId, committeeId, cycle, rows) {
 async function ensureTables() {
   await sql`ALTER TABLE representatives ADD COLUMN IF NOT EXISTS fec_candidate_id TEXT`;
   await sql`
-    CREATE TABLE IF NOT EXISTS rep_finance_totals (
+    CREATE TABLE IF NOT EXISTS rep_fec_totals (
       fec_candidate_id          TEXT NOT NULL,
       cycle                     INT NOT NULL,
       receipts                  NUMERIC,
@@ -427,7 +336,7 @@ async function ensureTables() {
       PRIMARY KEY (fec_candidate_id, cycle)
     )`;
   await sql`
-    CREATE TABLE IF NOT EXISTS rep_filings (
+    CREATE TABLE IF NOT EXISTS rep_fec_filings (
       fec_candidate_id     TEXT NOT NULL,
       file_number          BIGINT NOT NULL,
       report_type          TEXT,
@@ -441,9 +350,9 @@ async function ensureTables() {
       synced_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (fec_candidate_id, file_number)
     )`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_rep_filings_candidate_coverage ON rep_filings (fec_candidate_id, coverage_end DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_rep_fec_filings_candidate_coverage ON rep_fec_filings (fec_candidate_id, coverage_end DESC)`;
   await sql`
-    CREATE TABLE IF NOT EXISTS rep_top_donors (
+    CREATE TABLE IF NOT EXISTS rep_fec_donor_buckets (
       fec_candidate_id  TEXT NOT NULL,
       committee_id      TEXT NOT NULL,
       cycle             INT NOT NULL,
@@ -454,7 +363,7 @@ async function ensureTables() {
       synced_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (fec_candidate_id, cycle, bucket_type, bucket_label)
     )`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_rep_top_donors_amount ON rep_top_donors (fec_candidate_id, total_amount DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_rep_fec_donor_buckets_amount ON rep_fec_donor_buckets (fec_candidate_id, total_amount DESC)`;
   await sql`
     CREATE TABLE IF NOT EXISTS sync_state (
       key        TEXT PRIMARY KEY,

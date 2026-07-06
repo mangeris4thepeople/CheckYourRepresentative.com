@@ -30,18 +30,18 @@ export default async function handler(req, res) {
     const totals = await sql`
       SELECT cycle, receipts, disbursements, individual_contributions,
              pac_contributions, party_contributions, cash_on_hand_end
-      FROM rep_finance_totals WHERE fec_candidate_id = ${candidateId}
+      FROM rep_fec_totals WHERE fec_candidate_id = ${candidateId}
       ORDER BY cycle DESC`;
 
     const filings = await sql`
       SELECT file_number, report_type, coverage_start, coverage_end,
              total_receipts, total_disbursements, cash_on_hand_end, filed_date, pdf_url
-      FROM rep_filings WHERE fec_candidate_id = ${candidateId}
+      FROM rep_fec_filings WHERE fec_candidate_id = ${candidateId}
       ORDER BY coverage_end DESC NULLS LAST`;
 
     const topDonors = await sql`
       SELECT cycle, bucket_type, bucket_label, total_amount, donor_count
-      FROM rep_top_donors WHERE fec_candidate_id = ${candidateId}
+      FROM rep_fec_donor_buckets WHERE fec_candidate_id = ${candidateId}
       ORDER BY total_amount DESC`;
 
     return res.status(200).json({ ready: true, rep, matched: true, totals, filings, topDonors });
