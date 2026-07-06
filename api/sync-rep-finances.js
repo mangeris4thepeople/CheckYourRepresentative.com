@@ -101,6 +101,7 @@ export default async function handler(req, res) {
             return acc;
           }, {});
           steps.committee_filings_first_with_receipts = (committeeFilings.results || []).find(r => r.total_receipts != null) || null;
+          steps.committee_filings_first_report = (committeeFilings.results || []).find(r => r.form_category === "REPORT") || null;
         }
       } catch (e) {
         steps.committee_filings_error = e.message || String(e);
