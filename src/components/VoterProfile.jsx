@@ -5,6 +5,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getStoredSession, storeSession } from "../lib/session.js";
 import { PRIVACY_SHORT } from "../content/siteCopy.js";
+import AddressLookup from "./AddressLookup.jsx";
+import ConstituentOnboarding from "./ConstituentOnboarding.jsx";
+import InteractiveDistrictMap from "./InteractiveDistrictMap.jsx";
 
 const C = {
   navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
@@ -25,10 +28,13 @@ function humanizeSendError(code) {
 }
 
 // onProfileLoaded(profile, session) - lets App.jsx pull the saved district
-// into `resolved` so Vote / Accountability / Find District don't need the
+// into `resolved` so Vote / Accountability / All Active Bills don't need the
 // visitor to re-enter their address every time they sign in.
 // onSignOut() - lets App.jsx clear its copy of the session.
-export default function VoterProfile({ district, onDistrictNeeded, onProfileLoaded, onSignOut, onShowTutorial }) {
+// resolved / onResolved / onDistrictSelect - the district lookup used to live
+// on its own "Find District" tab; it now lives here instead, right next to
+// the District stat it fills in.
+export default function VoterProfile({ district, resolved, onResolved, onDistrictSelect, onProfileLoaded, onSignOut, onShowTutorial }) {
   const [authPhase, setAuthPhase] = useState("loading"); // loading|signed-out|sending|sent|signed-in
   const [email, setEmail]         = useState("");
   const [session, setSession]     = useState(null);
@@ -357,6 +363,35 @@ export default function VoterProfile({ district, onDistrictNeeded, onProfileLoad
                 </button>
               </>
             )}
+          </div>
+
+          {/* Find Your District - moved here from the old standalone "Find
+              District" tab. The street address only ever goes to
+              /api/geocode to resolve a district; it is never included in
+              the profile save payload below, never stored, never shown. */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1, marginBottom: 8 }}>
+              FIND YOUR DISTRICT
+            </div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
+              Used only to look up your district. Your address is never stored and never shown to anyone.
+            </div>
+            <AddressLookup onResolved={onResolved} />
+            {resolved ? (
+              <div style={{ marginTop: 20 }}>
+                <ConstituentOnboarding location={resolved.location} district={resolved.district} />
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", color: C.muted, fontStyle: "italic", maxWidth: 680, margin: "14px auto 0", fontSize: 13 }}>
+                Enter your address above to confirm your district - then choose the topics you want summaries for.
+              </p>
+            )}
+            <div style={{ marginTop: 28 }}>
+              <div style={{ margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
+                - OR EXPLORE THE MAP -
+              </div>
+              <InteractiveDistrictMap onDistrictSelect={onDistrictSelect} />
+            </div>
           </div>
 
           <Field label="DISPLAY NAME (optional)">

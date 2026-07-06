@@ -162,8 +162,9 @@ export const PRIVACY_POLICY = {
       body: [
         "When you create an account, we collect your email address. There is no password, " +
           "we use a one-time sign in link sent to your email instead.",
-        "When you use Find District, we collect the address you enter, so we can match you " +
-          "to your congressional district and representative.",
+        "When you use the district lookup on My Profile, the address you enter is used only " +
+          "to match you to your congressional district and representative. The address itself " +
+          "is never stored.",
         "If you fill in optional profile fields, we collect your display name, city or town, " +
           "and bio, only if you choose to provide them.",
         "We collect the positions you cast on bills, support, oppose, or undecided, and the " +
@@ -284,7 +285,7 @@ export const TUTORIAL_GETTING_STARTED = {
     },
     {
       n: "3",
-      title: "Enter your address on Find District.",
+      title: "Enter your address on My Profile.",
       body:
         "This matches you to your congressional district and your representative, and " +
         "personalizes everything else on the site around that district. That is all the " +
@@ -308,6 +309,8 @@ export const TUTORIAL_PAGES = {
       { label: "Votes Cast", desc: "The total number of bills you have cast a position on." },
       { label: "Verified", desc: "How many of your positions were cast from a network location that matched your district's state. It is a location signal on each vote, not an identity check." },
       { label: "District", desc: "The congressional district you were matched to." },
+      { label: "Find Your District", desc: "Enter your address to match yourself to your congressional district and representative. Your address is only ever used for this match, never stored, never shown or shared." },
+      { label: "Or explore the map", desc: "Browse districts on the map to look around, without changing the district your account is registered to." },
       { label: "Display Name (optional)", desc: "What shows instead of your email if your profile is public. Leave blank to stay anonymous even when public." },
       { label: "City / Town", desc: "A general location shown on your public profile. This is not your full address, which is only ever used privately to match your district." },
       { label: "Bio (optional)", desc: "A short personal statement shown on your public card if your profile is public." },
@@ -328,15 +331,6 @@ export const TUTORIAL_PAGES = {
       { label: "The four expandable sections", desc: "Who benefits, who is worse off, PAC and donor money behind it, and industries with a financial stake. Open them to read the plain-English breakdown before you vote." },
       { label: "Vote tally bar", desc: "Shows how the country has voted on this bill so far." },
       { label: "Support / Oppose / Undecided", desc: "Your position. One per bill, per account, permanent once cast. It cannot be changed or resubmitted, so read first." },
-    ],
-  },
-  district: {
-    title: "Find District",
-    intro: "Enter your address once to personalize the whole site around your district.",
-    items: [
-      { label: "Enter your address", desc: "This is how the site matches you to your congressional district and representative." },
-      { label: "Why it matters", desc: "Your district is what personalizes Accountability, Roll Calls, and your own profile. Your full address is only used for this match, never shown or shared." },
-      { label: "Or explore the map", desc: "Browse districts on the map to look around, without changing the district your account is registered to." },
     ],
   },
   ngos: {

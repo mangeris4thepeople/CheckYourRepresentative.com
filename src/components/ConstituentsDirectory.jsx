@@ -66,7 +66,7 @@ export default function ConstituentsDirectory({ district, initialVoterId }) {
 
         {scope === "district" && !district && (
           <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>
-            Set your district (Find District tab) to see your neighbors here.
+            Set your district (My Profile) to see your neighbors here.
           </div>
         )}
 

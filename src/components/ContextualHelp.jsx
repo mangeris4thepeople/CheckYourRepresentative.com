@@ -1,6 +1,6 @@
 // =============================================================================
-// ContextualHelp.jsx - left-hand help sidebar for the My Profile, Vote on
-// Bills, and Find District tabs. Explains every control on the page in plain
+// ContextualHelp.jsx - left-hand help sidebar for the My Profile and Vote on
+// Bills tabs. Explains every control on the page in plain
 // language, using the same copy as the Site Tutorial (trimmed to short lines),
 // so someone landing here understands the page without leaving to read a
 // separate tutorial.

@@ -12,14 +12,11 @@
 // =============================================================================
 import React, { useState, useEffect } from "react";
 import Landing from "./components/Landing.jsx";
-import AddressLookup from "./components/AddressLookup.jsx";
 import ConstituentMap from "./components/ConstituentMap.jsx";
-import ConstituentOnboarding from "./components/ConstituentOnboarding.jsx";
 import ConstituentVoting from "./components/ConstituentVoting.jsx";
 import AllBillsBrowser from "./components/AllBillsBrowser.jsx";
 import Merch from "./components/Merch.jsx";
 import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
-import InteractiveDistrictMap from "./components/InteractiveDistrictMap.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
@@ -41,7 +38,6 @@ const TABS = [
   { key: "profile",      label: "👤 My Profile" },
   { key: "vote",         label: "🗳️ Vote on Bills" },
   { key: "allbills",     label: "📄 All Active Bills" },
-  { key: "district",     label: "📍 Find District" },
   { key: "matrix",       label: "📊 Accountability" },
   { key: "rollcalls",    label: "📋 Roll Calls" },
   { key: "ngos",         label: "🏦 NGOs" },
@@ -51,7 +47,7 @@ const TABS = [
 ];
 
 // Tabs that get a left-hand contextual help sidebar.
-const HELP_TABS = { profile: "profile", vote: "vote", district: "district", ngos: "ngos", knowyourrep: "knowyourrep" };
+const HELP_TABS = { profile: "profile", vote: "vote", ngos: "ngos", knowyourrep: "knowyourrep" };
 
 // Inject mobile CSS once
 const MOBILE_CSS = `
@@ -119,7 +115,7 @@ export default function App() {
 
   // Called by VoterProfile once it has confirmed a session and loaded the
   // profile. Pulls the saved district straight into `resolved` so Vote /
-  // Accountability / Find District all just work without re-asking for
+  // Accountability / All Active Bills all just work without re-asking for
   // an address.
   function handleProfileLoaded(profile, sess) {
     setSession(sess || getStoredSession());
@@ -194,27 +190,6 @@ export default function App() {
       {showTutorial && <FirstRunTutorial onDismiss={dismissTutorial} />}
 
       <main className="cyr-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
-        {tab === "district" && (
-          <HelpLayout page="district">
-            <AddressLookup onResolved={(r) => setResolved({ ...r, confirmed: true })} />
-            {resolved ? (
-              <div style={{ marginTop: 28 }}>
-                <ConstituentOnboarding location={resolved.location} district={resolved.district} onGoVote={() => setTab('vote')} />
-              </div>
-            ) : (
-              <p style={{ textAlign: "center", color: C.muted, fontStyle: "italic", maxWidth: 680, margin: "18px auto 0", fontSize: 13.5 }}>
-                Enter your address above to confirm your district - then choose the topics you want summaries for.
-              </p>
-            )}
-            <div style={{ marginTop: 40 }}>
-              <div style={{ maxWidth: 1040, margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
-                - OR EXPLORE THE MAP  -
-              </div>
-              <InteractiveDistrictMap onDistrictSelect={(d) => { setResolved(r => ({...r, district: d, confirmed: false})); setTab("vote"); }} />
-            </div>
-          </HelpLayout>
-        )}
-
         {tab === "vote" && (
           <HelpLayout page="vote">
             <ConstituentVoting
@@ -263,6 +238,9 @@ export default function App() {
           <HelpLayout page="profile">
             <VoterProfile
               district={resolved?.district}
+              resolved={resolved}
+              onResolved={(r) => setResolved({ ...r, confirmed: true })}
+              onDistrictSelect={(d) => setResolved(r => ({ ...r, district: d, confirmed: false }))}
               onProfileLoaded={handleProfileLoaded}
               onSignOut={handleSignOut}
               onShowTutorial={openTutorial}
