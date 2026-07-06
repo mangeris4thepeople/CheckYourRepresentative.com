@@ -65,6 +65,13 @@ export default async function handler(req, res) {
         const test = await sql`SELECT district, fec_candidate_id FROM representatives LIMIT 1`;
         steps.push("select:ok:" + JSON.stringify(test));
       } catch (e) { steps.push("select:fail:" + (e.message || e)); }
+      try {
+        const cursor = await getCursor();
+        const test2 = await sql`
+          SELECT district, name, state, fec_candidate_id FROM representatives
+          WHERE district > ${cursor} ORDER BY district ASC LIMIT ${BATCH_SIZE}`;
+        steps.push("realquery:ok:" + JSON.stringify(test2) + " cursor=" + JSON.stringify(cursor));
+      } catch (e) { steps.push("realquery:fail:" + (e.message || e)); }
       return res.status(200).json({ debug: true, steps });
     }
 
