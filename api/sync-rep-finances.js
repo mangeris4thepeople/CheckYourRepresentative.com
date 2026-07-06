@@ -89,6 +89,22 @@ export default async function handler(req, res) {
       } catch (e) {
         steps.form_category_report_filter_error = e.message || String(e);
       }
+      try {
+        const committees = await fec(`/candidate/${candidateId}/committees/`, { per_page: 20 });
+        const principal = (committees.results || []).find(c => c.designation === "P") || committees.results?.[0];
+        steps.principal_committee_id = principal ? principal.committee_id : null;
+        if (principal) {
+          const committeeFilings = await fec(`/committee/${principal.committee_id}/filings/`, { sort: "-receipt_date", per_page: 10 });
+          steps.committee_filings_count = committeeFilings.results?.length ?? 0;
+          steps.committee_filings_form_categories = (committeeFilings.results || []).reduce((acc, r) => {
+            acc[r.form_category || "null"] = (acc[r.form_category || "null"] || 0) + 1;
+            return acc;
+          }, {});
+          steps.committee_filings_first_with_receipts = (committeeFilings.results || []).find(r => r.total_receipts != null) || null;
+        }
+      } catch (e) {
+        steps.committee_filings_error = e.message || String(e);
+      }
       return res.status(200).json({ debug: true, steps });
     }
 
