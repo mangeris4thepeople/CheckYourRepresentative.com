@@ -38,11 +38,17 @@ import { sql, hasDb } from "./_db.js";
 
 const FEC_API_KEY = process.env.FEC_API_KEY;
 const FEC_BASE = "https://api.open.fec.gov/v1";
-const BATCH_SIZE = 6;             // representatives worked per invocation batch
-const CONCURRENCY = 3;            // parallel representatives per batch, mindful of FEC rate limits
-const RECENT_CYCLES = 3;          // how many of a candidate's most recent cycles to keep totals for
-const FILINGS_LIMIT = 20;         // most recent filings kept per candidate (some incumbents have 100+)
-const TIME_BUDGET_MS = 45000;     // leaves margin below the platform's hard invocation limit
+const PAGE_SIZE = 20;              // representatives fetched from Postgres per page
+const CONCURRENCY = 2;             // parallel representatives in flight, mindful of FEC rate limits
+const RECENT_CYCLES = 3;           // how many of a candidate's most recent cycles to keep totals for
+const FILINGS_LIMIT = 20;          // most recent filings kept per candidate (some incumbents have 100+)
+// vercel.json sets maxDuration: 60 for api/*.js. Each unmatched representative
+// needs several sequential FEC round trips (candidate search, committees,
+// totals, filings, two Schedule A aggregates), so time is checked before every
+// small CONCURRENCY-sized chunk, not just between whole pages, otherwise a
+// slow chunk can run past the platform's hard limit before the check ever
+// fires (verified live: this happened with a coarser per-page check).
+const TIME_BUDGET_MS = 40000;
 
 // FEC's Schedule A "size" aggregate uses a fixed set of bucket floors.
 const SIZE_LABELS = {
@@ -64,31 +70,33 @@ export default async function handler(req, res) {
     await ensureTables();
 
     const cursor = await getCursor();
-    let reps = await sql`
-      SELECT district, name, state, fec_candidate_id FROM representatives
-      WHERE district > ${cursor} ORDER BY district ASC LIMIT ${BATCH_SIZE}`;
-
-    let reachedEnd = reps.length < BATCH_SIZE;
     let lastDistrict = cursor;
     let processed = 0;
+    let stoppedEarly = false;
     const unmatched = [];
     const fuzzyMatched = [];
 
-    while (reps.length && !outOfTime()) {
+    let reps = await sql`
+      SELECT district, name, state, fec_candidate_id FROM representatives
+      WHERE district > ${lastDistrict} ORDER BY district ASC LIMIT ${PAGE_SIZE}`;
+
+    pages:
+    while (reps.length) {
       for (let i = 0; i < reps.length; i += CONCURRENCY) {
+        if (outOfTime()) { stoppedEarly = true; break pages; }
         const batch = reps.slice(i, i + CONCURRENCY);
         await Promise.allSettled(batch.map(rep => processRep(rep, { unmatched, fuzzyMatched })));
         processed += batch.length;
+        lastDistrict = batch[batch.length - 1].district;
       }
-      lastDistrict = reps[reps.length - 1].district;
-      if (reachedEnd || outOfTime()) break;
+      if (outOfTime()) { stoppedEarly = true; break; }
 
       reps = await sql`
         SELECT district, name, state, fec_candidate_id FROM representatives
-        WHERE district > ${lastDistrict} ORDER BY district ASC LIMIT ${BATCH_SIZE}`;
-      reachedEnd = reps.length < BATCH_SIZE;
+        WHERE district > ${lastDistrict} ORDER BY district ASC LIMIT ${PAGE_SIZE}`;
     }
 
+    const reachedEnd = !stoppedEarly;
     await setCursor(reachedEnd ? "" : lastDistrict);
 
     return res.status(200).json({
