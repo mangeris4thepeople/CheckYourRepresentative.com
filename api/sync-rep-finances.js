@@ -73,14 +73,70 @@ export default async function handler(req, res) {
         steps.push("realquery:ok:" + JSON.stringify(test2) + " cursor=" + JSON.stringify(cursor));
       } catch (e) { steps.push("realquery:fail:" + (e.message || e)); }
       try {
-        await ensureTables();
-        steps.push("ensureTables:ok");
-        const cursor3 = await getCursor();
-        const test3 = await sql`
-          SELECT district, name, state, fec_candidate_id FROM representatives
-          WHERE district > ${cursor3} ORDER BY district ASC LIMIT ${BATCH_SIZE}`;
-        steps.push("afterEnsureTables:ok:" + JSON.stringify(test3));
-      } catch (e) { steps.push("afterEnsureTables:fail:" + (e.message || e)); }
+        await sql`
+          CREATE TABLE IF NOT EXISTS rep_finance_totals (
+            fec_candidate_id          TEXT NOT NULL,
+            cycle                     INT NOT NULL,
+            receipts                  NUMERIC,
+            disbursements             NUMERIC,
+            individual_contributions  NUMERIC,
+            pac_contributions         NUMERIC,
+            party_contributions       NUMERIC,
+            cash_on_hand_end          NUMERIC,
+            synced_at                 TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (fec_candidate_id, cycle)
+          )`;
+        steps.push("create_rep_finance_totals:ok");
+      } catch (e) { steps.push("create_rep_finance_totals:fail:" + (e.message || e)); }
+      try {
+        await sql`
+          CREATE TABLE IF NOT EXISTS rep_filings (
+            fec_candidate_id     TEXT NOT NULL,
+            file_number          BIGINT NOT NULL,
+            report_type          TEXT,
+            coverage_start       DATE,
+            coverage_end         DATE,
+            total_receipts       NUMERIC,
+            total_disbursements  NUMERIC,
+            cash_on_hand_end     NUMERIC,
+            filed_date           DATE,
+            pdf_url              TEXT,
+            synced_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (fec_candidate_id, file_number)
+          )`;
+        steps.push("create_rep_filings:ok");
+      } catch (e) { steps.push("create_rep_filings:fail:" + (e.message || e)); }
+      try {
+        const filingsCols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'rep_filings' ORDER BY ordinal_position`;
+        steps.push("rep_filings_columns:" + filingsCols.map(c => c.column_name).join(","));
+      } catch (e) { steps.push("rep_filings_columns:fail:" + (e.message || e)); }
+      try {
+        await sql`CREATE INDEX IF NOT EXISTS idx_rep_filings_candidate_coverage ON rep_filings (fec_candidate_id, coverage_end DESC)`;
+        steps.push("index_rep_filings:ok");
+      } catch (e) { steps.push("index_rep_filings:fail:" + (e.message || e)); }
+      try {
+        await sql`
+          CREATE TABLE IF NOT EXISTS rep_top_donors (
+            fec_candidate_id  TEXT NOT NULL,
+            committee_id      TEXT NOT NULL,
+            cycle             INT NOT NULL,
+            bucket_type       TEXT NOT NULL,
+            bucket_label      TEXT NOT NULL,
+            total_amount      NUMERIC NOT NULL,
+            donor_count       INT,
+            synced_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (fec_candidate_id, cycle, bucket_type, bucket_label)
+          )`;
+        steps.push("create_rep_top_donors:ok");
+      } catch (e) { steps.push("create_rep_top_donors:fail:" + (e.message || e)); }
+      try {
+        const donorsCols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'rep_top_donors' ORDER BY ordinal_position`;
+        steps.push("rep_top_donors_columns:" + donorsCols.map(c => c.column_name).join(","));
+      } catch (e) { steps.push("rep_top_donors_columns:fail:" + (e.message || e)); }
+      try {
+        await sql`CREATE INDEX IF NOT EXISTS idx_rep_top_donors_amount ON rep_top_donors (fec_candidate_id, total_amount DESC)`;
+        steps.push("index_rep_top_donors:ok");
+      } catch (e) { steps.push("index_rep_top_donors:fail:" + (e.message || e)); }
       return res.status(200).json({ debug: true, steps });
     }
 
