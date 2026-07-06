@@ -12,6 +12,55 @@
   margin-bottom: 8px;
 }
 
+/* Bill-type tabs (HR, S, HRES, ...), one per prefix that has any votes. */
+.bs-prefix-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.bs-prefix-tab {
+  flex: 1 1 calc(33% - 6px);
+  background: #fff;
+  border: 1px solid #0A1A3F;
+  border-radius: 14px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0A1A3F;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bs-prefix-tab:hover {
+  background: #eef1f7;
+}
+
+.bs-prefix-tab-active {
+  background: #0A1A3F;
+  border-color: #0A1A3F;
+  color: #fff;
+}
+
+.bs-load-more {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  font-weight: 700;
+  font-size: 12.5px;
+  background: #0A1A3F;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.bs-load-more:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .bs-filter-row {
   display: flex;
   flex-wrap: wrap;

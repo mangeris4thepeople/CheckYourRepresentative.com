@@ -1,12 +1,52 @@
 // =============================================================================
 // GET /api/matrix?district=CO-04 - accountability matrix for a district
 // Returns raw vote counts + how many contacted their rep per bill
+//
+//   GET /api/matrix?mode=prefixes  -> every bill type with any votes, and how
+//                                     many distinct bills of that type, no cap.
+//                                     Powers the sidebar's prefix tabs.
+//   GET /api/matrix?mode=byPrefix&prefix=hr&limit=20&offset=0
+//                                  -> that bill type's bills, paginated, so
+//                                     every voted-on bill is reachable, not
+//                                     just the top 100 nationally.
 // =============================================================================
 import { sql } from "./_db.js";
 
 export default async function handler(req, res) {
   try {
-    const { district, billId } = req.query;
+    const { district, billId, mode } = req.query;
+
+    if (mode === "prefixes") {
+      const prefixes = await sql`
+        SELECT split_part(bill_id, '-', 1) AS bill_type, COUNT(DISTINCT bill_id) AS bill_count
+        FROM votes WHERE quarantined = FALSE
+        GROUP BY 1 ORDER BY bill_count DESC`;
+      return res.status(200).json({ ok: true, prefixes });
+    }
+
+    if (mode === "byPrefix") {
+      const prefix = String(req.query.prefix || "").trim().toLowerCase();
+      if (!prefix) return res.status(400).json({ error: "prefix required" });
+      const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 20));
+      const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+
+      const rows = await sql`
+        SELECT v.bill_id,
+               COUNT(DISTINCT v.identity)                                        AS total_votes,
+               COUNT(DISTINCT v.identity) FILTER (WHERE v.position = 'support')  AS support_votes,
+               COUNT(DISTINCT v.identity) FILTER (WHERE v.position = 'oppose')   AS oppose_votes
+        FROM votes v
+        WHERE v.quarantined = FALSE AND split_part(v.bill_id, '-', 1) = ${prefix}
+        GROUP BY v.bill_id
+        ORDER BY total_votes DESC
+        LIMIT ${limit} OFFSET ${offset}`;
+
+      return res.status(200).json({
+        ok: true, rows, offset,
+        hasMore: rows.length === limit,
+        count: rows.length,
+      });
+    }
 
     let rows;
     let totals = null;

@@ -5,7 +5,7 @@
 // split, with the visitor's own district highlighted at the top.
 // One fetch, no filters. The bill is the story.
 // =============================================================================
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import BillSidebar from "./BillSidebar.jsx";
 import "./BillSidebar.css";
 
@@ -14,16 +14,20 @@ const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#FBF7E
   greenLight:"#E8F5E9", redLight:"#FFEBEE" };
 const serif = "Georgia, 'Times New Roman', serif";
 const mono = "'Courier New', monospace";
+const POLL_MS = 20000;
 
 export default function AccountabilityDashboard({ district }) {
-  const [rows, setRows]   = useState([]);
   const [totals, setTotals] = useState(null);
   const [phase, setPhase] = useState("loading");
-  const [selected, setSelected] = useState(null); // bill_id
+  const [selected, setSelected] = useState(null); // bill_id, set by BillSidebar
+  const [billRows, setBillRows] = useState([]);   // district breakdown for the selected bill
+  const [billRowsPhase, setBillRowsPhase] = useState("idle"); // idle|loading|ready|error
   const [synopses, setSynopses] = useState({});   // bill_id -> {headline, plain}
   const [expandedStates, setExpandedStates] = useState(() => new Set()); // which state rows are open
+  const inFlight = useRef(false);
 
   const userState = district ? String(district).split("-")[0] : null;
+  const activeBill = selected;
 
   function toggleState(st) {
     setExpandedStates(prev => {
@@ -35,31 +39,47 @@ export default function AccountabilityDashboard({ district }) {
 
   useEffect(() => { load(); }, []);
 
+  // Live refresh: re-pull the site-wide totals every 20s while the page is
+  // open, in addition to the one-time load on mount and the manual Refresh
+  // button. Guarded against overlapping calls (see load()).
+  useEffect(() => {
+    const id = setInterval(load, POLL_MS);
+    return () => clearInterval(id);
+  }, []);
+
   async function load() {
-    setPhase("loading");
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setPhase(p => (p === "ready" ? p : "loading"));
     try {
       const r = await fetch("/api/matrix");
       const data = await r.json();
-      const all = data.rows || [];
-      setRows(all);
       setTotals(data.totals || null);
-      setPhase(all.length ? "ready" : "empty");
+      setPhase(Number(data.totals?.total_votes) > 0 ? "ready" : "empty");
     } catch {
       setPhase("error");
+    } finally {
+      inFlight.current = false;
     }
   }
 
-  // Group rows by bill
-  const byBill = {};
-  for (const row of rows) {
-    const id = row.bill_id;
-    if (!byBill[id]) byBill[id] = [];
-    byBill[id].push(row);
-  }
-  const billIds = Object.keys(byBill).sort((a, b) =>
-    sumVotes(byBill[b]) - sumVotes(byBill[a]));
-  const activeBill = selected && byBill[selected] ? selected : billIds[0];
-  const billRows = activeBill ? byBill[activeBill] : [];
+  // District breakdown for whichever bill is currently selected in the
+  // sidebar. Fetched per bill (not derived from a capped national list), so
+  // any voted-on bill the sidebar surfaces works here too.
+  useEffect(() => {
+    if (!activeBill) { setBillRows([]); return; }
+    let cancelled = false;
+    setBillRowsPhase("loading");
+    fetch(`/api/matrix?billId=${encodeURIComponent(activeBill)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        setBillRows(d.rows || []);
+        setBillRowsPhase("ready");
+      })
+      .catch(() => { if (!cancelled) setBillRowsPhase("error"); });
+    return () => { cancelled = true; };
+  }, [activeBill]);
 
   useEffect(() => {
     if (!activeBill || synopses[activeBill]) return;
@@ -147,7 +167,7 @@ export default function AccountabilityDashboard({ district }) {
           <StatBox num={totalSupport.toLocaleString()} label="Support" color="#4CAF50" />
           <StatBox num={totalOppose.toLocaleString()} label="Oppose" color="#ef5350" />
           <StatBox num={totalContacts.toLocaleString()} label="Contacted Their Rep" color={C.gold} />
-          <StatBox num={billIds.length.toLocaleString()} label="Bills Tracked" color="#90CAF9" />
+          <StatBox num={(Number(totals?.bills_tracked) || 0).toLocaleString()} label="Bills Tracked" color="#90CAF9" />
         </div>
       </div>
 
@@ -167,12 +187,6 @@ export default function AccountabilityDashboard({ district }) {
           {/* LEFT RAIL: bills */}
           <div style={{ flex:"0 0 200px", minWidth:180 }}>
             <BillSidebar
-              bills={billIds.map(id => ({
-                id,
-                billNumber: id.replace(/-119$/,"").toUpperCase(),
-                positionCount: sumVotes(byBill[id]),
-                isActive: true,
-              }))}
               userVotes={{}}
               selectedBillId={activeBill}
               onSelectBill={setSelected}
@@ -209,6 +223,7 @@ export default function AccountabilityDashboard({ district }) {
                 <div style={{ fontSize:11, color:C.muted, margin:"8px 0 16px" }}>
                   {nat.total} position{nat.total !== 1 ? "s" : ""} across {billRows.length} district{billRows.length !== 1 ? "s" : ""}
                   {nat.contacted > 0 ? ` · ${nat.contacted} contacted their rep` : ""}
+                  {billRowsPhase === "loading" ? " · updating..." : ""}
                 </div>
 
                 {/* District breakdown, grouped by state. Each state is a
@@ -306,10 +321,6 @@ export default function AccountabilityDashboard({ district }) {
       </div>
     </div>
   );
-}
-
-function sumVotes(list) {
-  return list.reduce((s, r) => s + Number(r.total_votes), 0);
 }
 
 function NationalBar({ nat }) {
