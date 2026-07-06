@@ -137,6 +137,18 @@ export default async function handler(req, res) {
         await sql`CREATE INDEX IF NOT EXISTS idx_rep_top_donors_amount ON rep_top_donors (fec_candidate_id, total_amount DESC)`;
         steps.push("index_rep_top_donors:ok");
       } catch (e) { steps.push("index_rep_top_donors:fail:" + (e.message || e)); }
+      try {
+        const c1 = await sql`SELECT count(*) FROM rep_filings`;
+        const c2 = await sql`SELECT count(*) FROM rep_top_donors`;
+        const c3 = await sql`SELECT count(*) FROM rep_finance_totals`;
+        steps.push(`row_counts: rep_filings=${c1[0].count} rep_top_donors=${c2[0].count} rep_finance_totals=${c3[0].count}`);
+      } catch (e) { steps.push("row_counts:fail:" + (e.message || e)); }
+      try {
+        const sample1 = await sql`SELECT * FROM rep_filings LIMIT 2`;
+        const sample2 = await sql`SELECT * FROM rep_top_donors LIMIT 2`;
+        steps.push("sample_rep_filings:" + JSON.stringify(sample1));
+        steps.push("sample_rep_top_donors:" + JSON.stringify(sample2));
+      } catch (e) { steps.push("sample:fail:" + (e.message || e)); }
       return res.status(200).json({ debug: true, steps });
     }
 
