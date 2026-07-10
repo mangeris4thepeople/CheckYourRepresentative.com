@@ -222,7 +222,7 @@ export default function App() {
 
         {tab === "followthemoney" && (
           <HelpLayout page="followthemoney">
-            <FollowTheMoney />
+            <FollowTheMoney district={resolved?.district} />
           </HelpLayout>
         )}
 

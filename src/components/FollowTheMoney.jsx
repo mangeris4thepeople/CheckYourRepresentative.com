@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import KnowYourRepTabs from "./KnowYourRepTabs.jsx";
 import NgosDirectory from "./NgosDirectory.jsx";
+import SocialSecurityPanel from "./SocialSecurityPanel.jsx";
 
 const C = {
   navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
@@ -56,7 +57,7 @@ function ComingSoon({ title, body }) {
   );
 }
 
-export default function FollowTheMoney() {
+export default function FollowTheMoney({ district }) {
   const [section, setSection] = useState(readSectionFromUrl);
 
   useEffect(() => {
@@ -88,12 +89,7 @@ export default function FollowTheMoney() {
           body="State-level Medicare and Medicaid spending trends are on the way, sourced from the same public disclosures as the rest of this tab."
         />
       )}
-      {section === "social-security" && (
-        <ComingSoon
-          title="Social Security"
-          body="District and state-level Social Security data, including OASDI, is on the way."
-        />
-      )}
+      {section === "social-security" && <SocialSecurityPanel district={district} />}
     </div>
   );
 }

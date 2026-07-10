@@ -113,8 +113,11 @@ export const HOW_IT_WORKS = {
         "to the actual filing, and their top donors ranked by dollar amount, searchable by " +
         "name or district. NGO Funding shows how much of an advocacy organization's " +
         "reported revenue can be traced to a public, dollar-level disclosure, and how much " +
-        "the law leaves as an aggregate lump, using only what is already public. Medicare " +
-        "and Medicaid, and Social Security, are coming soon to the same tab.",
+        "the law leaves as an aggregate lump, using only what is already public. Social " +
+        "Security shows retirement, survivors, and disability beneficiary counts and total " +
+        "monthly benefits by state, sourced from the Social Security Administration, " +
+        "currently 2015 data, the most recent state-level breakdown published in this form. " +
+        "Medicare and Medicaid spending by state is coming soon to the same tab.",
     },
   ],
 };
@@ -345,7 +348,9 @@ export const TUTORIAL_PAGES = {
       { label: "NGO Funding, traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
       { label: "NGO Funding, reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
       { label: "Medicare and Medicaid", desc: "Coming soon. Will show state-level Medicare and Medicaid spending trends from public federal data." },
-      { label: "Social Security", desc: "Coming soon. Will show district and state-level Social Security data, including OASDI, from public federal data." },
+      { label: "Social Security, what this section shows", desc: "Retirement, survivors, and disability insurance (OASDI) beneficiary counts and total monthly benefits, by state, sourced from the Social Security Administration. The current data is from 2015, the most recent state-level breakdown SSA has published in this form." },
+      { label: "Social Security, your state", desc: "Pinned to the top once your district is matched, so you see your own state's figures first." },
+      { label: "Social Security, search", desc: "Search the full list of states and territories by name or abbreviation." },
     ],
   },
 };
