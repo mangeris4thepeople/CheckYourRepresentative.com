@@ -106,20 +106,15 @@ export const HOW_IT_WORKS = {
       n: "6",
       title: "Follow the money.",
       body:
-        "The NGOs section shows how much of an organization's reported revenue can be " +
-        "traced to a public, dollar-level disclosure, and how much the law leaves as an " +
-        "aggregate lump. It is a way to see who is funding the groups that shape the bills, " +
-        "using only what is already public.",
-    },
-    {
-      n: "7",
-      title: "Know your rep.",
-      body:
-        "Know Your Rep gives you a full profile on every member of the House: their " +
-        "bio, every dollar their campaign has ever reported raising by cycle, every " +
-        "quarterly filing they have submitted to the FEC with a direct link to the " +
-        "actual filing, and their top donors ranked by dollar amount. Search by name " +
-        "or district, browse the rest, twenty at a time.",
+        "The Follow the Money tab covers who funds power and who receives public spending, " +
+        "in four sub-sections. Know Your Rep gives you a full profile on every member of " +
+        "the House: their bio, every dollar their campaign has ever reported raising by " +
+        "cycle, every quarterly filing they have submitted to the FEC with a direct link " +
+        "to the actual filing, and their top donors ranked by dollar amount, searchable by " +
+        "name or district. NGO Funding shows how much of an advocacy organization's " +
+        "reported revenue can be traced to a public, dollar-level disclosure, and how much " +
+        "the law leaves as an aggregate lump, using only what is already public. Medicare " +
+        "and Medicaid, and Social Security, are coming soon to the same tab.",
     },
   ],
 };
@@ -333,27 +328,24 @@ export const TUTORIAL_PAGES = {
       { label: "Support / Oppose / Undecided", desc: "Your position. One per bill, per account, permanent once cast. It cannot be changed or resubmitted, so read first." },
     ],
   },
-  ngos: {
-    title: "NGOs",
-    intro: "Follow the money behind advocacy organizations, using only public disclosures.",
+  followthemoney: {
+    title: "Follow the Money",
+    intro: "Everything about who funds power and who receives public spending, in one tab: Know Your Rep, NGO Funding, Medicare and Medicaid, and Social Security. Switch between the four with the sub-tabs at the top, using only public disclosures.",
     items: [
-      { label: "What this section is", desc: "For each organization, it shows how much of its reported revenue can be traced to a public, dollar-level disclosure, and how much the law only requires as an aggregate lump." },
-      { label: "State / Source type / Fiscal year filters", desc: "Narrow the list by state, by the kind of funding (federal award, foreign principal, PAC, and so on), or by year." },
-      { label: "The traceability bar", desc: "Each row shows what percent of that org's revenue is traceable to a named public source. Click a row to open the organization." },
-      { label: "Funding transparency score", desc: "The percent of reported revenue traced to a dollar-level disclosure. A low score usually means the org relies on donors the law does not require to be itemized, not that anything is being hidden improperly." },
-      { label: "Traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
-      { label: "Reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
-    ],
-  },
-  knowyourrep: {
-    title: "Know Your Rep",
-    intro: "A full financial and biographical profile on every member of the House, sourced straight from the FEC and Congress.gov.",
-    items: [
-      { label: "Search bar", desc: "Search by representative name, state, or district." },
-      { label: "The list", desc: "Twenty representatives at a time. Use Load More to keep browsing rather than loading all 435 at once." },
-      { label: "Per-cycle financial totals", desc: "How much each representative's campaign has raised and spent, and how much came from individuals versus PACs versus the party, by two-year election cycle." },
-      { label: "FEC filings", desc: "Every quarterly and periodic report a representative's campaign has filed with the FEC, each with a direct link to the original filing on FEC.gov." },
-      { label: "Top donors", desc: "The largest disclosed contributors to a representative's campaign, ranked by dollar amount. This is a bounded list of the biggest sources, not every single contribution ever filed." },
+      { label: "Sub-tabs", desc: "Know Your Rep, NGO Funding, Medicare and Medicaid, and Social Security. Your choice is saved in the page's link, so you can share a link straight to one of them." },
+      { label: "Know Your Rep, search bar", desc: "Search by representative name, state, or district." },
+      { label: "Know Your Rep, the list", desc: "Twenty representatives at a time. Use Load More to keep browsing rather than loading all 435 at once." },
+      { label: "Know Your Rep, per-cycle financial totals", desc: "How much each representative's campaign has raised and spent, and how much came from individuals versus PACs versus the party, by two-year election cycle." },
+      { label: "Know Your Rep, FEC filings", desc: "Every quarterly and periodic report a representative's campaign has filed with the FEC, each with a direct link to the original filing on FEC.gov." },
+      { label: "Know Your Rep, top donors", desc: "The largest disclosed contributors to a representative's campaign, ranked by dollar amount. This is a bounded list of the biggest sources, not every single contribution ever filed." },
+      { label: "NGO Funding, what this section is", desc: "For each organization, it shows how much of its reported revenue can be traced to a public, dollar-level disclosure, and how much the law only requires as an aggregate lump." },
+      { label: "NGO Funding, state / source type / fiscal year filters", desc: "Narrow the list by state, by the kind of funding (federal award, foreign principal, PAC, and so on), or by year." },
+      { label: "NGO Funding, the traceability bar", desc: "Each row shows what percent of that org's revenue is traceable to a named public source. Click a row to open the organization." },
+      { label: "NGO Funding, funding transparency score", desc: "The percent of reported revenue traced to a dollar-level disclosure. A low score usually means the org relies on donors the law does not require to be itemized, not that anything is being hidden improperly." },
+      { label: "NGO Funding, traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
+      { label: "NGO Funding, reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
+      { label: "Medicare and Medicaid", desc: "Coming soon. Will show state-level Medicare and Medicaid spending trends from public federal data." },
+      { label: "Social Security", desc: "Coming soon. Will show district and state-level Social Security data, including OASDI, from public federal data." },
     ],
   },
 };

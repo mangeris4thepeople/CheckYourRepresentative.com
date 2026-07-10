@@ -20,8 +20,7 @@ import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
-import NgosDirectory from "./components/NgosDirectory.jsx";
-import KnowYourRepTabs from "./components/KnowYourRepTabs.jsx";
+import FollowTheMoney from "./components/FollowTheMoney.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
@@ -40,14 +39,13 @@ const TABS = [
   { key: "allbills",     label: "📄 All Active Bills" },
   { key: "matrix",       label: "📊 Accountability" },
   { key: "rollcalls",    label: "📋 Roll Calls" },
-  { key: "ngos",         label: "🏦 NGOs" },
-  { key: "knowyourrep",  label: "🏛️ Know Your Rep" },
+  { key: "followthemoney", label: "💰 Follow the Money" },
   { key: "constituents", label: "🌐 Constituents" },
   { key: "merch",        label: "👕 Merch" },
 ];
 
 // Tabs that get a left-hand contextual help sidebar.
-const HELP_TABS = { profile: "profile", vote: "vote", ngos: "ngos", knowyourrep: "knowyourrep" };
+const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthemoney" };
 
 // Inject mobile CSS once
 const MOBILE_CSS = `
@@ -222,15 +220,9 @@ export default function App() {
           <AccountabilityDashboard district={resolved?.district} />
         )}
 
-        {tab === "ngos" && (
-          <HelpLayout page="ngos">
-            <NgosDirectory />
-          </HelpLayout>
-        )}
-
-        {tab === "knowyourrep" && (
-          <HelpLayout page="knowyourrep">
-            <KnowYourRepTabs />
+        {tab === "followthemoney" && (
+          <HelpLayout page="followthemoney">
+            <FollowTheMoney />
           </HelpLayout>
         )}
 
