@@ -57,7 +57,7 @@ export function TutorialBody() {
       ))}
 
       {/* Per-page control breakdowns */}
-      {["profile", "vote", "ngos", "knowyourrep"].map(key => {
+      {["profile", "vote", "followthemoney"].map(key => {
         const page = PAGES[key];
         return (
           <div key={key}>
