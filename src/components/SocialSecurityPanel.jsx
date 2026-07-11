@@ -58,25 +58,52 @@ export default function SocialSecurityPanel({ district }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | notready | error
   const [rows, setRows] = useState([]);
   const [query, setQuery] = useState("");
+  const [errorDetail, setErrorDetail] = useState(null);
 
   const homeState = district ? String(district).split("-")[0].toUpperCase() : null;
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/social-security-detail")
-      .then(r => r.json())
-      .then(d => {
+      .then(async r => {
+        const d = await r.json().catch(() => null);
+        return { httpOk: r.ok, httpStatus: r.status, d };
+      })
+      .then(({ httpOk, httpStatus, d }) => {
         if (cancelled) return;
+        // A real server error has no ready field at all, distinct from the
+        // handler's own ready:false for a genuinely missing table. Treating
+        // them the same hid real bugs behind a generic message before.
+        if (!httpOk || !d || d.ready === undefined) {
+          console.error("Social Security data fetch failed", { httpOk, httpStatus, d });
+          setErrorDetail(d?.detail || d?.error || `HTTP ${httpStatus}`);
+          setPhase("error");
+          return;
+        }
         if (!d.ready) { setPhase("notready"); return; }
         setRows(d.rows || []);
         setPhase("ready");
       })
-      .catch(() => { if (!cancelled) setPhase("error"); });
+      .catch(err => {
+        if (cancelled) return;
+        console.error("Social Security data fetch threw", err);
+        setErrorDetail(String(err.message || err));
+        setPhase("error");
+      });
     return () => { cancelled = true; };
   }, []);
 
   if (phase === "loading") return <Center>Loading Social Security data...</Center>;
-  if (phase === "error") return <Center color={C.crimson}>Could not load Social Security data.</Center>;
+  if (phase === "error") {
+    return (
+      <Center color={C.crimson}>
+        Could not load Social Security data.
+        {errorDetail && (
+          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
+        )}
+      </Center>
+    );
+  }
   if (phase === "notready") return <Center>Social Security data has not been loaded yet.</Center>;
 
   const home = homeState ? rows.find(r => r.state_abbr === homeState) : null;
