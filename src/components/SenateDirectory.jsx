@@ -36,6 +36,7 @@ export default function SenateDirectory() {
   const [selected, setSelected] = useState(null); // bioguide_id
   const [matchedVia, setMatchedVia] = useState(null);
   const [resolvedState, setResolvedState] = useState(null);
+  const [errorDetail, setErrorDetail] = useState(null);
 
   const loadList = useCallback(async (newOffset, append) => {
     setPhase("loading");
@@ -43,7 +44,16 @@ export default function SenateDirectory() {
       const p = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(newOffset) });
       if (search) p.set("q", search);
       const r = await fetch(`/api/senators-list?${p}`);
-      const d = await r.json();
+      const d = await r.json().catch(() => null);
+      // A real server error has no ready field at all, distinct from the
+      // handler's own ready:false for a genuinely missing table. Treating
+      // them the same hides real bugs behind a generic message.
+      if (!r.ok || !d || d.ready === undefined) {
+        console.error("Senators list fetch failed", { status: r.status, d });
+        setErrorDetail(d?.detail || d?.error || `HTTP ${r.status}`);
+        setPhase("error");
+        return;
+      }
       if (!d.ready) { setPhase("notready"); return; }
       setSenators(prev => append ? [...prev, ...(d.senators || [])] : (d.senators || []));
       setOffset(d.offset ?? newOffset);
@@ -51,7 +61,9 @@ export default function SenateDirectory() {
       setMatchedVia(d.matchedVia || null);
       setResolvedState(d.resolvedState || null);
       setPhase("ready");
-    } catch {
+    } catch (err) {
+      console.error("Senators list fetch threw", err);
+      setErrorDetail(String(err.message || err));
       setPhase("error");
     }
   }, [search]);
@@ -100,7 +112,12 @@ export default function SenateDirectory() {
 
       {phase === "loading" && senators.length === 0 && <Center>Loading senators...</Center>}
       {phase === "error" && (
-        <Center color={C.crimson}>Could not load senators. <Link onClick={() => loadList(0, false)}>Try again</Link></Center>
+        <Center color={C.crimson}>
+          Could not load senators. <Link onClick={() => loadList(0, false)}>Try again</Link>
+          {errorDetail && (
+            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
+          )}
+        </Center>
       )}
       {phase === "notready" && (
         <Center>The senators database is not loaded yet.</Center>
@@ -151,19 +168,31 @@ export default function SenateDirectory() {
 function SenatorDetail({ bioguideId, onBack }) {
   const [phase, setPhase] = useState("loading");
   const [data, setData] = useState(null);
+  const [errorDetail, setErrorDetail] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     setPhase("loading");
     fetch(`/api/senator-detail?bioguideId=${encodeURIComponent(bioguideId)}`)
-      .then(r => r.json())
-      .then(d => {
+      .then(async r => ({ ok: r.ok, status: r.status, d: await r.json().catch(() => null) }))
+      .then(({ ok, status, d }) => {
         if (cancelled) return;
+        if (!ok || !d || d.ready === undefined) {
+          console.error("Senator detail fetch failed", { status, d });
+          setErrorDetail(d?.detail || d?.error || `HTTP ${status}`);
+          setPhase("error");
+          return;
+        }
         if (!d.ready) { setPhase("notready"); return; }
         setData(d);
         setPhase("ready");
       })
-      .catch(() => { if (!cancelled) setPhase("error"); });
+      .catch(err => {
+        if (cancelled) return;
+        console.error("Senator detail fetch threw", err);
+        setErrorDetail(String(err.message || err));
+        setPhase("error");
+      });
     return () => { cancelled = true; };
   }, [bioguideId]);
 
@@ -176,7 +205,17 @@ function SenatorDetail({ bioguideId, onBack }) {
   );
 
   if (phase === "loading") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>Loading senator...</Center></div>;
-  if (phase === "error") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center color={C.crimson}>Could not load this senator.</Center></div>;
+  if (phase === "error") return (
+    <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>
+      {back}
+      <Center color={C.crimson}>
+        Could not load this senator.
+        {errorDetail && (
+          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
+        )}
+      </Center>
+    </div>
+  );
   if (phase === "notready") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>The senators database is not loaded yet.</Center></div>;
 
   const { sen, matched, totals, filings, topDonors } = data;
