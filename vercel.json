@@ -9,7 +9,7 @@
     },
     {
       "path": "/api/floor-alerts",
-      "schedule": "0 13,19 * * 1-5"
+      "schedule": "0 13 * * 1-5"
     },
     {
       "path": "/api/sync-bills",
@@ -25,7 +25,7 @@
     },
     {
       "path": "/api/sync-rep-finances",
-      "schedule": "0 */3 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/sync-senators",
