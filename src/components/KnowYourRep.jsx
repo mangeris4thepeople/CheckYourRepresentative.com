@@ -35,6 +35,7 @@ export default function KnowYourRep() {
   const [selected, setSelected] = useState(null); // district
   const [matchedVia, setMatchedVia] = useState(null);
   const [resolvedDistrict, setResolvedDistrict] = useState(null);
+  const [errorDetail, setErrorDetail] = useState(null);
 
   const loadList = useCallback(async (newOffset, append) => {
     setPhase("loading");
@@ -42,7 +43,16 @@ export default function KnowYourRep() {
       const p = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(newOffset) });
       if (search) p.set("q", search);
       const r = await fetch(`/api/representatives-list?${p}`);
-      const d = await r.json();
+      const d = await r.json().catch(() => null);
+      // A real server error has no ready field at all, distinct from the
+      // handler's own ready:false for a genuinely missing table. Treating
+      // them the same hides real bugs behind a generic message.
+      if (!r.ok || !d || d.ready === undefined) {
+        console.error("Representatives list fetch failed", { status: r.status, d });
+        setErrorDetail(d?.detail || d?.error || `HTTP ${r.status}`);
+        setPhase("error");
+        return;
+      }
       if (!d.ready) { setPhase("notready"); return; }
       setReps(prev => append ? [...prev, ...(d.reps || [])] : (d.reps || []));
       setOffset(d.offset ?? newOffset);
@@ -50,7 +60,9 @@ export default function KnowYourRep() {
       setMatchedVia(d.matchedVia || null);
       setResolvedDistrict(d.resolvedDistrict || null);
       setPhase("ready");
-    } catch {
+    } catch (err) {
+      console.error("Representatives list fetch threw", err);
+      setErrorDetail(String(err.message || err));
       setPhase("error");
     }
   }, [search]);
@@ -99,7 +111,12 @@ export default function KnowYourRep() {
 
       {phase === "loading" && reps.length === 0 && <Center>Loading representatives...</Center>}
       {phase === "error" && (
-        <Center color={C.crimson}>Could not load representatives. <Link onClick={() => loadList(0, false)}>Try again</Link></Center>
+        <Center color={C.crimson}>
+          Could not load representatives. <Link onClick={() => loadList(0, false)}>Try again</Link>
+          {errorDetail && (
+            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
+          )}
+        </Center>
       )}
       {phase === "notready" && (
         <Center>The representatives database is not loaded yet.</Center>
@@ -150,19 +167,31 @@ export default function KnowYourRep() {
 function RepDetail({ district, onBack }) {
   const [phase, setPhase] = useState("loading");
   const [data, setData] = useState(null);
+  const [errorDetail, setErrorDetail] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     setPhase("loading");
     fetch(`/api/representative-detail?district=${encodeURIComponent(district)}`)
-      .then(r => r.json())
-      .then(d => {
+      .then(async r => ({ ok: r.ok, status: r.status, d: await r.json().catch(() => null) }))
+      .then(({ ok, status, d }) => {
         if (cancelled) return;
+        if (!ok || !d || d.ready === undefined) {
+          console.error("Representative detail fetch failed", { status, d });
+          setErrorDetail(d?.detail || d?.error || `HTTP ${status}`);
+          setPhase("error");
+          return;
+        }
         if (!d.ready) { setPhase("notready"); return; }
         setData(d);
         setPhase("ready");
       })
-      .catch(() => { if (!cancelled) setPhase("error"); });
+      .catch(err => {
+        if (cancelled) return;
+        console.error("Representative detail fetch threw", err);
+        setErrorDetail(String(err.message || err));
+        setPhase("error");
+      });
     return () => { cancelled = true; };
   }, [district]);
 
@@ -175,7 +204,17 @@ function RepDetail({ district, onBack }) {
   );
 
   if (phase === "loading") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>Loading representative...</Center></div>;
-  if (phase === "error") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center color={C.crimson}>Could not load this representative.</Center></div>;
+  if (phase === "error") return (
+    <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>
+      {back}
+      <Center color={C.crimson}>
+        Could not load this representative.
+        {errorDetail && (
+          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
+        )}
+      </Center>
+    </div>
+  );
   if (phase === "notready") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>The representatives database is not loaded yet.</Center></div>;
 
   const { rep, matched, totals, filings, topDonors } = data;
