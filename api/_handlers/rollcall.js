@@ -46,20 +46,43 @@ export default async function handler(req, res) {
 }
 
 // ---------------- House (Congress.gov API) ----------------
+// The API's list endpoints default-sort by updateDate, not by when the vote
+// was actually held. A single page trusts that the most recently updated
+// records are also the most recently held ones, which breaks the moment
+// Congress.gov corrects metadata on older votes: those jump to the top of
+// the updateDate ordering and permanently crowd out real new votes from an
+// unpaginated window. Pulling several pages and sorting by roll call number
+// ourselves is not fooled by that, at the cost of a few extra requests.
+const HOUSE_PAGE_SIZE = 250; // API's documented max per page
+const HOUSE_MAX_PAGES = 4;   // covers well over 1000 votes, a full session and then some
+
 async function houseList(congress, session) {
-  const url = `https://api.congress.gov/v3/house-vote/${congress}/${session}?format=json&limit=100&api_key=${CONGRESS_API_KEY}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`congress.gov ${r.status}`);
-  const data = await r.json();
-  const items = (data.houseRollCallVotes || []).map(v => ({
-    vote: v.rollCallNumber,
-    date: v.startDate,
-    question: v.voteQuestion || "",
-    result: v.result || "",
-    bill: v.legislationType && v.legislationNumber ? `${v.legislationType} ${v.legislationNumber}` : null,
-    description: v.amendmentAuthor || "",
-  })).sort((a, b) => b.vote - a.vote);
-  return { chamber: "house", congress, session, votes: items };
+  const items = [];
+  const seen = new Set();
+  for (let page = 0; page < HOUSE_MAX_PAGES; page++) {
+    const offset = page * HOUSE_PAGE_SIZE;
+    const url = `https://api.congress.gov/v3/house-vote/${congress}/${session}?format=json&limit=${HOUSE_PAGE_SIZE}&offset=${offset}&api_key=${CONGRESS_API_KEY}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`congress.gov ${r.status}`);
+    const data = await r.json();
+    const batch = data.houseRollCallVotes || [];
+    if (batch.length === 0) break;
+    for (const v of batch) {
+      if (seen.has(v.rollCallNumber)) continue;
+      seen.add(v.rollCallNumber);
+      items.push({
+        vote: v.rollCallNumber,
+        date: v.startDate,
+        question: v.voteQuestion || "",
+        result: v.result || "",
+        bill: v.legislationType && v.legislationNumber ? `${v.legislationType} ${v.legislationNumber}` : null,
+        description: v.amendmentAuthor || "",
+      });
+    }
+    if (batch.length < HOUSE_PAGE_SIZE) break; // last page
+  }
+  items.sort((a, b) => b.vote - a.vote);
+  return { chamber: "house", congress, session, votes: items.slice(0, 100) };
 }
 
 async function houseDetail(congress, session, voteNumber) {
