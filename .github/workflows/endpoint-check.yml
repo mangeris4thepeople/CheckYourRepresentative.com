@@ -1,0 +1,24 @@
+# Manual endpoint check. Fetches one public URL and prints the response, so
+# a remote agent session (or anyone with repo write access) can verify the
+# live site's public API responses from the Actions tab without needing a
+# browser. Takes no secrets and sends none, only use it for public,
+# unauthenticated URLs.
+name: endpoint-check
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Public URL to fetch
+        required: true
+        type: string
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch URL
+        env:
+          URL: ${{ inputs.url }}
+        run: |
+          curl -sS --max-time 120 -w "\nHTTP %{http_code}\n" "$URL" | head -c 4000

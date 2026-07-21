@@ -138,7 +138,12 @@ async function ensureSchema() {
       SELECT column_name FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name = ${t}`;
     const have = new Set(cols.map(c => c.column_name));
-    if (wanted.some(c => !have.has(c))) await sql.query(`DROP TABLE "${t}" CASCADE`);
+    // Exact match required, extra columns count as a mismatch too. Verified
+    // live: a pre-existing co_courts had every expected column plus its own
+    // NOT NULL slug column, which passed a subset check and then broke the
+    // seed insert. Anything not exactly this shape gets rebuilt.
+    const mismatch = wanted.some(c => !have.has(c)) || have.size !== wanted.length;
+    if (mismatch) await sql.query(`DROP TABLE "${t}" CASCADE`);
   }
 
   await sql`
