@@ -3,6 +3,12 @@
 # live site's public API responses from the Actions tab without needing a
 # browser. Takes no secrets and sends none, only use it for public,
 # unauthenticated URLs.
+#
+# mode controls the output:
+#   raw   - first 4000 bytes of the body, for JSON APIs
+#   page  - first 3000 bytes plus every unique link on the page, for
+#           scouting an HTML site's structure
+#   text  - tags stripped, first 6000 bytes, for reading page content
 name: endpoint-check
 
 on:
@@ -12,6 +18,11 @@ on:
         description: Public URL to fetch
         required: true
         type: string
+      mode:
+        description: Output mode (raw, page, or text)
+        required: false
+        default: raw
+        type: string
 
 jobs:
   fetch:
@@ -20,5 +31,17 @@ jobs:
       - name: Fetch URL
         env:
           URL: ${{ inputs.url }}
+          MODE: ${{ inputs.mode }}
         run: |
-          curl -sS --max-time 120 -w "\nHTTP %{http_code}\n" "$URL" | head -c 4000
+          curl -sSL --max-time 120 -A "Mozilla/5.0 (civic data check)" -w "\nHTTP_STATUS %{http_code}\n" "$URL" -o /tmp/page || true
+          echo "SIZE $(wc -c < /tmp/page)"
+          if [ "$MODE" = "page" ]; then
+            head -c 3000 /tmp/page
+            echo ""
+            echo "== LINKS =="
+            grep -oE 'href="[^"]+"' /tmp/page | sort -u | head -120 || true
+          elif [ "$MODE" = "text" ]; then
+            sed -e 's/<[^>]*>/ /g' /tmp/page | tr -s ' \n' ' \n' | head -c 6000
+          else
+            head -c 4000 /tmp/page
+          fi
