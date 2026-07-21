@@ -66,7 +66,7 @@ jobs:
           H_SUP = re.compile(r"^\s*Colorado Supreme Court Justice\s+-\s+(.+?)\s*$")
           H_APP = re.compile(r"^\s*Colorado Court Of Appeals Judge\s+-\s+(.+?)\s*$", re.IGNORECASE)
           H_DIS = re.compile(r"^\s*District Court Judge\s+-\s+(\d+)(?:st|nd|rd|th)\s+Judicial District\s+-\s+(.+?)\s*$")
-          H_CTY = re.compile(r"^\s*County Court Judge\s+-\s+")
+          H_CTY = re.compile(r"^\s*County Court Judge\s+-\s+(.+?)\s+-\s+(.+?)\s*$")
           TOTAL = re.compile(r"^\s*Total\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s")
 
           def dsuffix(n):
@@ -94,10 +94,9 @@ jobs:
               if m:
                   open_contest(m.group(2).strip(), f"{dsuffix(int(m.group(1)))} Judicial District Court")
                   continue
-              if H_CTY.match(ln):
-                  if current:
-                      skipped.append(f"{current[0]} | {current[1]} | no total found")
-                  current = None
+              m = H_CTY.match(ln)
+              if m:
+                  open_contest(m.group(2).strip(), f"{m.group(1).strip()} County Court")
                   continue
               m = TOTAL.match(ln)
               if m and current:

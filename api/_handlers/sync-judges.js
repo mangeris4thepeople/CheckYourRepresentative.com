@@ -241,4 +241,25 @@ async function ensureSchema() {
       VALUES (${DISTRICTS[i] + " Judicial District Court"}, 'district', ${i + 1}, NULL)
       ON CONFLICT (name) DO NOTHING`;
   }
+
+  // Every Colorado county court, so county judges from the OJPE evaluations
+  // and the certified retention results have a court to attach to.
+  const COUNTIES = [
+    "Adams", "Alamosa", "Arapahoe", "Archuleta", "Baca", "Bent", "Boulder",
+    "Broomfield", "Chaffee", "Cheyenne", "Clear Creek", "Conejos", "Costilla",
+    "Crowley", "Custer", "Delta", "Denver", "Dolores", "Douglas", "Eagle",
+    "Elbert", "El Paso", "Fremont", "Garfield", "Gilpin", "Grand", "Gunnison",
+    "Hinsdale", "Huerfano", "Jackson", "Jefferson", "Kiowa", "Kit Carson",
+    "Lake", "La Plata", "Larimer", "Las Animas", "Lincoln", "Logan", "Mesa",
+    "Mineral", "Moffat", "Montezuma", "Montrose", "Morgan", "Otero", "Ouray",
+    "Park", "Phillips", "Pitkin", "Prowers", "Pueblo", "Rio Blanco",
+    "Rio Grande", "Routt", "Saguache", "San Juan", "San Miguel", "Sedgwick",
+    "Summit", "Teller", "Washington", "Weld", "Yuma",
+  ];
+  for (const county of COUNTIES) {
+    await sql`
+      INSERT INTO co_courts (name, court_type, judicial_district, courtlistener_id)
+      VALUES (${county + " County Court"}, 'county', NULL, NULL)
+      ON CONFLICT (name) DO NOTHING`;
+  }
 }

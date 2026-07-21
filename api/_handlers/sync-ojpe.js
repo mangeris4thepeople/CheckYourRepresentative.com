@@ -56,39 +56,37 @@ export default async function handler(req, res) {
       .replace(/\s+/g, " ");
 
     // Walk headings, section labels, and judge rows in document order so
-    // every judge lands under the court heading that precedes them.
+    // every judge lands under the court heading that precedes them. County
+    // court sections carry their county in the label, e.g. "El Paso County
+    // Court Judges", and map onto the seeded "<County> County Court" rows.
     const walker = new RegExp(
       "(Colorado Supreme Court|Court of Appeals" +
       "|((?:Twenty-)?[A-Z][a-z]+) Judicial District\\s*\\(" +
-      "|County Court Judges|District Court Judges" +
+      "|([A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*)?) County Court Judges|District Court Judges" +
       `|Honorable ([^]*?) (${RECOMMENDATIONS}))`,
       "g"
     );
 
     let courtName = null;   // resolved co_courts name for the current section
-    let inCounty = false;
-    let skippedCounty = 0;
     const unparsed = [];
     const rows = [];        // { judge, courtName, recommendation }
 
     let m;
     while ((m = walker.exec(text)) !== null) {
       const token = m[1];
-      if (token === "Colorado Supreme Court") { courtName = "Colorado Supreme Court"; inCounty = false; continue; }
-      if (token === "Court of Appeals") { courtName = "Colorado Court of Appeals"; inCounty = false; continue; }
+      if (token === "Colorado Supreme Court") { courtName = "Colorado Supreme Court"; continue; }
+      if (token === "Court of Appeals") { courtName = "Colorado Court of Appeals"; continue; }
       if (m[2]) {
         const n = ORDINALS[m[2]];
         courtName = n ? districtCourtName(n) : null;
         if (!n) unparsed.push(`district heading: ${m[2]}`);
-        inCounty = false;
         continue;
       }
-      if (token === "County Court Judges") { inCounty = true; continue; }
-      if (token === "District Court Judges") { inCounty = false; continue; }
-      if (m[3]) {
-        const judge = m[3].trim().replace(/\s+/g, " ");
-        const recommendation = m[4].trim();
-        if (inCounty) { skippedCounty++; continue; }
+      if (m[3]) { courtName = `${m[3]} County Court`; continue; }
+      if (token === "District Court Judges") { continue; }
+      if (m[4]) {
+        const judge = m[4].trim().replace(/\s+/g, " ");
+        const recommendation = m[5].trim();
         if (!courtName) { unparsed.push(`no court context for: ${judge}`); continue; }
         if (judge.length > 60) { unparsed.push(`suspicious name: ${judge.slice(0, 80)}`); continue; }
         rows.push({ judge, courtName, recommendation });

@@ -63,11 +63,12 @@ export default async function handler(req, res) {
   }
 }
 
-// The abstract names courts in prose. Map onto co_courts names, county
-// courts return null on purpose: the directory covers state courts only.
+// The abstract names courts in prose. Map onto co_courts names. County
+// courts arrive already canonical from the extraction workflow, e.g.
+// "Adams County Court", and pass straight through.
 function mapCourt(raw) {
-  const s = String(raw || "");
-  if (/county court/i.test(s)) return null;
+  const s = String(raw || "").trim();
+  if (/^[A-Za-z ]+ County Court$/.test(s)) return s;
   if (/supreme/i.test(s)) return "Colorado Supreme Court";
   if (/appeals/i.test(s)) return "Colorado Court of Appeals";
   if (/denver probate/i.test(s)) return "Denver Probate Court";

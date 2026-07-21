@@ -360,7 +360,7 @@ export const TUTORIAL_PAGES = {
     intro: "Colorado judges do not run in contested elections, you vote to retain or remove them. This section exists so that ballot line is never a blind guess.",
     items: [
       { label: "What this section is", desc: "Every Colorado judge we track: their court, the state's official performance evaluation of them, and how their past retention votes went." },
-      { label: "Search and court filter", desc: "Search by judge or court name, or narrow to one court, from the Supreme Court down to each judicial district." },
+      { label: "Search and court filter", desc: "Search by judge or court name, or narrow to one court, from the Supreme Court through each judicial district down to every county court." },
       { label: "Performance evaluations (OJPE)", desc: "The Colorado Office of Judicial Performance Evaluation formally evaluates every judge before their retention election and publishes a recommendation. We show that recommendation and link the full published narrative." },
       { label: "Retention election results", desc: "The actual yes and no vote counts from each retention election a judge has faced, from official Secretary of State records." },
       { label: "Where the data comes from", desc: "Appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official state publications." },
