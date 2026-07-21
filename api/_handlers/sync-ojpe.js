@@ -117,7 +117,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({
-      ok: true, imported, parsed: rows.length, skippedCountyCourt: skippedCounty,
+      ok: true, imported, parsed: rows.length,
       unparsed: unparsed.slice(0, 20), errors: errors.slice(0, 20),
     });
   } catch (err) {
