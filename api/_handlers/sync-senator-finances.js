@@ -331,6 +331,23 @@ async function upsertDonorBuckets(candidateId, committeeId, cycle, rows) {
 // ---- schema + cursor ----
 async function ensureTables() {
   await sql`ALTER TABLE senators ADD COLUMN IF NOT EXISTS fec_candidate_id TEXT`;
+
+  // Some databases carry these tables from an older schema without
+  // fec_candidate_id, which CREATE TABLE IF NOT EXISTS silently skips and
+  // the index creation below then fails on. They are pure mirrors of FEC
+  // data that this sync rebuilds in full, so an incompatible old table is
+  // dropped and recreated rather than patched around a wrong primary key.
+  for (const t of ["senator_finance_totals", "senator_filings", "senator_top_donors"]) {
+    const table = await sql`
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = ${t}`;
+    if (!table.length) continue;
+    const col = await sql`
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = ${t} AND column_name = 'fec_candidate_id'`;
+    if (!col.length) await sql.query(`DROP TABLE "${t}"`);
+  }
+
   await sql`
     CREATE TABLE IF NOT EXISTS senator_finance_totals (
       fec_candidate_id          TEXT NOT NULL,
