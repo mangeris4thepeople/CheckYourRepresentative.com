@@ -44,6 +44,14 @@ jobs:
           grep -in "retain" /tmp/abstract.txt | head -40 || true
           echo "== SAMPLE: 12 lines of context around the first retention match =="
           grep -in -A 10 -m 2 "be retained" /tmp/abstract.txt | head -40 || true
+          echo "== SAMPLE: lines containing Justice =="
+          grep -in "justice" /tmp/abstract.txt | head -20 || true
+          echo "== SAMPLE: lines containing Judicial District =="
+          grep -in "judicial district" /tmp/abstract.txt | head -20 || true
+          echo "== SAMPLE: known 2024 retention judges =="
+          grep -inE "marquez|boatright|berkenkotter" /tmp/abstract.txt | head -12 || true
+          echo "== SAMPLE: context around first Marquez match =="
+          grep -in -B 3 -A 8 -m 1 "marquez" /tmp/abstract.txt | head -30 || true
       - name: Parse retention results
         env:
           ELECTION_YEAR: ${{ inputs.election_year }}
