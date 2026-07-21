@@ -52,6 +52,12 @@ export default async function handler(req, res) {
     if (/relation .* does not exist/i.test(msg)) {
       return res.status(200).json({ ready: false, reason: "schema_not_migrated" });
     }
+    // Self-heal the missing class column, same drift as senators-list.js.
+    if (/column "class" does not exist/i.test(msg) && !req.__classHealRetried) {
+      req.__classHealRetried = true;
+      await sql`ALTER TABLE senators ADD COLUMN IF NOT EXISTS class TEXT`;
+      return handler(req, res);
+    }
     return res.status(500).json({ error: "senator_detail_failed", detail: msg });
   }
 }

@@ -31,6 +31,10 @@ export default async function handler(req, res) {
       )
     `;
 
+    // Databases whose senators table predates the class column never get it
+    // from CREATE TABLE IF NOT EXISTS, so add it explicitly.
+    await sql`ALTER TABLE senators ADD COLUMN IF NOT EXISTS class TEXT`;
+
     let count = 0;
     for (const m of members) {
       await sql`

@@ -96,6 +96,15 @@ export default async function handler(req, res) {
     if (/relation .* does not exist/i.test(msg)) {
       return res.status(200).json({ ready: false, reason: "schema_not_migrated", senators: [] });
     }
+    // Self-heal a known schema drift: databases where the senators table was
+    // created before the class column existed. CREATE TABLE IF NOT EXISTS in
+    // sync-senators.js never alters an existing table, so those databases
+    // 500 on every query that selects class. Add it once and retry.
+    if (/column "class" does not exist/i.test(msg) && !req.__classHealRetried) {
+      req.__classHealRetried = true;
+      await sql`ALTER TABLE senators ADD COLUMN IF NOT EXISTS class TEXT`;
+      return handler(req, res);
+    }
     return res.status(500).json({ error: "senators_list_failed", detail: msg });
   }
 }
