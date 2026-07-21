@@ -1,0 +1,111 @@
+# Extracts judicial retention election results from the Colorado Secretary
+# of State's certified Abstract of Votes Cast PDF and commits them to
+# data/retention_results.csv. The abstract is the official certified record
+# of every retention question and its yes/no vote counts.
+#
+# Prints a debug sample of the extracted text around retention questions on
+# every run, so the parser can be tuned against the PDF's real layout from
+# the Actions log. Only commits the CSV when at least one row parsed.
+name: retention-extract
+
+on:
+  workflow_dispatch:
+    inputs:
+      pdf_url:
+        description: Abstract of Votes Cast PDF URL
+        required: false
+        default: https://www.coloradosos.gov/pubs/elections/Results/2024/2024BiennialAbstract.pdf
+        type: string
+      election_year:
+        description: Election year for the CSV rows
+        required: false
+        default: "2024"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poppler
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+      - name: Download and extract
+        env:
+          PDF_URL: ${{ inputs.pdf_url }}
+        run: |
+          curl -sSL --max-time 300 -A "Mozilla/5.0 (civic data check)" "$PDF_URL" -o /tmp/abstract.pdf
+          echo "PDF size: $(wc -c < /tmp/abstract.pdf)"
+          pdftotext -layout /tmp/abstract.pdf /tmp/abstract.txt
+          echo "Text size: $(wc -c < /tmp/abstract.txt)"
+          echo "== SAMPLE: first 40 lines containing retain =="
+          grep -in "retain" /tmp/abstract.txt | head -40 || true
+          echo "== SAMPLE: 12 lines of context around the first retention match =="
+          grep -in -A 10 -m 2 "be retained" /tmp/abstract.txt | head -40 || true
+      - name: Parse retention results
+        env:
+          ELECTION_YEAR: ${{ inputs.election_year }}
+        run: |
+          python3 << 'PYEOF'
+          import re, os, csv
+
+          text = open('/tmp/abstract.txt', encoding='utf-8', errors='replace').read()
+          year = os.environ.get('ELECTION_YEAR', '2024')
+
+          # Question headings look like:
+          #   Shall Justice Monica M. Marquez of the Colorado Supreme Court be retained in office?
+          #   Shall Judge Eric Bentley of the 4th Judicial District be retained in office?
+          # followed within a few lines by Yes/For and No/Against counts.
+          q = re.compile(
+              r"Shall\s+(?:Justice|Judge)\s+(.+?)\s+of\s+the\s+(.+?)\s+be\s+retained",
+              re.IGNORECASE)
+          rows = []
+          skipped = []
+          matches = list(q.finditer(text))
+          print(f"retention questions found: {len(matches)}")
+          for i, m in enumerate(matches):
+              name = re.sub(r"\s+", " ", m.group(1)).strip()
+              court = re.sub(r"\s+", " ", m.group(2)).strip()
+              window = text[m.end(): m.end() + 800]
+              yes = re.search(r"(?:Yes(?:/For)?|For)\D{0,40}?([\d,]{2,})", window, re.IGNORECASE)
+              no = re.search(r"(?:No(?:/Against)?|Against)\D{0,40}?([\d,]{2,})", window, re.IGNORECASE)
+              if not (yes and no):
+                  skipped.append(f"{name} | {court} | counts not found")
+                  continue
+              y = int(yes.group(1).replace(",", ""))
+              n = int(no.group(1).replace(",", ""))
+              rows.append({
+                  "judge_full_name": name, "court_name": court,
+                  "election_year": year, "yes_votes": y, "no_votes": n,
+                  "retained": "yes" if y > n else "no",
+              })
+
+          print(f"parsed: {len(rows)}, skipped: {len(skipped)}")
+          for s in skipped[:20]:
+              print("SKIP:", s)
+          for r in rows[:10]:
+              print("ROW:", r)
+
+          if rows:
+              os.makedirs("data", exist_ok=True)
+              with open("data/retention_results.csv", "w", newline="") as f:
+                  w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+                  w.writeheader()
+                  w.writerows(rows)
+              print("csv written")
+          else:
+              print("no rows parsed, csv not written")
+          PYEOF
+      - name: Commit CSV if produced
+        run: |
+          if [ -f data/retention_results.csv ]; then
+            git config user.name "Claude"
+            git config user.email "noreply@anthropic.com"
+            git add data/retention_results.csv
+            git diff --cached --quiet || git commit -m "Extract judicial retention results from certified SoS abstract"
+            git push
+          else
+            echo "nothing to commit"
+          fi
