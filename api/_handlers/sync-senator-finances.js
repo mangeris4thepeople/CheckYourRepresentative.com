@@ -332,20 +332,32 @@ async function upsertDonorBuckets(candidateId, committeeId, cycle, rows) {
 async function ensureTables() {
   await sql`ALTER TABLE senators ADD COLUMN IF NOT EXISTS fec_candidate_id TEXT`;
 
-  // Some databases carry these tables from an older schema without
-  // fec_candidate_id, which CREATE TABLE IF NOT EXISTS silently skips and
-  // the index creation below then fails on. They are pure mirrors of FEC
-  // data that this sync rebuilds in full, so an incompatible old table is
-  // dropped and recreated rather than patched around a wrong primary key.
-  for (const t of ["senator_finance_totals", "senator_filings", "senator_top_donors"]) {
+  // Some databases carry these tables from an older schema, which CREATE
+  // TABLE IF NOT EXISTS silently skips, so later statements fail on missing
+  // columns. Verified live twice: first fec_candidate_id was missing, then a
+  // table that had it was still missing receipts, so checking one column is
+  // not enough. Each table is checked against its full expected column set.
+  // They are pure mirrors of FEC data that this sync rebuilds in full, so an
+  // incompatible old table is dropped and recreated rather than patched
+  // around a wrong primary key.
+  const EXPECTED = {
+    senator_finance_totals: ["fec_candidate_id", "cycle", "receipts", "disbursements",
+      "individual_contributions", "pac_contributions", "party_contributions", "cash_on_hand_end", "synced_at"],
+    senator_filings: ["fec_candidate_id", "file_number", "report_type", "coverage_start", "coverage_end",
+      "total_receipts", "total_disbursements", "cash_on_hand_end", "filed_date", "pdf_url", "synced_at"],
+    senator_top_donors: ["fec_candidate_id", "committee_id", "cycle", "bucket_type", "bucket_label",
+      "total_amount", "donor_count", "synced_at"],
+  };
+  for (const [t, wanted] of Object.entries(EXPECTED)) {
     const table = await sql`
       SELECT 1 FROM information_schema.tables
       WHERE table_schema = 'public' AND table_name = ${t}`;
     if (!table.length) continue;
-    const col = await sql`
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = ${t} AND column_name = 'fec_candidate_id'`;
-    if (!col.length) await sql.query(`DROP TABLE "${t}"`);
+    const cols = await sql`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = ${t}`;
+    const have = new Set(cols.map(c => c.column_name));
+    if (wanted.some(c => !have.has(c))) await sql.query(`DROP TABLE "${t}"`);
   }
 
   await sql`
