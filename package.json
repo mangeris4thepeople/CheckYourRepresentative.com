@@ -14,6 +14,7 @@
     "etl:990": "node scripts/etl/etl_990_revenue.js",
     "compute:transparency": "node scripts/etl/compute_transparency_score.js",
     "etl:judges": "node scripts/etl/etl_courtlistener_judges.js",
+    "etl:judges-national": "node scripts/etl/etl_national_judges.js",
     "import:ojpe": "node scripts/etl/import_ojpe_evaluations.js",
     "import:retention": "node scripts/etl/import_retention_results.js"
   },

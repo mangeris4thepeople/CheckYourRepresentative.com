@@ -1,23 +1,18 @@
 // =============================================================================
-// KnowYourJudge.jsx - the Know Your Judge tab, in two scopes:
+// NationalJudgeDirectory.jsx - the national scope of the Know Your Judge tab.
+// Every federal judge (Supreme Court, circuit courts, district courts, the
+// standing specialty courts) and every state supreme and appellate judge
+// CourtListener tracks, browsable by state. Same state-view pattern as the
+// Colorado directory in KnowYourJudge.jsx (this app has no router): a
+// searchable, filterable list and a detail view per judge.
 //
-//   National  - the National Judge Directory (NationalJudgeDirectory.jsx):
-//               the federal bench and every state's supreme and appellate
-//               courts, synced from CourtListener.
-//   Colorado  - the original Colorado deep dive below: every judge we track
-//               down to the county courts, their official OJPE performance
-//               evaluations, and their retention election results.
-//
-// Colorado stays its own scope rather than folding into the national tables
-// because its trial-court coverage comes from hand-transcribed official
-// state publications (OJPE reports, Secretary of State election results),
-// which CourtListener does not carry. Follows the same state-view pattern as
-// KnowYourRep.jsx (this app has no router): a searchable, filterable list
-// and a detail view per judge.
+// Data: /api/judges-national-list, /api/judge-national-courts and
+// /api/judge-national-detail, all fed by the sync-judges-national cron.
+// Colorado judges get their OJPE evaluations and retention results attached
+// on the detail view; other states have no equivalent data source yet.
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
 import RetentionBar from "./RetentionBar.jsx";
-import NationalJudgeDirectory from "./NationalJudgeDirectory.jsx";
 
 const C = {
   navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
@@ -26,39 +21,43 @@ const C = {
 const serif = "Georgia, 'Times New Roman', serif";
 const PAGE_SIZE = 20;
 
-export default function KnowYourJudge() {
-  const [scope, setScope] = useState("national"); // national | colorado
+const STATE_NAMES = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+  MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire",
+  NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina",
+  ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
+  RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee",
+  TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington",
+  WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
+  PR: "Puerto Rico", GU: "Guam", VI: "U.S. Virgin Islands", AS: "American Samoa",
+  MP: "Northern Mariana Islands",
+};
 
-  const scopeBtn = (key, label) => (
-    <button onClick={() => setScope(key)}
-      style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, padding: "8px 18px",
-               borderRadius: 6, cursor: "pointer",
-               border: `1px solid ${scope === key ? C.navy : C.line}`,
-               background: scope === key ? C.navy : "#fff",
-               color: scope === key ? "#fff" : C.navy }}>
-      {label}
-    </button>
-  );
+const JURISDICTION_LABELS = {
+  F: "Federal Appellate", FD: "Federal District", FS: "Federal Specialty",
+  S: "State Supreme", SA: "State Appellate",
+  TS: "Territory Supreme", TA: "Territory Appellate",
+};
 
-  return (
-    <div>
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
-        {scopeBtn("national", "🇺🇸 National Directory")}
-        {scopeBtn("colorado", "🏔️ Colorado Deep Dive")}
-      </div>
-      {scope === "national" ? <NationalJudgeDirectory /> : <ColoradoJudgeDirectory />}
-    </div>
-  );
+function scopeName(code) {
+  if (code === "US") return "Federal courts (nationwide)";
+  return STATE_NAMES[code] || code;
 }
 
-function ColoradoJudgeDirectory() {
+export default function NationalJudgeDirectory() {
   const [phase, setPhase] = useState("loading"); // loading | ready | notready | error
   const [judges, setJudges] = useState([]);
-  const [courts, setCourts] = useState([]);
+  const [scopes, setScopes] = useState([]);   // [{state, court_count, judge_count}]
+  const [courts, setCourts] = useState([]);   // courts within the selected scope
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [scope, setScope] = useState("US");   // 'US' | state code | '' for everything
   const [courtId, setCourtId] = useState("");
   const [selected, setSelected] = useState(null); // judge id
   const [errorDetail, setErrorDetail] = useState(null);
@@ -69,10 +68,11 @@ function ColoradoJudgeDirectory() {
       const p = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(newOffset) });
       if (search) p.set("q", search);
       if (courtId) p.set("courtId", courtId);
-      const r = await fetch(`/api/judges-list?${p}`);
+      else if (scope) p.set("state", scope);
+      const r = await fetch(`/api/judges-national-list?${p}`);
       const d = await r.json().catch(() => null);
       if (!r.ok || !d || d.ready === undefined) {
-        console.error("Judges list fetch failed", { status: r.status, d });
+        console.error("National judges list fetch failed", { status: r.status, d });
         setErrorDetail(d?.detail || d?.error || `HTTP ${r.status}`);
         setPhase("error");
         return;
@@ -83,58 +83,86 @@ function ColoradoJudgeDirectory() {
       setHasMore(!!d.hasMore);
       setPhase("ready");
     } catch (err) {
-      console.error("Judges list fetch threw", err);
+      console.error("National judges list fetch threw", err);
       setErrorDetail(String(err.message || err));
       setPhase("error");
     }
-  }, [search, courtId]);
+  }, [search, scope, courtId]);
 
-  useEffect(() => { loadList(0, false); }, [search, courtId, loadList]);
+  useEffect(() => { loadList(0, false); }, [search, scope, courtId, loadList]);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/judge-courts")
+    fetch("/api/judge-national-courts")
       .then(r => r.json())
-      .then(d => { if (!cancelled && d.ready) setCourts(d.courts || []); })
+      .then(d => { if (!cancelled && d.ready) setScopes(d.scopes || []); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!scope) { setCourts([]); return; }
+    let cancelled = false;
+    fetch(`/api/judge-national-courts?state=${encodeURIComponent(scope)}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d.ready) setCourts(d.courts || []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [scope]);
+
   function runSearch() { setSearch(searchInput.trim()); }
 
   if (selected) {
-    return <JudgeDetail judgeId={selected} onBack={() => setSelected(null)} />;
+    return <NationalJudgeDetail judgeId={selected} onBack={() => setSelected(null)} />;
   }
+
+  // The federal option always exists even before the first sync has run, so
+  // the default selection never points at a missing <option>.
+  const scopeOptions = (scopes.some(s => s.state === "US") ? [...scopes] : [{ state: "US" }, ...scopes])
+    .sort((a, b) =>
+      a.state === "US" ? -1 : b.state === "US" ? 1 : scopeName(a.state).localeCompare(scopeName(b.state)));
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
       <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
-          Know Your Judge
+          National Judge Directory
         </div>
         <div style={{ fontSize: 14, color: "#cfd6e4", lineHeight: 1.6 }}>
-          Colorado's judges do not run in contested elections, you vote to retain or remove them.
-          This section shows every judge we track, their official performance evaluation from the
-          state's Office of Judicial Performance Evaluation, and how past retention votes went,
-          so a retention ballot line is never a blind guess.
+          Judges are the least-known officials on your ballot and on your case. This directory
+          covers the federal bench, from the Supreme Court to every district court, and the
+          supreme and appellate courts of all fifty states, so you can see who sits on a court,
+          what their position is, and who put them there.
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        <select value={scope} onChange={e => { setScope(e.target.value); setCourtId(""); }}
+          style={{ flex: "1 1 190px", fontFamily: serif, fontSize: 13, padding: "10px 8px",
+                   border: `1px solid ${C.line}`, borderRadius: 5, background: "#fff" }}>
+          <option value="">All states &amp; federal</option>
+          {scopeOptions.map(s => (
+            <option key={s.state} value={s.state}>
+              {scopeName(s.state)}{Number(s.judge_count) > 0 ? ` (${s.judge_count})` : ""}
+            </option>
+          ))}
+        </select>
+        {scope && courts.length > 0 && (
+          <select value={courtId} onChange={e => setCourtId(e.target.value)}
+            style={{ flex: "1 1 190px", fontFamily: serif, fontSize: 13, padding: "10px 8px",
+                     border: `1px solid ${C.line}`, borderRadius: 5, background: "#fff" }}>
+            <option value="">All courts</option>
+            {courts.map(c => (
+              <option key={c.id} value={c.id}>{c.name}{Number(c.judge_count) > 0 ? ` (${c.judge_count})` : ""}</option>
+            ))}
+          </select>
+        )}
         <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && runSearch()}
           placeholder="Search by judge or court name"
-          style={{ flex: "2 1 220px", fontFamily: serif, fontSize: 14, padding: "10px 12px",
+          style={{ flex: "2 1 200px", fontFamily: serif, fontSize: 14, padding: "10px 12px",
                    border: `1px solid ${C.line}`, borderRadius: 5 }} />
-        <select value={courtId} onChange={e => setCourtId(e.target.value)}
-          style={{ flex: "1 1 180px", fontFamily: serif, fontSize: 13, padding: "10px 8px",
-                   border: `1px solid ${C.line}`, borderRadius: 5, background: "#fff" }}>
-          <option value="">All courts</option>
-          {courts.map(c => (
-            <option key={c.id} value={c.id}>{c.name}{Number(c.judge_count) > 0 ? ` (${c.judge_count})` : ""}</option>
-          ))}
-        </select>
         <button onClick={runSearch}
           style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "10px 18px",
                    background: C.crimson, color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}>
@@ -151,8 +179,15 @@ function ColoradoJudgeDirectory() {
           )}
         </Center>
       )}
-      {phase === "notready" && <Center>The judges database is not loaded yet.</Center>}
-      {phase === "ready" && judges.length === 0 && <Center>No judges match that search.</Center>}
+      {phase === "notready" && (
+        <Center>The national judges database is not loaded yet. It fills in automatically as the daily sync runs.</Center>
+      )}
+      {phase === "ready" && judges.length === 0 && (
+        <Center>
+          No judges match{scope ? ` in ${scopeName(scope)}` : " that search"} yet.
+          The directory fills in state by state as the daily sync runs.
+        </Center>
+      )}
 
       {judges.length > 0 && (
         <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
@@ -167,6 +202,13 @@ function ColoradoJudgeDirectory() {
                   {j.court_name || "Court not on record"}{j.position_title ? ` · ${j.position_title}` : ""}
                 </div>
               </div>
+              {j.jurisdiction && (
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase",
+                               color: C.muted, border: `1px solid ${C.line}`, borderRadius: 4,
+                               padding: "3px 8px", flexShrink: 0 }}>
+                  {JURISDICTION_LABELS[j.jurisdiction] || j.jurisdiction}
+                </span>
+              )}
               <span style={{ fontSize: 12, color: C.crimson, fontWeight: 700, flexShrink: 0 }}>View →</span>
             </button>
           ))}
@@ -183,15 +225,17 @@ function ColoradoJudgeDirectory() {
       )}
 
       <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginTop: 18 }}>
-        Sources: appellate judges from the Free Law Project's CourtListener. Performance evaluations
-        transcribed from the Colorado Office of Judicial Performance Evaluation. Retention results
-        transcribed from official Colorado Secretary of State election records.
+        Source: the Free Law Project's CourtListener judge database. Coverage spans the federal
+        judiciary and every state's supreme and appellate courts; state trial courts are not
+        included because no reliable nationwide source exists for them. Colorado judges also
+        carry their official performance evaluations and retention results, from the Colorado
+        deep dive.
       </p>
     </div>
   );
 }
 
-function JudgeDetail({ judgeId, onBack }) {
+function NationalJudgeDetail({ judgeId, onBack }) {
   const [phase, setPhase] = useState("loading");
   const [data, setData] = useState(null);
   const [errorDetail, setErrorDetail] = useState(null);
@@ -199,12 +243,12 @@ function JudgeDetail({ judgeId, onBack }) {
   useEffect(() => {
     let cancelled = false;
     setPhase("loading");
-    fetch(`/api/judge-detail?judgeId=${encodeURIComponent(judgeId)}`)
+    fetch(`/api/judge-national-detail?judgeId=${encodeURIComponent(judgeId)}`)
       .then(async r => ({ ok: r.ok, status: r.status, d: await r.json().catch(() => null) }))
       .then(({ ok, status, d }) => {
         if (cancelled) return;
         if (!ok || !d || d.ready === undefined) {
-          console.error("Judge detail fetch failed", { status, d });
+          console.error("National judge detail fetch failed", { status, d });
           setErrorDetail(d?.detail || d?.error || `HTTP ${status}`);
           setPhase("error");
           return;
@@ -241,9 +285,10 @@ function JudgeDetail({ judgeId, onBack }) {
       </Center>
     </div>
   );
-  if (phase === "notready") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>The judges database is not loaded yet.</Center></div>;
+  if (phase === "notready") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>The national judges database is not loaded yet.</Center></div>;
 
   const { judge, evaluations, retention } = data;
+  const jurisdictionLabel = JURISDICTION_LABELS[judge.jurisdiction] || null;
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 900, margin: "0 auto" }}>
@@ -256,15 +301,18 @@ function JudgeDetail({ judgeId, onBack }) {
           {judge.position_title ? ` · ${judge.position_title}` : ""}
           {judge.date_start ? ` · serving since ${String(judge.date_start).slice(0, 10)}` : ""}
         </div>
-        {judge.appointed_by && (
-          <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>Appointed by {judge.appointed_by}</div>
-        )}
+        <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
+          {[
+            judge.state ? scopeName(judge.state) : (jurisdictionLabel ? "Federal (nationwide)" : null),
+            jurisdictionLabel,
+            judge.appointed_by ? `Appointed by ${judge.appointed_by}` : null,
+          ].filter(Boolean).join(" · ")}
+        </div>
       </div>
 
-      <Section title="Performance evaluations (OJPE)">
-        {evaluations.length === 0
-          ? <Empty>No OJPE evaluation on record for this judge yet.</Empty>
-          : evaluations.map((e, i) => (
+      {evaluations.length > 0 && (
+        <Section title="Performance evaluations (Colorado OJPE)">
+          {evaluations.map((e, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: "1px solid #f0ead8" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{e.eval_year} evaluation</div>
@@ -281,16 +329,25 @@ function JudgeDetail({ judgeId, onBack }) {
               )}
             </div>
           ))}
-      </Section>
+        </Section>
+      )}
 
-      <Section title="Retention election results">
-        {retention.length === 0
-          ? <Empty>No retention election on record for this judge yet.</Empty>
-          : retention.map((r, i) => (
+      {retention.length > 0 && (
+        <Section title="Retention election results">
+          {retention.map((r, i) => (
             <RetentionBar key={i} electionYear={r.election_year} yesVotes={r.yes_votes}
               noVotes={r.no_votes} retained={r.retained} />
           ))}
-      </Section>
+        </Section>
+      )}
+
+      <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
+        Directory data from the Free Law Project's CourtListener.
+        {evaluations.length === 0 && retention.length === 0 && (
+          " Performance evaluations and retention results are shown where an official state source" +
+          " has been wired in; Colorado is the first."
+        )}
+      </p>
     </div>
   );
 }
@@ -302,9 +359,6 @@ function Section({ title, children }) {
       <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
     </div>
   );
-}
-function Empty({ children }) {
-  return <div style={{ padding: "14px", fontSize: 13, color: C.muted }}>{children}</div>;
 }
 function Center({ children, color }) {
   return <div style={{ textAlign: "center", padding: 40, color: color || C.muted, fontSize: 14.5, fontFamily: serif }}>{children}</div>;

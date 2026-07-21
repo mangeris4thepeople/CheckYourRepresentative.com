@@ -5,11 +5,16 @@
 // =============================================================================
 import judgesList from "./_handlers/judges-list.js";
 import judgeDetail from "./_handlers/judge-detail.js";
+import judgesNationalList from "./_handlers/judges-national-list.js";
+import judgeNationalDetail from "./_handlers/judge-national-detail.js";
 
 const OPS = {
   "judges-list": judgesList,
   "judge-detail": judgeDetail,
   "judge-courts": judgeDetail,
+  "judges-national-list": judgesNationalList,
+  "judge-national-detail": judgeNationalDetail,
+  "judge-national-courts": judgeNationalDetail,
 };
 
 export default async function handler(req, res) {

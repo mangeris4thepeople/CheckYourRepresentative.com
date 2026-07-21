@@ -357,13 +357,14 @@ export const TUTORIAL_PAGES = {
   },
   judges: {
     title: "Know Your Judge",
-    intro: "Colorado judges do not run in contested elections, you vote to retain or remove them. This section exists so that ballot line is never a blind guess.",
+    intro: "Judges shape daily life as much as any legislator, and most people cannot name one. This section covers the bench in two scopes: the National Directory and the Colorado Deep Dive.",
     items: [
-      { label: "What this section is", desc: "Every Colorado judge we track: their court, the state's official performance evaluation of them, and how their past retention votes went." },
-      { label: "Search and court filter", desc: "Search by judge or court name, or narrow to one court, from the Supreme Court through each judicial district down to every county court." },
+      { label: "National Directory", desc: "The federal bench, from the Supreme Court through every circuit and district court, plus the supreme and appellate courts of all fifty states. Pick a state (or the federal courts) to see who sits on each court, their position, and who appointed them." },
+      { label: "Colorado Deep Dive", desc: "Every Colorado judge we track, down to the county courts: their court, the state's official performance evaluation of them, and how their past retention votes went." },
+      { label: "Search and court filter", desc: "In either scope, search by judge or court name, or narrow to one court, from the U.S. Supreme Court down to every Colorado county court." },
       { label: "Performance evaluations (OJPE)", desc: "The Colorado Office of Judicial Performance Evaluation formally evaluates every judge before their retention election and publishes a recommendation. We show that recommendation and link the full published narrative." },
       { label: "Retention election results", desc: "The actual yes and no vote counts from each retention election a judge has faced, from official Secretary of State records." },
-      { label: "Where the data comes from", desc: "Appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official state publications." },
+      { label: "Where the data comes from", desc: "The national directory and appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official Colorado state publications." },
       { label: "Social Security, what this section shows", desc: "Retirement, survivors, and disability insurance (OASDI) beneficiary counts and total monthly benefits, by state, sourced from the Social Security Administration. The current data is from 2015, the most recent state-level breakdown SSA has published in this form." },
       { label: "Social Security, your state", desc: "Pinned to the top once your district is matched, so you see your own state's figures first." },
       { label: "Social Security, search", desc: "Search the full list of states and territories by name or abbreviation." },

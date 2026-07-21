@@ -37,7 +37,11 @@
 
     { "source": "/api/judges-list", "destination": "/api/judges?op=judges-list" },
     { "source": "/api/judge-detail", "destination": "/api/judges?op=judge-detail" },
-    { "source": "/api/judge-courts", "destination": "/api/judges?op=judge-courts" }
+    { "source": "/api/judge-courts", "destination": "/api/judges?op=judge-courts" },
+
+    { "source": "/api/judges-national-list", "destination": "/api/judges?op=judges-national-list" },
+    { "source": "/api/judge-national-detail", "destination": "/api/judges?op=judge-national-detail" },
+    { "source": "/api/judge-national-courts", "destination": "/api/judges?op=judge-national-courts" }
   ],
   "crons": [
     {
@@ -71,6 +75,10 @@
     {
       "path": "/api/cron?op=sync-senator-finances",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron?op=sync-judges-national",
+      "schedule": "30 4 * * *"
     }
   ]
 }
