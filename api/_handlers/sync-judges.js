@@ -115,6 +115,32 @@ async function cl(url) {
 
 // ---- schema, mirrored in sql/know_your_judge_schema.sql ----
 async function ensureSchema() {
+  // Verified live: these tables can pre-exist in a database with a different
+  // shape (created by hand from an earlier schema draft), which CREATE TABLE
+  // IF NOT EXISTS silently skips, and every ON CONFLICT then fails with "no
+  // unique or exclusion constraint matching". Same legacy-drift class as the
+  // senator finance tables. A table missing expected columns is dropped for
+  // rebuild; a table with the right columns but missing unique constraints
+  // gets them added as unique indexes below, which ON CONFLICT accepts.
+  const EXPECTED = {
+    co_courts: ["id", "name", "court_type", "judicial_district", "courtlistener_id"],
+    co_judges: ["id", "courtlistener_person_id", "full_name", "court_id", "position_title",
+      "appointed_by", "date_start", "date_termination", "active", "synced_at"],
+    ojpe_evaluations: ["id", "judge_id", "eval_year", "recommendation", "retention_score", "narrative_url"],
+    judicial_retention_results: ["id", "judge_id", "election_year", "yes_votes", "no_votes", "retained"],
+  };
+  for (const [t, wanted] of Object.entries(EXPECTED)) {
+    const table = await sql`
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = ${t}`;
+    if (!table.length) continue;
+    const cols = await sql`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = ${t}`;
+    const have = new Set(cols.map(c => c.column_name));
+    if (wanted.some(c => !have.has(c))) await sql.query(`DROP TABLE "${t}" CASCADE`);
+  }
+
   await sql`
     CREATE TABLE IF NOT EXISTS co_courts (
       id                 SERIAL PRIMARY KEY,
@@ -157,6 +183,17 @@ async function ensureSchema() {
       retained       BOOLEAN,
       UNIQUE (judge_id, election_year)
     )`;
+
+  // A pre-existing table can have the right columns but not the unique
+  // constraints the upserts rely on. A unique index satisfies ON CONFLICT.
+  // On a freshly created table these duplicate the inline UNIQUE
+  // constraints under a second name, which is redundant but harmless at
+  // this table size, and keeping them unconditional keeps this path simple.
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS co_courts_name_uq ON co_courts (name)`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS co_judges_person_uq ON co_judges (courtlistener_person_id)`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS co_judges_name_court_uq ON co_judges (full_name, court_id)`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS ojpe_judge_year_uq ON ojpe_evaluations (judge_id, eval_year)`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS retention_judge_year_uq ON judicial_retention_results (judge_id, election_year)`;
 
   const DISTRICTS = [
     "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th",
