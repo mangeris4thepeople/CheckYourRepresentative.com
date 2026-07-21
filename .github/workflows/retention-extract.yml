@@ -51,41 +51,69 @@ jobs:
           python3 << 'PYEOF'
           import re, os, csv
 
-          text = open('/tmp/abstract.txt', encoding='utf-8', errors='replace').read()
+          # Verified against the abstract's real layout: each retention
+          # contest opens with a header naming the court and judge, then a
+          # county table whose Total row carries Yes in column 3 and No in
+          # column 4:
+          #   Colorado Supreme Court Justice - Brian D. Boatright
+          #   County   Registered Voters   Ballots Cast   Yes   No   Total   Turnout %
+          #   ...
+          #   Total    4,583,280   3,241,155   1,685,363   837,630   2,522,993   70.72%
+          # County court judges are outside this site's directory and skipped.
           year = os.environ.get('ELECTION_YEAR', '2024')
+          lines = open('/tmp/abstract.txt', encoding='utf-8', errors='replace').read().splitlines()
 
-          # Question headings look like:
-          #   Shall Justice Monica M. Marquez of the Colorado Supreme Court be retained in office?
-          #   Shall Judge Eric Bentley of the 4th Judicial District be retained in office?
-          # followed within a few lines by Yes/For and No/Against counts.
-          q = re.compile(
-              r"Shall\s+(?:Justice|Judge)\s+(.+?)\s+of\s+the\s+(.+?)\s+be\s+retained",
-              re.IGNORECASE)
-          rows = []
-          skipped = []
-          matches = list(q.finditer(text))
-          print(f"retention questions found: {len(matches)}")
-          for i, m in enumerate(matches):
-              name = re.sub(r"\s+", " ", m.group(1)).strip()
-              court = re.sub(r"\s+", " ", m.group(2)).strip()
-              window = text[m.end(): m.end() + 800]
-              yes = re.search(r"(?:Yes(?:/For)?|For)\D{0,40}?([\d,]{2,})", window, re.IGNORECASE)
-              no = re.search(r"(?:No(?:/Against)?|Against)\D{0,40}?([\d,]{2,})", window, re.IGNORECASE)
-              if not (yes and no):
-                  skipped.append(f"{name} | {court} | counts not found")
+          H_SUP = re.compile(r"^\s*Colorado Supreme Court Justice\s+-\s+(.+?)\s*$")
+          H_APP = re.compile(r"^\s*Colorado Court Of Appeals Judge\s+-\s+(.+?)\s*$", re.IGNORECASE)
+          H_DIS = re.compile(r"^\s*District Court Judge\s+-\s+(\d+)(?:st|nd|rd|th)\s+Judicial District\s+-\s+(.+?)\s*$")
+          H_CTY = re.compile(r"^\s*County Court Judge\s+-\s+")
+          TOTAL = re.compile(r"^\s*Total\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s")
+
+          def dsuffix(n):
+              return {1: "1st", 2: "2nd", 3: "3rd", 21: "21st", 22: "22nd"}.get(n, f"{n}th")
+
+          rows, skipped = [], []
+          current = None  # (judge, court)
+
+          def open_contest(judge, court):
+              global current
+              if current and current != (judge, court):
+                  skipped.append(f"{current[0]} | {current[1]} | no total found")
+              current = (judge, court)
+
+          for ln in lines:
+              m = H_SUP.match(ln)
+              if m:
+                  open_contest(m.group(1).strip(), "Colorado Supreme Court")
                   continue
-              y = int(yes.group(1).replace(",", ""))
-              n = int(no.group(1).replace(",", ""))
-              rows.append({
-                  "judge_full_name": name, "court_name": court,
-                  "election_year": year, "yes_votes": y, "no_votes": n,
-                  "retained": "yes" if y > n else "no",
-              })
+              m = H_APP.match(ln)
+              if m:
+                  open_contest(m.group(1).strip(), "Colorado Court of Appeals")
+                  continue
+              m = H_DIS.match(ln)
+              if m:
+                  open_contest(m.group(2).strip(), f"{dsuffix(int(m.group(1)))} Judicial District Court")
+                  continue
+              if H_CTY.match(ln):
+                  if current:
+                      skipped.append(f"{current[0]} | {current[1]} | no total found")
+                  current = None
+                  continue
+              m = TOTAL.match(ln)
+              if m and current:
+                  y = int(m.group(3).replace(",", ""))
+                  n = int(m.group(4).replace(",", ""))
+                  rows.append({
+                      "judge_full_name": current[0], "court_name": current[1],
+                      "election_year": year, "yes_votes": y, "no_votes": n,
+                      "retained": "yes" if y > n else "no",
+                  })
+                  current = None
 
           print(f"parsed: {len(rows)}, skipped: {len(skipped)}")
           for s in skipped[:20]:
               print("SKIP:", s)
-          for r in rows[:10]:
+          for r in rows[:12]:
               print("ROW:", r)
 
           if rows:

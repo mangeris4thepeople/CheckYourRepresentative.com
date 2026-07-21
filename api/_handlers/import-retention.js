@@ -98,7 +98,13 @@ function mapCourt(raw) {
 }
 
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z ]/g, "").trim();
-const lastName = (s) => norm(s).split(" ").filter(Boolean).pop() || "";
+// Generational suffixes are dropped so "Joseph R. Whitfield, Jr." still
+// yields whitfield as the matching token rather than jr.
+const SUFFIXES = new Set(["jr", "sr", "ii", "iii", "iv", "v"]);
+const lastName = (s) => {
+  const parts = norm(s).split(" ").filter(Boolean).filter(t => !SUFFIXES.has(t));
+  return parts.pop() || "";
+};
 
 async function matchJudge(fullName, courtId) {
   const last = lastName(fullName);
