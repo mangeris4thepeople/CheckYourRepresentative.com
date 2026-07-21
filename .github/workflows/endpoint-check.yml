@@ -33,6 +33,7 @@ jobs:
           URL: ${{ inputs.url }}
           MODE: ${{ inputs.mode }}
         run: |
+          touch /tmp/page
           curl -sSL --max-time 120 -A "Mozilla/5.0 (civic data check)" -w "\nHTTP_STATUS %{http_code}\n" "$URL" -o /tmp/page || true
           echo "SIZE $(wc -c < /tmp/page)"
           if [ "$MODE" = "page" ]; then
