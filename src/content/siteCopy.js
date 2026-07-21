@@ -55,6 +55,11 @@ export const ABOUT = {
       "not a campaign, not a PAC, not a data broker, not any institution, period. This " +
       "exists to give power back to people, not to become another place your data gets " +
       "monetized.",
+    "Accountability does not stop at Congress. Judges shape daily life as much as any " +
+      "legislator, and in Colorado you do not elect them in contested races, you vote to " +
+      "retain or remove them. Know Your Judge puts the state's own performance evaluations " +
+      "and every past retention result in front of you, so that ballot line gets the same " +
+      "scrutiny as every vote in Washington.",
     "This is not a partisan project. Progressive, Conservative, Independent, Libertarian, " +
       "Green, Socialist, it does not matter where you start. The bills are the same for " +
       "everyone, and so is the record. Freedom does not erode all at once, it erodes one " +
@@ -348,6 +353,17 @@ export const TUTORIAL_PAGES = {
       { label: "NGO Funding, traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
       { label: "NGO Funding, reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
       { label: "Medicare and Medicaid", desc: "Coming soon. Will show state-level Medicare and Medicaid spending trends from public federal data." },
+    ],
+  },
+  judges: {
+    title: "Know Your Judge",
+    intro: "Colorado judges do not run in contested elections, you vote to retain or remove them. This section exists so that ballot line is never a blind guess.",
+    items: [
+      { label: "What this section is", desc: "Every Colorado judge we track: their court, the state's official performance evaluation of them, and how their past retention votes went." },
+      { label: "Search and court filter", desc: "Search by judge or court name, or narrow to one court, from the Supreme Court down to each judicial district." },
+      { label: "Performance evaluations (OJPE)", desc: "The Colorado Office of Judicial Performance Evaluation formally evaluates every judge before their retention election and publishes a recommendation. We show that recommendation and link the full published narrative." },
+      { label: "Retention election results", desc: "The actual yes and no vote counts from each retention election a judge has faced, from official Secretary of State records." },
+      { label: "Where the data comes from", desc: "Appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official state publications." },
       { label: "Social Security, what this section shows", desc: "Retirement, survivors, and disability insurance (OASDI) beneficiary counts and total monthly benefits, by state, sourced from the Social Security Administration. The current data is from 2015, the most recent state-level breakdown SSA has published in this form." },
       { label: "Social Security, your state", desc: "Pinned to the top once your district is matched, so you see your own state's figures first." },
       { label: "Social Security, search", desc: "Search the full list of states and territories by name or abbreviation." },

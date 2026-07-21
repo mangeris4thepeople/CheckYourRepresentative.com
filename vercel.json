@@ -33,7 +33,11 @@
 
     { "source": "/api/contact", "destination": "/api/messages?op=contact" },
     { "source": "/api/contact-us", "destination": "/api/messages?op=contact-us" },
-    { "source": "/api/contact-track", "destination": "/api/messages?op=contact-track" }
+    { "source": "/api/contact-track", "destination": "/api/messages?op=contact-track" },
+
+    { "source": "/api/judges-list", "destination": "/api/judges?op=judges-list" },
+    { "source": "/api/judge-detail", "destination": "/api/judges?op=judge-detail" },
+    { "source": "/api/judge-courts", "destination": "/api/judges?op=judge-courts" }
   ],
   "crons": [
     {

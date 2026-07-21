@@ -21,6 +21,7 @@ import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import FollowTheMoney from "./components/FollowTheMoney.jsx";
+import KnowYourJudge from "./components/KnowYourJudge.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
@@ -40,12 +41,13 @@ const TABS = [
   { key: "matrix",       label: "📊 Accountability" },
   { key: "rollcalls",    label: "📋 Roll Calls" },
   { key: "followthemoney", label: "💰 Follow the Money" },
+  { key: "judges",       label: "⚖️ Know Your Judge" },
   { key: "constituents", label: "🌐 Constituents" },
   { key: "merch",        label: "👕 Merch" },
 ];
 
 // Tabs that get a left-hand contextual help sidebar.
-const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthemoney" };
+const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthemoney", judges: "judges" };
 
 // Inject mobile CSS once
 const MOBILE_CSS = `
@@ -223,6 +225,12 @@ export default function App() {
         {tab === "followthemoney" && (
           <HelpLayout page="followthemoney">
             <FollowTheMoney district={resolved?.district} />
+          </HelpLayout>
+        )}
+
+        {tab === "judges" && (
+          <HelpLayout page="judges">
+            <KnowYourJudge />
           </HelpLayout>
         )}
 
