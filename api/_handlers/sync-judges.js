@@ -49,17 +49,23 @@ export default async function handler(req, res) {
   }
 }
 
+// CourtListener rejects date_termination__isnull as a filter (verified live:
+// "Unknown filter parameters are not allowed"), so all positions are fetched
+// newest first and terminated ones are skipped client side. Newest first
+// matters: it puts sitting judges on the first pages, so the page cap can
+// never cut them off behind a century of historical positions.
 async function syncCourt(court) {
   let synced = 0;
   const errors = [];
 
   let url = `${CL_BASE}/positions/?court=${encodeURIComponent(court.courtlistener_id)}` +
-    `&date_termination__isnull=True&page_size=${PAGE_SIZE}&order_by=id`;
+    `&page_size=${PAGE_SIZE}&order_by=-id`;
 
   for (let page = 0; page < MAX_PAGES_PER_COURT && url; page++) {
     const data = await cl(url);
     for (const pos of data.results || []) {
       try {
+        if (pos.date_termination) continue;
         const person = await resolvePerson(pos.person);
         if (!person) continue;
         const name = personName(person);
@@ -70,7 +76,7 @@ async function syncCourt(court) {
             (courtlistener_person_id, full_name, court_id, position_title,
              appointed_by, date_start, date_termination, active, synced_at)
           VALUES
-            (${person.id}, ${name}, ${court.id}, ${pos.job_title || pos.position_type || null},
+            (${person.id}, ${name}, ${court.id}, ${positionTitle(pos)},
              ${pos.appointer_str || null}, ${pos.date_start || null}, ${pos.date_termination || null},
              ${!pos.date_termination}, now())
           ON CONFLICT (courtlistener_person_id) DO UPDATE SET
@@ -107,9 +113,27 @@ function personName(p) {
   return (parts + suffix).trim() || null;
 }
 
+// CourtListener position_type is a short code (verified live: "jud"), with
+// job_title usually empty for state judges. Map the common codes to plain
+// English and fall back to whatever the API sent.
+const POSITION_TITLES = {
+  "jud": "Judge", "c-jud": "Chief Judge", "act-jud": "Acting Judge",
+  "jus": "Justice", "c-jus": "Chief Justice", "act-jus": "Acting Justice",
+  "ret-jus": "Retired Justice", "ret-act-jus": "Retired Acting Justice",
+};
+
+function positionTitle(pos) {
+  if (pos.job_title) return pos.job_title;
+  if (pos.position_type) return POSITION_TITLES[pos.position_type] || pos.position_type;
+  return null;
+}
+
 async function cl(url) {
   const r = await fetch(url, { headers: { Authorization: `Token ${CL_TOKEN}` } });
-  if (!r.ok) throw new Error(`CourtListener ${r.status} on ${url.slice(0, 120)}`);
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    throw new Error(`CourtListener ${r.status} on ${url.slice(0, 120)}: ${body.slice(0, 160)}`);
+  }
   return r.json();
 }
 

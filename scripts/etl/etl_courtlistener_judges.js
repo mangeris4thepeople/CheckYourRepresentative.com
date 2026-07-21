@@ -44,11 +44,12 @@ async function run() {
     let total = 0;
     for (const court of courts) {
       let url = `${CL_BASE}/positions/?court=${encodeURIComponent(court.courtlistener_id)}` +
-        `&date_termination__isnull=True&page_size=50&order_by=id`;
+        `&page_size=50&order_by=-id`;
       let synced = 0;
       while (url) {
         const data = await cl(url);
         for (const pos of data.results || []) {
+          if (pos.date_termination) continue;
           const person = await resolvePerson(pos.person);
           if (!person) continue;
           const name = personName(person);
