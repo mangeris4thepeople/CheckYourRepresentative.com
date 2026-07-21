@@ -1,6 +1,7 @@
 // test-email.js
 export default async function handler(req, res) {
-  const KEY = "re_hNBNrFbn_KpAZnS1S5dgqaSkZ6VJE3vTz";
+  const KEY = process.env.RESEND_API_KEY;
+  if (!KEY) return res.status(500).json({ error: "RESEND_API_KEY not set" });
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": "Bearer " + KEY },
