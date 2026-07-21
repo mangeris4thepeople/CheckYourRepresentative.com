@@ -45,6 +45,9 @@ export default async function handler(req, res) {
         const a = f.attributes || {};
         const state = a.State_Territory || a.ORDER1_NAM || a.NAME_LAT;
         if (!state) continue;
+        // Some territories appear as two map features, one carrying the real
+        // values and one zeroed. Never let a zero row overwrite real data.
+        if (!toInt(a.Total_Beneficiaries)) continue;
         try {
           await sql`
             INSERT INTO ssa_oasdi_state
