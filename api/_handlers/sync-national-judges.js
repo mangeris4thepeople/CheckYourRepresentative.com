@@ -13,9 +13,13 @@
 //
 // The full crawl is far larger than one function invocation, so this is
 // resumable exactly like sync-senator-finances: a cursor in sync_state
-// stores the next page URL and jurisdiction index, each run consumes its
-// time budget and reports resume state, and a daily cron entry keeps
-// chipping away until passComplete, then refreshes continuously.
+// stores the next page URL and jurisdiction index and each run consumes
+// its time budget. Unlike that crawler, this one also chains itself: a
+// run that ends mid-pass fires one request at its own URL before
+// responding, so a single trigger (the daily cron, or one manual click)
+// walks the entire pass to completion unattended. The chain only
+// continues from a successful incomplete run, so a failing run breaks
+// the chain instead of looping, and a completed pass ends it.
 //
 // If the API ever rejects court__jurisdiction as a filter, the crawler
 // flips itself to one unfiltered pass and filters by the embedded court's
@@ -168,8 +172,23 @@ export default async function handler(req, res) {
       SELECT count(*)::int AS judges, count(DISTINCT court_cl_id)::int AS courts
       FROM national_judges WHERE active`)[0];
 
+    // Chain the next chunk. The kick request only needs to reach Vercel and
+    // start the next invocation, which keeps running after this one aborts
+    // the connection and returns, so the whole pass completes from a single
+    // trigger. Chunks that errored heavily do not chain, so a broken source
+    // stops the crawl rather than hammering it.
+    let chained = false;
+    if (!passComplete && errors.length < 20 && process.env.CRON_SECRET) {
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      if (host) {
+        const selfUrl = `https://${host}/api/cron?op=sync-national-judges&key=${process.env.CRON_SECRET}`;
+        await fetch(selfUrl, { signal: AbortSignal.timeout(2000) }).catch(() => {});
+        chained = true;
+      }
+    }
+
     return res.status(200).json({
-      ok: true, processed, skippedTerminated, passComplete,
+      ok: true, processed, skippedTerminated, passComplete, chained,
       totalJudges: totals.judges, totalCourts: totals.courts,
       errors: errors.slice(0, 10),
     });
