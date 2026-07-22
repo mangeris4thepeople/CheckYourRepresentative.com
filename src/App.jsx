@@ -88,6 +88,9 @@ export default function App() {
   const initialDeepLink = (() => {
     try {
       if (window.location.pathname === "/privacy") return { view: "privacy", tab: null };
+      // The old landing page lives on at /welcome as the campaign page for
+      // ads and social links; the site entry itself is gate free.
+      if (window.location.pathname === "/welcome") return { view: "landing", tab: null };
       const t = new URLSearchParams(window.location.search).get("tab");
       const VALID = new Set(["vote", "allbills", "rollcalls", "constituents", "matrix",
         "followthemoney", "judges", "profile", "merch"]);
@@ -96,6 +99,11 @@ export default function App() {
     return null;
   })();
 
+  // Signed-in visitors land on their profile; signed-out visitors land on
+  // something worth looking at (the national judges map) with a sign-in
+  // nudge in the header, instead of a sign-in form as the front door.
+  const hasStoredSession = !!getStoredSession();
+
   // view is one of: "landing" | "about" | "benefits" | "tutorial" |
   // "howitworks" | "privacy" | "tool". The marketing views are content
   // pages; the app has no router so they are plain state. Visitors land
@@ -103,7 +111,8 @@ export default function App() {
   // and deterred constituents, so the first-run walkthrough (below) now
   // carries the introduction instead.
   const [view, setView] = useState(initialVoterId ? "tool" : (initialDeepLink?.view || "tool"));
-  const [tab, setTab] = useState(initialVoterId ? "constituents" : (initialDeepLink?.tab || "profile"));
+  const [tab, setTab] = useState(initialVoterId ? "constituents"
+    : (initialDeepLink?.tab || (hasStoredSession ? "profile" : "judges")));
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
   const [showTutorial, setShowTutorial] = useState(false);
@@ -123,6 +132,8 @@ export default function App() {
   function dismissTutorial() {
     try { localStorage.setItem("cyr_tutorial_seen", "1"); } catch {}
     setShowTutorial(false);
+    // Anonymous aggregate counter, nothing identifying: see /privacy.
+    fetch("/api/metric?m=walkthrough_dismissed", { method: "POST" }).catch(() => {});
   }
 
   // Reopened on demand from My Profile, so people can revisit it anytime.
@@ -141,6 +152,14 @@ export default function App() {
     try {
       if (view === "tool" && !initialVoterId && localStorage.getItem("cyr_tutorial_seen") !== "1") {
         setShowTutorial(true);
+      }
+    } catch {}
+    // One anonymous visit tick per browser session; a pure daily counter
+    // with no identifiers, consistent with the privacy policy.
+    try {
+      if (sessionStorage.getItem("cyr_visit_counted") !== "1") {
+        sessionStorage.setItem("cyr_visit_counted", "1");
+        fetch("/api/metric?m=visit", { method: "POST" }).catch(() => {});
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,6 +214,13 @@ export default function App() {
             <div className="cyr-site-title" style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Check Your Representative</div>
             <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW YOUR BILLS · KNOW YOUR VOTE · KNOW YOUR MONEY · HOLD THE LINE</div>
           </div>
+          {!session && tab !== "profile" && (
+            <button className="cyr-home-btn" onClick={() => { setView("tool"); setTab("profile"); }}
+              style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: C.gold,
+                       border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
+              Sign In to Vote →
+            </button>
+          )}
           <button className="cyr-home-btn" onClick={openTutorial}
             style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff", background: "transparent",
                      border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>

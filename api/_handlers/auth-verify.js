@@ -1,5 +1,6 @@
 // GET /api/auth/verify?token=xxx - verify magic link, issue session, redirect
 import { sql } from "../_db.js";
+import { bumpMetric } from "./metrics.js";
 import crypto from "crypto";
 
 export default async function handler(req, res) {
@@ -32,6 +33,8 @@ export default async function handler(req, res) {
       session_token = ${sessionToken},
       session_expires = ${sessionExpires}
     WHERE email = ${email}`;
+
+  await bumpMetric("signin_complete");
 
   // Redirect to app with session token in URL fragment (never hits server logs)
   return res.redirect(302,

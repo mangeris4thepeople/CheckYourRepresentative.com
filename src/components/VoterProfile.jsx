@@ -7,7 +7,6 @@ import { getStoredSession, storeSession } from "../lib/session.js";
 import { PRIVACY_SHORT } from "../content/siteCopy.js";
 import AddressLookup from "./AddressLookup.jsx";
 import ConstituentOnboarding from "./ConstituentOnboarding.jsx";
-import InteractiveDistrictMap from "./InteractiveDistrictMap.jsx";
 
 const C = {
   navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
@@ -454,12 +453,6 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
                 Enter your address above to confirm your district - then choose the topics you want summaries for.
               </p>
             )}
-            <div style={{ marginTop: 28 }}>
-              <div style={{ margin: "0 auto 10px", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted, textAlign: "center" }}>
-                - OR EXPLORE THE MAP -
-              </div>
-              <InteractiveDistrictMap onDistrictSelect={onDistrictSelect} />
-            </div>
           </div>
         </div>
       )}

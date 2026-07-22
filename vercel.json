@@ -24,6 +24,9 @@
     { "source": "/api/medicaid-state-detail", "destination": "/api/reps?op=medicaid-state-detail" },
     { "source": "/api/money-map", "destination": "/api/reps?op=money-map" },
     { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/welcome", "destination": "/index.html" },
+    { "source": "/api/metric", "destination": "/api/account?op=metric" },
+    { "source": "/api/metrics-summary", "destination": "/api/account?op=metrics-summary" },
 
     { "source": "/api/vote", "destination": "/api/votes?op=vote" },
     { "source": "/api/vote-status", "destination": "/api/votes?op=vote-status" },

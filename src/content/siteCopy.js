@@ -248,6 +248,12 @@ export const PRIVACY_POLICY = {
         "We do not use Google Analytics, Vercel Web Analytics, or any other product " +
           "analytics or user-tracking tool. We do not track your page views or tie any " +
           "browsing activity to your account.",
+        "We keep our own anonymous daily counters: total visits, walkthrough dismissals, " +
+          "and sign ins, each stored as a single number per day. These counters contain no " +
+          "IP address, no device information, no cookies, and no account identifiers, so " +
+          "they cannot be tied to you. They exist only so we can tell whether the site is " +
+          "working for people, and the running totals are publicly readable at " +
+          "/api/metrics-summary because our transparency standard applies to us too.",
         "The only third-party resource loaded in your browser is Google Fonts, used for the " +
           "site's typography, which is not analytics. Our hosting and database providers keep " +
           "standard operational server logs, which can include IP addresses, for security and " +
@@ -329,7 +335,6 @@ export const TUTORIAL_PAGES = {
       { label: "Verified", desc: "How many of your positions were cast from a network location that matched your district's state. It is a location signal on each vote, not an identity check." },
       { label: "District", desc: "The congressional district you were matched to." },
       { label: "Find Your District", desc: "Enter your address to match yourself to your congressional district and representative. Your address is only ever used for this match, never stored, never shown or shared." },
-      { label: "Or explore the map", desc: "Browse districts on the map to look around, without changing the district your account is registered to." },
       { label: "Display Name (optional)", desc: "What shows instead of your email if your profile is public. Leave blank to stay anonymous even when public." },
       { label: "City / Town", desc: "A general location shown on your public profile. This is not your full address, which is only ever used privately to match your district." },
       { label: "Bio (optional)", desc: "A short personal statement shown on your public card if your profile is public." },
