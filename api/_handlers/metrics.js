@@ -16,9 +16,14 @@
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
 
+// Metrics a browser may increment. vote_cast and new_account are NOT here
+// on purpose: they only ever increment server side inside the vote and
+// auth handlers, so the numbers a buyer would care about cannot be
+// inflated by anyone hitting this endpoint.
 const ALLOWED = new Set([
   "visit",
   "walkthrough_dismissed",
+  "vote_intent",
   "signin_request",
   "signin_complete",
 ]);
@@ -51,11 +56,40 @@ export default async function handler(req, res) {
     await ensureSchema();
     const rows = await sql`
       SELECT day, metric, count FROM site_metrics
-      WHERE day >= CURRENT_DATE - 30
+      WHERE day >= CURRENT_DATE - 60
       ORDER BY day DESC, metric ASC`;
-    const totals = {};
-    for (const r of rows) totals[r.metric] = (totals[r.metric] || 0) + Number(r.count);
-    return res.status(200).json({ ok: true, days: rows, totals });
+
+    const allTime = await sql`
+      SELECT metric, SUM(count)::int AS total FROM site_metrics GROUP BY metric`;
+    const totals = Object.fromEntries(allTime.map(r => [r.metric, Number(r.total)]));
+
+    const bucket = (from, to) => {
+      const out = {};
+      for (const r of rows) {
+        const age = Math.floor((Date.now() - new Date(r.day).getTime()) / 86400000);
+        if (age >= from && age < to) out[r.metric] = (out[r.metric] || 0) + Number(r.count);
+      }
+      return out;
+    };
+    const last7 = bucket(0, 7);
+    const prior7 = bucket(7, 14);
+
+    const rate = (num, den) => (den > 0 ? Math.round((num / den) * 1000) / 10 : null);
+    // The funnel a valuation conversation actually asks about, computed
+    // from all-time totals. Percentages; null until the denominator exists.
+    const funnel = {
+      visit_to_signin_request_pct: rate(totals.signin_request || 0, totals.visit || 0),
+      signin_request_to_complete_pct: rate(totals.signin_complete || 0, totals.signin_request || 0),
+      vote_intent_to_signin_request_pct: rate(totals.signin_request || 0, totals.vote_intent || 0),
+      signin_complete_to_first_votes_note:
+        "vote_cast counts every vote recorded, server side only; divide by new_account for votes per account",
+      votes_per_account: totals.new_account > 0
+        ? Math.round(((totals.vote_cast || 0) / totals.new_account) * 10) / 10 : null,
+    };
+
+    return res.status(200).json({
+      ok: true, totals, last7, prior7, funnel, days: rows.slice(0, 120),
+    });
   } catch (err) {
     return res.status(500).json({ error: "metrics_failed", detail: String(err.message || err) });
   }

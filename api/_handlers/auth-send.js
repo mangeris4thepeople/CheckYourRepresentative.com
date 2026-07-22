@@ -44,7 +44,8 @@ export default async function handler(req, res) {
     await sql`
       INSERT INTO profiles (email, email_channel, unsub_token)
       VALUES (${email.toLowerCase()}, 'off', ${crypto.randomBytes(16).toString("hex")})
-      ON CONFLICT (email) DO NOTHING`;
+      ON CONFLICT (email) DO NOTHING
+      RETURNING email`.then(rows => rows.length ? bumpMetric("new_account") : null);
 
     await sql`
       INSERT INTO sessions (email, magic_token, magic_expires, session_token)
