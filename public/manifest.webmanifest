@@ -1,0 +1,32 @@
+{
+  "name": "Check Your Representative",
+  "short_name": "CheckYourRep",
+  "description": "KNOW YOUR BILLS, KNOW YOUR VOTE, KNOW YOUR MONEY, HOLD THE LINE",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0A1A3F",
+  "background_color": "#FBF7EC",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Vote on Bills",
+      "url": "/?tab=vote",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Follow the Money",
+      "url": "/?tab=followthemoney",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Know Your Judge",
+      "url": "/?tab=judges",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

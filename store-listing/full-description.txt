@@ -1,0 +1,23 @@
+KNOW YOUR BILLS, KNOW YOUR VOTE, KNOW YOUR MONEY, HOLD THE LINE.
+
+Check Your Representative is built on one principle: public records only. Every number in the app comes from a named government source, and every claim links back to it. No spin, no scores invented from thin air, no party line. Progressive, conservative, independent, it does not matter where you start; the records are the same for everyone.
+
+WHAT YOU GET
+
+Know Your Bills. Plain language summaries of every active bill in Congress, with the actual roll call votes as they happen. See exactly how your representative voted, not how a pundit says they voted.
+
+Vote on Bills. Cast your own position on the same bills your representative votes on, support, oppose, or undecided, and see how your district actually feels next to how it is being represented. Your profile can be public or private, your choice, changeable anytime.
+
+Know Your Money. The Follow the Money tab traces who funds power and who receives public spending. Every dollar your representative's campaign has reported raising, every FEC filing with a link to the original document, and their top donors ranked by amount. NGO funding transparency built from federal award, FARA, and FEC disclosures. National heat maps of Medicaid and SNAP that drill from every state to every county and city the Census publishes. Social Security by state from the SSA. And the Money Map, which overlays six public money flows on one county level map with correlations computed from public records, clearly labeled: correlation is not causation.
+
+Know Your Judge. The judges of every state, from the Free Law Project's CourtListener database, on a national heat map that drills from state to county to courthouse. Each judge shows a Ruling Record of raw public counts from opinions they authored, never a score or a grade. Colorado gets the deepest treatment, with the state's own performance evaluations and every retention election result.
+
+WHAT WE NEVER DO
+
+Your information and your votes are never sold to anyone. Not a campaign, not a PAC, not a data broker, not any institution, for any price, period. No ads, no tracking SDKs, no analytics profiles. Sign in is a one time email link; there is no password to steal. The address you use to find your district is never stored.
+
+Where public data ends, the app says so plainly. A gap on a map is labeled as a government disclosure gap, because pretending to know more than the record shows is the exact disease this app exists to fight.
+
+Sources include Congress.gov, the Federal Election Commission, USASpending.gov, the US Census Bureau, the Social Security Administration, the Free Law Project's CourtListener, and official state election records. The full privacy policy is at https://checkyourrepresentative.com/privacy
+
+We the People. A tool for an informed electorate.

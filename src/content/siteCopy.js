@@ -130,6 +130,16 @@ export const HOW_IT_WORKS = {
         "correlation matrix computed from public records. Statistical relationships, not " +
         "causes: the numbers are offered for your own analysis, with every source named.",
     },
+    {
+      n: "7",
+      title: "Take it with you.",
+      body:
+        "Check Your Representative is available as an Android app on Google Play, and it " +
+        "installs straight from the browser too: on your phone, choose Add to Home Screen " +
+        "or Install App from the browser menu. Same site, same public records, one tap " +
+        "away. Bills, votes, and money data always load fresh from the record, never from " +
+        "a stale cache.",
+    },
   ],
 };
 
@@ -392,6 +402,14 @@ export const TUTORIAL_PAGES = {
 // Remaining in-app areas, for the full Site Tutorial page. These pages do not
 // get a contextual sidebar, so they only appear on the tutorial page.
 export const TUTORIAL_OTHER = [
+  {
+    title: "Get the app",
+    body:
+      "Check Your Representative is available on Android from Google Play, and installs " +
+      "directly from the browser on any phone: choose Add to Home Screen or Install App " +
+      "from your browser's menu. It is the same site with the same public records; bills, " +
+      "votes, and money data always load fresh, never from a stale cache.",
+  },
   {
     title: "All Active Bills",
     body:

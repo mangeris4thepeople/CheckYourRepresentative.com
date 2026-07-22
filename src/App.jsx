@@ -81,11 +81,26 @@ export default function App() {
     try { return new URLSearchParams(window.location.search).get("voter"); } catch { return null; }
   })();
 
+  // App-shortcut and deep links: /?tab=vote (and friends) skips the landing
+  // page straight into that tab, which the installed app's shortcuts use.
+  // /privacy (a Vercel rewrite of this same page) opens the privacy policy,
+  // giving it the stable URL app stores require.
+  const initialDeepLink = (() => {
+    try {
+      if (window.location.pathname === "/privacy") return { view: "privacy", tab: null };
+      const t = new URLSearchParams(window.location.search).get("tab");
+      const VALID = new Set(["vote", "allbills", "rollcalls", "constituents", "matrix",
+        "followthemoney", "judges", "profile", "merch"]);
+      if (t && VALID.has(t)) return { view: "tool", tab: t };
+    } catch {}
+    return null;
+  })();
+
   // view is one of: "landing" | "about" | "benefits" | "tutorial" |
   // "howitworks" | "privacy" | "tool". The marketing views are the pre-tool
   // content pages; the app has no router so they are plain state.
-  const [view, setView] = useState(initialVoterId ? "tool" : "landing");
-  const [tab, setTab] = useState(initialVoterId ? "constituents" : "profile");
+  const [view, setView] = useState(initialVoterId ? "tool" : (initialDeepLink?.view || "landing"));
+  const [tab, setTab] = useState(initialVoterId ? "constituents" : (initialDeepLink?.tab || "profile"));
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
   const [showTutorial, setShowTutorial] = useState(false);

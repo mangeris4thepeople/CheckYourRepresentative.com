@@ -23,6 +23,7 @@
     { "source": "/api/medicaid-national", "destination": "/api/reps?op=medicaid-national" },
     { "source": "/api/medicaid-state-detail", "destination": "/api/reps?op=medicaid-state-detail" },
     { "source": "/api/money-map", "destination": "/api/reps?op=money-map" },
+    { "source": "/privacy", "destination": "/index.html" },
 
     { "source": "/api/vote", "destination": "/api/votes?op=vote" },
     { "source": "/api/vote-status", "destination": "/api/votes?op=vote-status" },
