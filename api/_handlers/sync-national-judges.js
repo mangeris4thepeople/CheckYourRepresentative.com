@@ -31,8 +31,15 @@ const CL_TOKEN = process.env.COURTLISTENER_API_TOKEN;
 const CL_BASE = "https://www.courtlistener.com/api/rest/v4";
 const JURISDICTIONS = ["S", "SA", "ST", "SS"];
 const STATE_JURIS = new Set(JURISDICTIONS);
-const TIME_BUDGET_MS = 40000;
+// CourtListener throttles at 10 requests per minute (verified live via a
+// 429 on the first crawl attempt), so requests are spaced 7 seconds apart
+// and each invocation uses a long budget under api/cron.js's 300 second
+// maxDuration to still cover ~34 pages (3,400 positions) per run.
+const TIME_BUDGET_MS = 240000;
+const REQUEST_GAP_MS = 7000;
 const CURSOR_KEY = "natjudges_cursor";
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const STATES = {
   "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR", "California": "CA",
@@ -107,6 +114,7 @@ export default async function handler(req, res) {
 
     let processed = 0;
     let skippedTerminated = 0;
+    let lastFetchAt = 0;
     const errors = [];
 
     while (!outOfTime()) {
@@ -119,7 +127,20 @@ export default async function handler(req, res) {
           : `${CL_BASE}/positions/?page_size=100&order_by=-id`;
       }
 
+      const sinceLast = Date.now() - lastFetchAt;
+      if (sinceLast < REQUEST_GAP_MS) await sleep(REQUEST_GAP_MS - sinceLast);
+      lastFetchAt = Date.now();
+
       const r = await fetch(url, { headers: { Authorization: `Token ${CL_TOKEN}` } });
+      if (r.status === 429) {
+        // Throttled anyway: wait out the advertised cooldown if it fits in
+        // the budget, otherwise end this chunk cleanly. The cursor still
+        // points at this page, so the chained run picks it right back up.
+        const m = (await r.text().catch(() => "")).match(/(\d+)\s*second/);
+        const waitMs = (m ? parseInt(m[1], 10) + 2 : 65) * 1000;
+        if (Date.now() - startedAt + waitMs < TIME_BUDGET_MS) { await sleep(waitMs); continue; }
+        break;
+      }
       if (r.status === 400 && cursor.mode === "filtered") {
         // Filter rejected: flip to one unfiltered pass and filter client side.
         cursor = { mode: "unfiltered", ji: 0, url: null };
