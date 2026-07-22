@@ -88,8 +88,11 @@ export default function SiteTutorialPage({ onNavigate, onEnter }) {
   );
 }
 
-// Dismissible modal shown automatically on the first Enter The Tool click.
-export function FirstRunTutorial({ onDismiss }) {
+// Dismissible modal shown automatically on a visitor's first arrival, now
+// that the tool itself is the front door. The optional onNavigate prop
+// links out to the full intro pages (What We Stand For, How This Benefits
+// You, the Site Tutorial); each of those pages routes back into the tool.
+export function FirstRunTutorial({ onDismiss, onNavigate }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(13,13,13,0.72)",
                   display: "flex", alignItems: "flex-start", justifyContent: "center",
@@ -114,6 +117,22 @@ export function FirstRunTutorial({ onDismiss }) {
           </button>
         </div>
         <div style={{ padding: "8px 24px 24px", maxHeight: "70vh", overflowY: "auto" }}>
+          {onNavigate && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "14px 0 6px" }}>
+              {[
+                ["about", "What We Stand For"],
+                ["benefits", "How This Benefits You And The Country"],
+                ["tutorial", "Full Site Tutorial"],
+              ].map(([v, label]) => (
+                <button key={v} onClick={() => onNavigate(v)}
+                  style={{ fontFamily: serif, fontSize: 12.5, fontWeight: 700, color: C.navy,
+                           background: "#fff", border: `2px solid ${C.gold}`, borderRadius: 6,
+                           padding: "9px 14px", cursor: "pointer", flex: "1 1 180px" }}>
+                  {label} →
+                </button>
+              ))}
+            </div>
+          )}
           <TutorialBody />
           <button onClick={onDismiss}
             style={{ width: "100%", marginTop: 20, padding: "14px", fontFamily: bebas, fontSize: 18, letterSpacing: 2,

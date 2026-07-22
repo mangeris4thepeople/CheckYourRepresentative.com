@@ -97,9 +97,12 @@ export default function App() {
   })();
 
   // view is one of: "landing" | "about" | "benefits" | "tutorial" |
-  // "howitworks" | "privacy" | "tool". The marketing views are the pre-tool
-  // content pages; the app has no router so they are plain state.
-  const [view, setView] = useState(initialVoterId ? "tool" : (initialDeepLink?.view || "landing"));
+  // "howitworks" | "privacy" | "tool". The marketing views are content
+  // pages; the app has no router so they are plain state. Visitors land
+  // straight in the tool: the old landing page gated entry behind a click
+  // and deterred constituents, so the first-run walkthrough (below) now
+  // carries the introduction instead.
+  const [view, setView] = useState(initialVoterId ? "tool" : (initialDeepLink?.view || "tool"));
   const [tab, setTab] = useState(initialVoterId ? "constituents" : (initialDeepLink?.tab || "profile"));
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
@@ -130,6 +133,18 @@ export default function App() {
   useEffect(() => {
     try { window.scrollTo(0, 0); } catch {}
   }, [view]);
+
+  // With no landing gate, the first visit opens the walkthrough on top of
+  // the tool itself. Dismissing it (or jumping to one of its intro pages)
+  // marks it seen; it never auto-opens again after that.
+  useEffect(() => {
+    try {
+      if (view === "tool" && !initialVoterId && localStorage.getItem("cyr_tutorial_seen") !== "1") {
+        setShowTutorial(true);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Called by VoterProfile once it has confirmed a session and loaded the
   // profile. Pulls the saved district straight into `resolved` so Vote /
@@ -180,10 +195,10 @@ export default function App() {
             <div className="cyr-site-title" style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Check Your Representative</div>
             <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW YOUR BILLS · KNOW YOUR VOTE · KNOW YOUR MONEY · HOLD THE LINE</div>
           </div>
-          <button className="cyr-home-btn" onClick={() => setView("landing")}
+          <button className="cyr-home-btn" onClick={openTutorial}
             style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff", background: "transparent",
                      border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
-            ← Home
+            How It Works
           </button>
         </div>
         <StarStrip />
@@ -207,7 +222,10 @@ export default function App() {
         </div>
       </nav>
 
-      {showTutorial && <FirstRunTutorial onDismiss={dismissTutorial} />}
+      {showTutorial && (
+        <FirstRunTutorial onDismiss={dismissTutorial}
+          onNavigate={(v) => { dismissTutorial(); setView(v); }} />
+      )}
 
       <main className="cyr-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
         {tab === "vote" && (
