@@ -33,6 +33,11 @@ const STATE_NAMES = {
 const clProfileUrl = (j) =>
   `https://www.courtlistener.com/person/${j.cl_person_id}/${j.slug || "judge"}/`;
 
+const JURISDICTION_NAMES = {
+  S: "State supreme court", SA: "State appellate court",
+  ST: "State trial court", SS: "State special court",
+};
+
 export default function NationalJudges() {
   const [phase, setPhase] = useState("loading"); // loading | ready | notready | error
   const [judges, setJudges] = useState([]);
@@ -43,6 +48,7 @@ export default function NationalJudges() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [state, setState] = useState("");
+  const [selected, setSelected] = useState(null); // full judge row object
   const [errorDetail, setErrorDetail] = useState(null);
 
   const loadList = useCallback(async (newOffset, append) => {
@@ -87,6 +93,10 @@ export default function NationalJudges() {
   }, []);
 
   function runSearch() { setSearch(searchInput.trim()); }
+
+  if (selected) {
+    return <NationalJudgeDetail judge={selected} onBack={() => setSelected(null)} />;
+  }
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
@@ -143,10 +153,10 @@ export default function NationalJudges() {
       {judges.length > 0 && (
         <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
           {judges.map(j => (
-            <a key={j.id} href={clProfileUrl(j)} target="_blank" rel="noopener noreferrer"
+            <button key={j.id} onClick={() => setSelected(j)}
               style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
-                       padding: "12px 16px", textDecoration: "none",
-                       borderBottom: "1px solid #f0ead8", fontFamily: serif }}>
+                       padding: "12px 16px", background: "transparent", border: "none",
+                       borderBottom: "1px solid #f0ead8", cursor: "pointer", fontFamily: serif }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>
                   {j.full_name}
@@ -161,10 +171,8 @@ export default function NationalJudges() {
                   {j.date_start ? ` · since ${String(j.date_start).slice(0, 4)}` : ""}
                 </div>
               </div>
-              <span style={{ fontSize: 12, color: C.crimson, fontWeight: 700, flexShrink: 0 }}>
-                CourtListener →
-              </span>
-            </a>
+              <span style={{ fontSize: 12, color: C.crimson, fontWeight: 700, flexShrink: 0 }}>View →</span>
+            </button>
           ))}
         </div>
       )}
@@ -184,6 +192,76 @@ export default function NationalJudges() {
         for trial courts. Colorado judges get the fuller treatment in the Colorado view, with
         official performance evaluations and retention election results.
       </p>
+    </div>
+  );
+}
+
+function NationalJudgeDetail({ judge, onBack }) {
+  const startDate = judge.date_start ? String(judge.date_start).slice(0, 10) : null;
+  return (
+    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 900, margin: "0 auto" }}>
+      <button onClick={onBack}
+        style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
+                 border: `1px solid ${C.line}`, borderRadius: 6, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
+        ← All judges
+      </button>
+
+      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px", borderRadius: 8,
+                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
+        <div style={{ fontSize: 20, fontWeight: 900 }}>{judge.full_name}</div>
+        <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
+          {judge.court_name || "Court not on record"}
+          {judge.position_title ? ` · ${judge.position_title}` : ""}
+          {startDate ? ` · serving since ${startDate}` : ""}
+        </div>
+      </div>
+
+      <Section title="Position">
+        <Row label="Court" value={judge.court_name || "Not on record"} />
+        <Row label="Court type" value={JURISDICTION_NAMES[judge.jurisdiction] || "State court"} />
+        <Row label="State" value={STATE_NAMES[judge.state_abbr] || judge.state_abbr || "Not on record"} />
+        <Row label="Title" value={judge.position_title || "Judge"} />
+        <Row label="Serving since" value={startDate || "Not on record"} />
+      </Section>
+
+      <Section title="Full profile">
+        <div style={{ padding: "14px", fontSize: 13, color: C.muted, lineHeight: 1.7 }}>
+          Career history, education, political affiliations, and financial disclosures for this
+          judge live on their CourtListener profile, maintained by the nonprofit Free Law Project.
+          <div style={{ marginTop: 10 }}>
+            <a href={clProfileUrl(judge)} target="_blank" rel="noopener noreferrer"
+              style={{ display: "inline-block", fontFamily: serif, fontSize: 13, fontWeight: 700,
+                       color: "#fff", background: C.crimson, borderRadius: 6, padding: "9px 18px",
+                       textDecoration: "none" }}>
+              View full CourtListener profile →
+            </a>
+          </div>
+        </div>
+      </Section>
+
+      <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginTop: 18 }}>
+        Performance evaluations and retention election results are currently tracked for Colorado
+        judges in the Colorado view. Equivalent official data for other states gets added as each
+        state's public records are wired in.
+      </p>
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div style={{ display: "flex", gap: 12, padding: "10px 14px", borderBottom: "1px solid #f0ead8", fontFamily: serif }}>
+      <span style={{ flex: "0 0 140px", fontSize: 12, fontWeight: 700, color: C.muted }}>{label}</span>
+      <span style={{ flex: 1, fontSize: 13.5, color: C.ink }}>{value}</span>
     </div>
   );
 }
