@@ -359,7 +359,8 @@ export const TUTORIAL_PAGES = {
     title: "Know Your Judge",
     intro: "Colorado judges do not run in contested elections, you vote to retain or remove them. This section exists so that ballot line is never a blind guess.",
     items: [
-      { label: "What this section is", desc: "Every Colorado judge we track: their court, the state's official performance evaluation of them, and how their past retention votes went." },
+      { label: "What this section is", desc: "Every Colorado judge we track: their court, the state's official performance evaluation of them, and how their past retention votes went. A second view covers every state." },
+      { label: "Colorado and All 50 States views", desc: "The Colorado view carries the deep data: evaluations and retention results. The All 50 States view is a national registry of sitting state court judges from the Free Law Project's CourtListener database, searchable by name, court, or state, with each judge linked to their full CourtListener profile." },
       { label: "Search and court filter", desc: "Search by judge or court name, or narrow to one court, from the Supreme Court through each judicial district down to every county court." },
       { label: "Performance evaluations (OJPE)", desc: "The Colorado Office of Judicial Performance Evaluation formally evaluates every judge before their retention election and publishes a recommendation. We show that recommendation and link the full published narrative." },
       { label: "Retention election results", desc: "The actual yes and no vote counts from each retention election a judge has faced, from official Secretary of State records." },

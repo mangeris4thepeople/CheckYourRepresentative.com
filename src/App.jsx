@@ -21,7 +21,7 @@ import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import FollowTheMoney from "./components/FollowTheMoney.jsx";
-import KnowYourJudge from "./components/KnowYourJudge.jsx";
+import JudgesTabs from "./components/JudgesTabs.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
@@ -230,7 +230,7 @@ export default function App() {
 
         {tab === "judges" && (
           <HelpLayout page="judges">
-            <KnowYourJudge />
+            <JudgesTabs />
           </HelpLayout>
         )}
 
