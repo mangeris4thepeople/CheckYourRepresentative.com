@@ -32,10 +32,10 @@ const CL_BASE = "https://www.courtlistener.com/api/rest/v4";
 const JURISDICTIONS = ["S", "SA", "ST", "SS"];
 const STATE_JURIS = new Set(JURISDICTIONS);
 // CourtListener throttles at 10 requests per minute (verified live via a
-// 429 on the first crawl attempt), so requests are spaced 7 seconds apart
-// and each invocation uses a long budget under api/cron.js's 300 second
-// maxDuration to still cover ~34 pages (3,400 positions) per run.
-const TIME_BUDGET_MS = 240000;
+// 429 on the first crawl attempt), so requests are spaced 7 seconds apart.
+// The budget fits the 60 second function limit; the self-chain carries the
+// crawl across as many invocations as the full pass needs.
+const TIME_BUDGET_MS = 40000;
 const REQUEST_GAP_MS = 7000;
 const CURSOR_KEY = "natjudges_cursor";
 

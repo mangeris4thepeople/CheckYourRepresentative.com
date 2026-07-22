@@ -10,17 +10,20 @@
 //
 // The Census data API requires a free API key (verified live: keyless
 // requests get an error page), so CENSUS_API_KEY must be set in Vercel.
-// One state query, one county query, and one place query per state load
-// everything, about 33,000 rows, batch-upserted within a single cron
-// invocation under api/cron.js's 300 second maxDuration.
 //
-// Creates and heals its own schema on every run, same pattern as sync-ssa.
+// The load runs as stages (one states query, one counties query, then one
+// places query per state), resumable exactly like sync-national-judges: a
+// cursor in sync_state records the next stage, each run consumes its time
+// budget under the 60 second function limit, and an incomplete run kicks
+// its own URL so one trigger walks every stage to completion.
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
 
 const YEAR = 2023;
 const BASE = `https://api.census.gov/data/${YEAR}/acs/acs5/subject`;
 const FIELDS = "NAME,S2201_C01_001E,S2201_C03_001E,S2201_C04_001E";
+const TIME_BUDGET_MS = 40000;
+const CURSOR_KEY = "snap_cursor";
 
 const FIPS_TO_ABBR = {
   "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA", "08": "CO", "09": "CT",
@@ -33,6 +36,10 @@ const FIPS_TO_ABBR = {
   "55": "WI", "56": "WY", "72": "PR",
 };
 
+// Stage 0 loads all states, stage 1 all counties, stages 2+ one state's
+// places each. Order matters: the map lights up after the first stage.
+const STAGES = ["state", "county", ...Object.keys(FIPS_TO_ABBR)];
+
 export default async function handler(req, res) {
   if (!hasDb) return res.status(500).json({ error: "no database configured" });
   const key = process.env.CENSUS_API_KEY;
@@ -43,32 +50,58 @@ export default async function handler(req, res) {
     });
   }
 
+  const startedAt = Date.now();
+  const outOfTime = () => Date.now() - startedAt > TIME_BUDGET_MS;
+
   try {
     await ensureSchema();
 
-    const counts = { state: 0, county: 0, place: 0 };
+    let idx = await getCursor();
+    let synced = 0;
     const errors = [];
 
-    counts.state = await loadGeography(`${BASE}?get=${FIELDS}&for=state:*&key=${key}`, "state", errors);
-    counts.county = await loadGeography(`${BASE}?get=${FIELDS}&for=county:*&key=${key}`, "county", errors);
-
-    // Places (cities and towns). A single national place:* query is not
-    // supported for every vintage, so this walks state by state.
-    for (const fips of Object.keys(FIPS_TO_ABBR)) {
-      counts.place += await loadGeography(
-        `${BASE}?get=${FIELDS}&for=place:*&in=state:${fips}`, "place", errors, key
-      );
+    while (idx < STAGES.length && !outOfTime()) {
+      const stage = STAGES[idx];
+      if (stage === "state") {
+        synced += await loadGeography(`${BASE}?get=${FIELDS}&for=state:*&key=${key}`, "state", errors);
+      } else if (stage === "county") {
+        synced += await loadGeography(`${BASE}?get=${FIELDS}&for=county:*&key=${key}`, "county", errors);
+      } else {
+        synced += await loadGeography(
+          `${BASE}?get=${FIELDS}&for=place:*&in=state:${stage}&key=${key}`, "place", errors
+        );
+      }
+      idx += 1;
+      await setCursor(idx);
     }
 
-    return res.status(200).json({ ok: true, dataYear: YEAR, synced: counts, errors: errors.slice(0, 10) });
+    const passComplete = idx >= STAGES.length;
+    if (passComplete) await setCursor(0);
+
+    // Chain the next chunk, same pattern as sync-national-judges: the kick
+    // only needs to start the next invocation before this one returns.
+    let chained = false;
+    if (!passComplete && errors.length < 10 && process.env.CRON_SECRET) {
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      if (host) {
+        const selfUrl = `https://${host}/api/cron?op=sync-snap&key=${process.env.CRON_SECRET}`;
+        await fetch(selfUrl, { signal: AbortSignal.timeout(2000) }).catch(() => {});
+        chained = true;
+      }
+    }
+
+    return res.status(200).json({
+      ok: true, dataYear: YEAR, syncedThisRun: synced,
+      stagesDone: idx, totalStages: STAGES.length, passComplete, chained,
+      errors: errors.slice(0, 10),
+    });
   } catch (err) {
     return res.status(500).json({ error: "sync_snap_failed", detail: String(err.message || err) });
   }
 }
 
-async function loadGeography(url, level, errors, appendKey) {
-  const full = appendKey ? `${url}&key=${appendKey}` : url;
-  const r = await fetch(full);
+async function loadGeography(url, level, errors) {
+  const r = await fetch(url);
   if (!r.ok) {
     const body = await r.text().catch(() => "");
     throw new Error(`census ${level} ${r.status}: ${body.slice(0, 140)}`);
@@ -139,9 +172,23 @@ function toNum(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+async function getCursor() {
+  const rows = await sql`SELECT value FROM sync_state WHERE key = ${CURSOR_KEY}`;
+  if (!rows.length || !rows[0].value) return 0;
+  const n = parseInt(rows[0].value, 10);
+  return Number.isFinite(n) && n >= 0 && n < STAGES.length ? n : 0;
+}
+
+async function setCursor(idx) {
+  await sql`
+    INSERT INTO sync_state (key, value, updated_at)
+    VALUES (${CURSOR_KEY}, ${String(idx)}, now())
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`;
+}
+
 async function ensureSchema() {
   // Same healing rule as sync-ssa: this table is a pure mirror of the ACS
-  // dataset, refetched in full on every run, so a shape mismatch rebuilds it.
+  // dataset, refetched in full on every pass, so a shape mismatch rebuilds it.
   const wanted = ["id", "geo_level", "geoid", "name", "state_abbr",
     "total_households", "snap_households", "snap_percent", "data_year", "created_at"];
   const table = await sql`
@@ -171,4 +218,10 @@ async function ensureSchema() {
     )`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS snap_geo_uq ON snap_acs (geo_level, geoid, data_year)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_snap_state ON snap_acs (state_abbr, geo_level)`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS sync_state (
+      key        TEXT PRIMARY KEY,
+      value      TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
 }
