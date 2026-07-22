@@ -66,7 +66,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ ready: true, years: YEARS, counties, correlations, contribStates });
   } catch (err) {
     const msg = String(err.message || err);
-    if (/relation .* does not exist/i.test(msg)) {
+    // A missing table, or a pre-existing table with a different shape that
+    // the sync job will heal on its first run, both mean the same thing to
+    // the reader: nothing to show yet.
+    if (/relation .* does not exist/i.test(msg) || /column .* does not exist/i.test(msg)) {
       return res.status(200).json({ ready: false, reason: "not_computed_yet" });
     }
     return res.status(500).json({ error: "money_map_failed", detail: msg });
