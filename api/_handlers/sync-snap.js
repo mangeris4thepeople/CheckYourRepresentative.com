@@ -42,11 +42,14 @@ const STAGES = ["state", "county", ...Object.keys(FIPS_TO_ABBR)];
 
 export default async function handler(req, res) {
   if (!hasDb) return res.status(500).json({ error: "no database configured" });
-  const key = process.env.CENSUS_API_KEY;
+  // The env var is the durable home for the key (the weekly cron uses it),
+  // but a manual trigger may hand it over as ?censusKey= so a first load
+  // does not have to wait on a Vercel settings change and redeploy.
+  const key = process.env.CENSUS_API_KEY || String(req.query.censusKey || "").trim();
   if (!key) {
     return res.status(500).json({
       error: "CENSUS_API_KEY not set",
-      detail: "Sign up free at https://api.census.gov/data/key_signup.html and add CENSUS_API_KEY in Vercel env vars.",
+      detail: "Sign up free at https://api.census.gov/data/key_signup.html and add CENSUS_API_KEY in Vercel env vars, or pass ?censusKey= on a manual run.",
     });
   }
 
@@ -84,7 +87,10 @@ export default async function handler(req, res) {
     if (!passComplete && errors.length < 10 && process.env.CRON_SECRET) {
       const host = req.headers["x-forwarded-host"] || req.headers.host;
       if (host) {
-        const selfUrl = `https://${host}/api/cron?op=sync-snap&key=${process.env.CRON_SECRET}`;
+        // Carry a URL-provided key forward so the whole chain keeps working
+        // even before the env var exists.
+        const keyParam = process.env.CENSUS_API_KEY ? "" : `&censusKey=${encodeURIComponent(key)}`;
+        const selfUrl = `https://${host}/api/cron?op=sync-snap&key=${process.env.CRON_SECRET}${keyParam}`;
         await fetch(selfUrl, { signal: AbortSignal.timeout(2000) }).catch(() => {});
         chained = true;
       }
