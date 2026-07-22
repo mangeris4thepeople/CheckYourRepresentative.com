@@ -38,7 +38,10 @@ const JURISDICTION_NAMES = {
   ST: "State trial court", SS: "State special court",
 };
 
-export default function NationalJudges() {
+// Standalone by default; `hideHeader` drops the navy banner when embedded
+// under the national heat map, and `onSelectJudge` hands row clicks to the
+// parent (the drill-down's judge profile) instead of the built-in detail.
+export default function NationalJudges({ hideHeader = false, onSelectJudge = null }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | notready | error
   const [judges, setJudges] = useState([]);
   const [states, setStates] = useState([]);
@@ -100,18 +103,20 @@ export default function NationalJudges() {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
-          National Judge Registry
+      {!hideHeader && (
+        <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+                      border: `3px solid ${C.gold}`, marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
+            National Judge Registry
+          </div>
+          <div style={{ fontSize: 14, color: "#cfd6e4", lineHeight: 1.6 }}>
+            Sitting state court judges across all 50 states, mirrored from the Free Law Project's
+            CourtListener database{totalJudges ? ` (${totalJudges.toLocaleString()} judges on file)` : ""}.
+            Search by name or court, filter by state, and follow any judge through to their full
+            CourtListener profile for biography, career history, and financial disclosures.
+          </div>
         </div>
-        <div style={{ fontSize: 14, color: "#cfd6e4", lineHeight: 1.6 }}>
-          Sitting state court judges across all 50 states, mirrored from the Free Law Project's
-          CourtListener database{totalJudges ? ` (${totalJudges.toLocaleString()} judges on file)` : ""}.
-          Search by name or court, filter by state, and follow any judge through to their full
-          CourtListener profile for biography, career history, and financial disclosures.
-        </div>
-      </div>
+      )}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
@@ -153,7 +158,7 @@ export default function NationalJudges() {
       {judges.length > 0 && (
         <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
           {judges.map(j => (
-            <button key={j.id} onClick={() => setSelected(j)}
+            <button key={j.id} onClick={() => (onSelectJudge ? onSelectJudge(j) : setSelected(j))}
               style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
                        padding: "12px 16px", background: "transparent", border: "none",
                        borderBottom: "1px solid #f0ead8", cursor: "pointer", fontFamily: serif }}>

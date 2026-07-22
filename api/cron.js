@@ -25,6 +25,9 @@ import syncSenators from "./_handlers/sync-senators.js";
 import syncSenatorFinances from "./_handlers/sync-senator-finances.js";
 import syncJudges from "./_handlers/sync-judges.js";
 import syncNationalJudges from "./_handlers/sync-national-judges.js";
+import syncCourtLocations from "./_handlers/sync-court-locations.js";
+import syncOpinions from "./_handlers/sync-opinions.js";
+import syncRulingStats from "./_handlers/sync-ruling-stats.js";
 import syncSsa from "./_handlers/sync-ssa.js";
 import syncSnap from "./_handlers/sync-snap.js";
 import syncMedicaid from "./_handlers/sync-medicaid.js";
@@ -43,6 +46,9 @@ const OPS = {
   "sync-senator-finances": syncSenatorFinances,
   "sync-judges": syncJudges,
   "sync-national-judges": syncNationalJudges,
+  "sync-court-locations": syncCourtLocations,
+  "sync-opinions": syncOpinions,
+  "sync-ruling-stats": syncRulingStats,
   "sync-ssa": syncSsa,
   "sync-snap": syncSnap,
   "sync-medicaid": syncMedicaid,

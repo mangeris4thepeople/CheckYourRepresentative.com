@@ -6,6 +6,7 @@
 import judgesList from "./_handlers/judges-list.js";
 import judgeDetail from "./_handlers/judge-detail.js";
 import nationalJudges from "./_handlers/national-judges.js";
+import judgesGeo from "./_handlers/judges-geo.js";
 
 const OPS = {
   "judges-list": judgesList,
@@ -13,6 +14,10 @@ const OPS = {
   "judge-courts": judgeDetail,
   "national-judges-list": nationalJudges,
   "national-courts": nationalJudges,
+  "judges-map": judgesGeo,
+  "state-judges": judgesGeo,
+  "county-courts": judgesGeo,
+  "national-judge-detail": judgesGeo,
 };
 
 export default async function handler(req, res) {

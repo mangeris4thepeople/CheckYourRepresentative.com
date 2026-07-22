@@ -56,10 +56,12 @@ export const ABOUT = {
       "exists to give power back to people, not to become another place your data gets " +
       "monetized.",
     "Accountability does not stop at Congress. Judges shape daily life as much as any " +
-      "legislator, and in Colorado you do not elect them in contested races, you vote to " +
-      "retain or remove them. Know Your Judge puts the state's own performance evaluations " +
-      "and every past retention result in front of you, so that ballot line gets the same " +
-      "scrutiny as every vote in Washington.",
+      "legislator, so Know Your Judge covers the whole country: a heat map of every state's " +
+      "sitting judges that drills from state to county to courthouse and city, with each " +
+      "judge's Ruling Record built from public court data, raw counts of the opinions they " +
+      "authored, never a score or a grade. Colorado gets the deepest treatment, with the " +
+      "state's own performance evaluations and every past retention election result, so a " +
+      "retention ballot line gets the same scrutiny as every vote in Washington.",
     "This is not a partisan project. Progressive, Conservative, Independent, Libertarian, " +
       "Green, Socialist, it does not matter where you start. The bills are the same for " +
       "everyone, and so is the record. Freedom does not erode all at once, it erodes one " +
@@ -364,9 +366,12 @@ export const TUTORIAL_PAGES = {
     title: "Know Your Judge",
     intro: "Colorado judges do not run in contested elections, you vote to retain or remove them. This section exists so that ballot line is never a blind guess.",
     items: [
-      { label: "What this section is", desc: "Every Colorado judge we track: their court, the state's official performance evaluation of them, and how their past retention votes went. A second view covers every state." },
-      { label: "Colorado and All 50 States views", desc: "The Colorado view carries the deep data: evaluations and retention results. The All 50 States view is a national registry of sitting state court judges from the Free Law Project's CourtListener database, searchable by name, court, or state, with each judge linked to their full CourtListener profile." },
-      { label: "Search and court filter", desc: "Search by judge or court name, or narrow to one court, from the Supreme Court through each judicial district down to every county court." },
+      { label: "What this section is", desc: "One national directory of sitting state court judges, built on the Free Law Project's CourtListener database. It opens on a heat map of the whole country and drills all the way down to a single judge's public ruling record." },
+      { label: "The national heat map", desc: "Every state colored by its sitting judges on file, with a toggle between total judges and judges per 100,000 residents. Click any state to drill in." },
+      { label: "State and county drill down", desc: "A state's page shows its statewide courts first (supreme and appellate), then a county heat map. Click a county for its courts grouped by city, each with a plain language explanation of what that court handles and its sitting judges." },
+      { label: "Ruling Record", desc: "Each judge's profile shows raw public record counts from opinions they authored: totals, the majority, concurrence, and dissent split, and outcomes where the public feed carries them. Counts only, never a score, grade, or ranking, with a link to every opinion on CourtListener." },
+      { label: "Search", desc: "Below the national map, search every judge by name or court and filter by state." },
+      { label: "Colorado retention data", desc: "Colorado's state page keeps the full retention section: every judge's official OJPE performance evaluation and the actual yes and no vote counts from past retention elections." },
       { label: "Performance evaluations (OJPE)", desc: "The Colorado Office of Judicial Performance Evaluation formally evaluates every judge before their retention election and publishes a recommendation. We show that recommendation and link the full published narrative." },
       { label: "Retention election results", desc: "The actual yes and no vote counts from each retention election a judge has faced, from official Secretary of State records." },
       { label: "Where the data comes from", desc: "Appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official state publications." },

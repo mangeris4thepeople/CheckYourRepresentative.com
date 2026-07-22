@@ -32,8 +32,13 @@ function hex(h) {
   return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 }
 
-export default function USAHeatMap({ values, onSelect, format, legendLow, legendHigh, legendLabel }) {
+// Renders the US state map by default; pass `regions` and `viewBox` to draw
+// any other set of shapes with the same colors, legend, and interactions
+// (the per-state county maps use this with the lazy loaded county files).
+export default function USAHeatMap({ values, onSelect, format, legendLow, legendHigh, legendLabel,
+                                     regions, viewBox, ariaLabel }) {
   const [hover, setHover] = useState(null); // { abbr, x, y }
+  const shapes = regions || STATE_PATHS;
 
   const [min, max] = useMemo(() => {
     const nums = Object.values(values || {}).filter(v => Number.isFinite(v));
@@ -45,9 +50,9 @@ export default function USAHeatMap({ values, onSelect, format, legendLow, legend
 
   return (
     <div style={{ position: "relative" }}>
-      <svg viewBox="0 0 975 610" style={{ width: "100%", height: "auto", display: "block" }}
-        role="img" aria-label="United States heat map">
-        {Object.entries(STATE_PATHS).map(([abbr, s]) => {
+      <svg viewBox={viewBox || "0 0 975 610"} style={{ width: "100%", height: "auto", display: "block" }}
+        role="img" aria-label={ariaLabel || "United States heat map"}>
+        {Object.entries(shapes).map(([abbr, s]) => {
           const v = values?.[abbr];
           const has = Number.isFinite(v);
           const isHover = hover?.abbr === abbr;
@@ -77,7 +82,7 @@ export default function USAHeatMap({ values, onSelect, format, legendLow, legend
           padding: "7px 11px", borderRadius: 6, pointerEvents: "none",
           border: `1px solid ${C.gold}`, whiteSpace: "nowrap", zIndex: 5,
         }}>
-          <span style={{ fontWeight: 700 }}>{STATE_PATHS[hover.abbr].name}</span>
+          <span style={{ fontWeight: 700 }}>{shapes[hover.abbr].name}</span>
           {"  "}
           {Number.isFinite(values?.[hover.abbr])
             ? (format ? format(values[hover.abbr]) : values[hover.abbr])
