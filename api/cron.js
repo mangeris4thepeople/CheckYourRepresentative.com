@@ -31,6 +31,8 @@ import syncRulingStats from "./_handlers/sync-ruling-stats.js";
 import syncSsa from "./_handlers/sync-ssa.js";
 import syncSnap from "./_handlers/sync-snap.js";
 import syncMedicaid from "./_handlers/sync-medicaid.js";
+import syncMoneySources from "./_handlers/sync-money-sources.js";
+import syncMoneyMap from "./_handlers/sync-money-map.js";
 import syncOjpe from "./_handlers/sync-ojpe.js";
 import importRetention from "./_handlers/import-retention.js";
 import testEmail from "./_handlers/test-email.js";
@@ -52,6 +54,8 @@ const OPS = {
   "sync-ssa": syncSsa,
   "sync-snap": syncSnap,
   "sync-medicaid": syncMedicaid,
+  "sync-money-sources": syncMoneySources,
+  "sync-money-map": syncMoneyMap,
   "sync-ojpe": syncOjpe,
   "import-retention": importRetention,
   "test-email": testEmail,

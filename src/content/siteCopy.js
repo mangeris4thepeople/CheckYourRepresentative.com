@@ -121,10 +121,14 @@ export const HOW_IT_WORKS = {
         "name or district. NGO Funding shows how much of an advocacy organization's " +
         "reported revenue can be traced to a public, dollar-level disclosure, and how much " +
         "the law leaves as an aggregate lump, using only what is already public. Social " +
-        "Security shows retirement, survivors, and disability beneficiary counts and total " +
-        "monthly benefits by state, sourced from the Social Security Administration, " +
-        "currently 2015 data, the most recent state-level breakdown published in this form. " +
-        "Medicare and Medicaid spending by state is coming soon to the same tab.",
+        "Security shows retirement, survivors, and disability beneficiary counts by state, " +
+        "sourced from the Social Security Administration. Medicaid and SNAP each get a " +
+        "national heat map that drills from every state to every county and city the Census " +
+        "publishes. And the Money Map overlays six public money flows, Medicare, Medicaid, " +
+        "SNAP, Social Security income, federal NGO awards, and campaign contributions, on " +
+        "one county level map with per capita heat maps, blended two program views, and a " +
+        "correlation matrix computed from public records. Statistical relationships, not " +
+        "causes: the numbers are offered for your own analysis, with every source named.",
     },
   ],
 };
@@ -360,6 +364,9 @@ export const TUTORIAL_PAGES = {
       { label: "SNAP / Food Stamps, the national map", desc: "A heat map of all 50 states colored by the share of households receiving SNAP benefits, darkest red where participation is highest. Hover any state for its numbers." },
       { label: "SNAP / Food Stamps, state breakdowns", desc: "Click any state on the map or in the ranked list to see its full breakdown by county and by city or town, with a search across every place the Census publishes." },
       { label: "SNAP / Food Stamps, where the data comes from", desc: "US Census Bureau American Community Survey 5-year estimates, table S2201, the only public dataset covering every city and county. It reports households receiving benefits; USDA publishes dollar payouts at the state level only." },
+      { label: "Money Map, what it overlays", desc: "Six public money flows on one county level map: Medicare, Medicaid, SNAP, Social Security income, federal awards to NGOs, and campaign contributions to the tracked delegation. Pick one program for a heat map, two for a blended overlap view, three or more for side by side mini maps." },
+      { label: "Money Map, the correlation panel", desc: "Pairwise Pearson correlations across counties for the programs you can see, nationally or within one state, with the strongest relationships called out in plain language. These are statistical relationships in public spending data, offered for your own analysis. Correlation is not causation." },
+      { label: "Money Map, honesty rules", desc: "Census estimates carry a visible badge and are never presented as administrative counts. Every figure shows its data year and named government source. Counties without a program's data are shaded neutral and excluded from that pair's correlation. Campaign contributions appear at state level only because the FEC does not publish county data." },
     ],
   },
   judges: {

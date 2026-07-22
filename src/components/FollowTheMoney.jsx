@@ -12,6 +12,7 @@ import NgosDirectory from "./NgosDirectory.jsx";
 import SocialSecurityPanel from "./SocialSecurityPanel.jsx";
 import SnapMap from "./SnapMap.jsx";
 import MedicaidMap from "./MedicaidMap.jsx";
+import MoneyMap from "./MoneyMap.jsx";
 
 const C = {
   navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
@@ -25,6 +26,7 @@ const SECTIONS = [
   { key: "medicare-medicaid", label: "Medicaid" },
   { key: "social-security", label: "Social Security" },
   { key: "snap", label: "SNAP / Food Stamps" },
+  { key: "money-map", label: "Money Map" },
 ];
 const DEFAULT_SECTION = "know-your-rep";
 const VALID_KEYS = new Set(SECTIONS.map(s => s.key));
@@ -76,6 +78,7 @@ export default function FollowTheMoney({ district }) {
       {section === "medicare-medicaid" && <MedicaidMap />}
       {section === "social-security" && <SocialSecurityPanel district={district} />}
       {section === "snap" && <SnapMap />}
+      {section === "money-map" && <MoneyMap onGoSection={selectSection} />}
     </div>
   );
 }

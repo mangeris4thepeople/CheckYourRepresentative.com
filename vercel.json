@@ -22,6 +22,7 @@
     { "source": "/api/snap-state-detail", "destination": "/api/reps?op=snap-state-detail" },
     { "source": "/api/medicaid-national", "destination": "/api/reps?op=medicaid-national" },
     { "source": "/api/medicaid-state-detail", "destination": "/api/reps?op=medicaid-state-detail" },
+    { "source": "/api/money-map", "destination": "/api/reps?op=money-map" },
 
     { "source": "/api/vote", "destination": "/api/votes?op=vote" },
     { "source": "/api/vote-status", "destination": "/api/votes?op=vote-status" },
@@ -105,6 +106,10 @@
     {
       "path": "/api/cron?op=sync-ruling-stats",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron?op=sync-money-sources",
+      "schedule": "0 13 * * 1"
     }
   ]
 }
