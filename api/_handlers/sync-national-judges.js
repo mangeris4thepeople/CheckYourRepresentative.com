@@ -57,11 +57,27 @@ function stateFromCourtName(name) {
   return null;
 }
 
+// CourtListener's position_type vocabulary, mapped to display titles. The
+// live API returns codes like "ass-jus" (verified on Washington Supreme
+// Court data), so anything unmapped falls back to the raw code and should
+// get added here when it shows up.
 const POSITION_TITLES = {
   "jud": "Judge", "c-jud": "Chief Judge", "act-jud": "Acting Judge",
+  "ass-jud": "Associate Judge", "ass-c-jud": "Associate Chief Judge",
+  "ass-pres-jud": "Associate Presiding Judge", "pres-jud": "Presiding Judge",
+  "act-pres-jud": "Acting Presiding Judge", "sen-jud": "Senior Judge",
+  "spec-jud": "Special Judge", "jud-pt": "Judge Pro Tem",
+  "ret-senior-jud": "Senior Judge", "ret-ass-jud": "Retired Associate Judge",
+  "ret-c-jud": "Retired Chief Judge",
   "jus": "Justice", "c-jus": "Chief Justice", "act-jus": "Acting Justice",
-  "ret-jus": "Retired Justice", "ret-act-jus": "Retired Acting Justice",
-  "mag": "Magistrate", "pres-jud": "Presiding Judge",
+  "ass-jus": "Associate Justice", "ass-c-jus": "Associate Chief Justice",
+  "pres-jus": "Presiding Justice", "jus-pt": "Justice Pro Tem",
+  "ret-jus": "Retired Justice", "ret-act-jus": "Active Retired Justice",
+  "mag": "Magistrate", "c-mag": "Chief Magistrate", "pres-mag": "Presiding Magistrate",
+  "ad-law-jud": "Administrative Law Judge", "com": "Commissioner",
+  "com-dep": "Deputy Commissioner", "spec-m": "Special Master",
+  "c-spec-m": "Chief Special Master", "ref-jud-tr": "Judge Trial Referee",
+  "ref-off": "Official Referee", "ref-state-trial": "State Trial Referee",
 };
 
 function positionTitle(pos) {
