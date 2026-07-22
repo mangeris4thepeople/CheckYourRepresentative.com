@@ -11,6 +11,7 @@ import KnowYourRepTabs from "./KnowYourRepTabs.jsx";
 import NgosDirectory from "./NgosDirectory.jsx";
 import SocialSecurityPanel from "./SocialSecurityPanel.jsx";
 import SnapMap from "./SnapMap.jsx";
+import MedicaidMap from "./MedicaidMap.jsx";
 
 const C = {
   navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
@@ -21,7 +22,7 @@ const serif = "Georgia, 'Times New Roman', serif";
 const SECTIONS = [
   { key: "know-your-rep", label: "Know Your Rep" },
   { key: "ngo-funding", label: "NGO Funding" },
-  { key: "medicare-medicaid", label: "Medicare and Medicaid" },
+  { key: "medicare-medicaid", label: "Medicaid" },
   { key: "social-security", label: "Social Security" },
   { key: "snap", label: "SNAP / Food Stamps" },
 ];
@@ -44,19 +45,6 @@ function writeSectionToUrl(key) {
     else url.searchParams.set("ftm", key);
     window.history.replaceState(null, "", url.toString());
   } catch {}
-}
-
-function ComingSoon({ title, body }) {
-  return (
-    <div style={{ fontFamily: serif, maxWidth: 700, margin: "40px auto", textAlign: "center",
-                  border: `1px solid ${C.line}`, borderRadius: 8, padding: "36px 24px", background: "#fff" }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.navy, marginBottom: 10 }}>{title}</div>
-      <div style={{ fontSize: 14, lineHeight: 1.7, color: C.muted }}>{body}</div>
-      <div style={{ marginTop: 16, fontSize: 12, fontWeight: 700, color: C.gold, letterSpacing: 1, textTransform: "uppercase" }}>
-        Coming soon
-      </div>
-    </div>
-  );
 }
 
 export default function FollowTheMoney({ district }) {
@@ -85,12 +73,7 @@ export default function FollowTheMoney({ district }) {
 
       {section === "know-your-rep" && <KnowYourRepTabs />}
       {section === "ngo-funding" && <NgosDirectory />}
-      {section === "medicare-medicaid" && (
-        <ComingSoon
-          title="Medicare and Medicaid spending"
-          body="State-level Medicare and Medicaid spending trends are on the way, sourced from the same public disclosures as the rest of this tab."
-        />
-      )}
+      {section === "medicare-medicaid" && <MedicaidMap />}
       {section === "social-security" && <SocialSecurityPanel district={district} />}
       {section === "snap" && <SnapMap />}
     </div>

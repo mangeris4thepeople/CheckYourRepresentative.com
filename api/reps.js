@@ -11,6 +11,7 @@ import ngoDetail from "./_handlers/ngo-detail.js";
 import ngos from "./_handlers/ngos.js";
 import socialSecurityDetail from "./_handlers/social-security-detail.js";
 import snap from "./_handlers/snap.js";
+import medicaid from "./_handlers/medicaid.js";
 
 const OPS = {
   "representative-detail": representativeDetail,
@@ -22,6 +23,8 @@ const OPS = {
   "social-security-detail": socialSecurityDetail,
   "snap-national": snap,
   "snap-state-detail": snap,
+  "medicaid-national": medicaid,
+  "medicaid-state-detail": medicaid,
 };
 
 export default async function handler(req, res) {
