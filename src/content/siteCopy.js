@@ -353,6 +353,9 @@ export const TUTORIAL_PAGES = {
       { label: "NGO Funding, traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
       { label: "NGO Funding, reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
       { label: "Medicare and Medicaid", desc: "Coming soon. Will show state-level Medicare and Medicaid spending trends from public federal data." },
+      { label: "SNAP / Food Stamps, the national map", desc: "A heat map of all 50 states colored by the share of households receiving SNAP benefits, darkest red where participation is highest. Hover any state for its numbers." },
+      { label: "SNAP / Food Stamps, state breakdowns", desc: "Click any state on the map or in the ranked list to see its full breakdown by county and by city or town, with a search across every place the Census publishes." },
+      { label: "SNAP / Food Stamps, where the data comes from", desc: "US Census Bureau American Community Survey 5-year estimates, table S2201, the only public dataset covering every city and county. It reports households receiving benefits; USDA publishes dollar payouts at the state level only." },
     ],
   },
   judges: {

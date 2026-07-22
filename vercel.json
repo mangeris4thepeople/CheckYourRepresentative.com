@@ -19,6 +19,8 @@
     { "source": "/api/ngo-detail", "destination": "/api/reps?op=ngo-detail" },
     { "source": "/api/ngos", "destination": "/api/reps?op=ngos" },
     { "source": "/api/social-security-detail", "destination": "/api/reps?op=social-security-detail" },
+    { "source": "/api/snap-national", "destination": "/api/reps?op=snap-national" },
+    { "source": "/api/snap-state-detail", "destination": "/api/reps?op=snap-state-detail" },
 
     { "source": "/api/vote", "destination": "/api/votes?op=vote" },
     { "source": "/api/vote-status", "destination": "/api/votes?op=vote-status" },
@@ -78,6 +80,10 @@
     {
       "path": "/api/cron?op=sync-national-judges",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron?op=sync-snap",
+      "schedule": "0 11 * * 1"
     }
   ]
 }

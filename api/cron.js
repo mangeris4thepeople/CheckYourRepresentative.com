@@ -26,6 +26,7 @@ import syncSenatorFinances from "./_handlers/sync-senator-finances.js";
 import syncJudges from "./_handlers/sync-judges.js";
 import syncNationalJudges from "./_handlers/sync-national-judges.js";
 import syncSsa from "./_handlers/sync-ssa.js";
+import syncSnap from "./_handlers/sync-snap.js";
 import syncOjpe from "./_handlers/sync-ojpe.js";
 import importRetention from "./_handlers/import-retention.js";
 import testEmail from "./_handlers/test-email.js";
@@ -42,6 +43,7 @@ const OPS = {
   "sync-judges": syncJudges,
   "sync-national-judges": syncNationalJudges,
   "sync-ssa": syncSsa,
+  "sync-snap": syncSnap,
   "sync-ojpe": syncOjpe,
   "import-retention": importRetention,
   "test-email": testEmail,

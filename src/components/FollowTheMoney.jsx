@@ -10,6 +10,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import KnowYourRepTabs from "./KnowYourRepTabs.jsx";
 import NgosDirectory from "./NgosDirectory.jsx";
 import SocialSecurityPanel from "./SocialSecurityPanel.jsx";
+import SnapMap from "./SnapMap.jsx";
 
 const C = {
   navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
@@ -22,6 +23,7 @@ const SECTIONS = [
   { key: "ngo-funding", label: "NGO Funding" },
   { key: "medicare-medicaid", label: "Medicare and Medicaid" },
   { key: "social-security", label: "Social Security" },
+  { key: "snap", label: "SNAP / Food Stamps" },
 ];
 const DEFAULT_SECTION = "know-your-rep";
 const VALID_KEYS = new Set(SECTIONS.map(s => s.key));
@@ -90,6 +92,7 @@ export default function FollowTheMoney({ district }) {
         />
       )}
       {section === "social-security" && <SocialSecurityPanel district={district} />}
+      {section === "snap" && <SnapMap />}
     </div>
   );
 }
