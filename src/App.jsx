@@ -51,6 +51,9 @@ const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthe
 
 // Inject mobile CSS once
 const MOBILE_CSS = `
+  @media (max-width: 900px) {
+    .cyr-tagline { font-size: 10.5px !important; }
+  }
   @media (max-width: 600px) {
     .cyr-header-inner { padding: 12px 14px !important; gap: 10px !important; }
     .cyr-site-title { font-size: 17px !important; }
@@ -158,7 +161,7 @@ export default function App() {
         <div className="cyr-header-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="cyr-site-title" style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Check Your Representative</div>
-            <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW THE BILLS · KNOW YOUR VOTE · HOLD THE LINE</div>
+            <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW YOUR BILLS · KNOW YOUR VOTE · KNOW YOUR MONEY · HOLD THE LINE</div>
           </div>
           <button className="cyr-home-btn" onClick={() => setView("landing")}
             style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff", background: "transparent",
