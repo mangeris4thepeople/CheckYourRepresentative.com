@@ -1,0 +1,11 @@
+.venv/
+data/*.db
+data/index.faiss*
+data/archive/*
+!data/archive/.gitkeep
+data/inbox/*
+!data/inbox/.gitkeep
+models/**
+!models/llm/.gitkeep
+!models/adapters/.gitkeep
+__pycache__/

@@ -1,0 +1,22 @@
+# Core (always needed)
+pyyaml
+numpy<2
+sentence-transformers
+pypdf
+python-docx
+
+# Vector index. faiss-cpu where available; MIBrain falls back to a NumPy
+# index automatically on platforms without a FAISS build (Termux/Android).
+faiss-cpu; platform_system != "Android"
+
+# Chat backend. CPU build works everywhere; for CUDA build with
+# CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
+llama-cpp-python
+
+# Dev-phase model staging only (the deploy script uses it; the air gapped
+# production node stages models via courier and never needs this).
+huggingface_hub
+
+# Training stack (only needed for `python cli.py train`). Install on the
+# training machine: torch to match your CUDA version, then:
+# transformers peft datasets accelerate bitsandbytes
