@@ -155,7 +155,13 @@ export default function ConstituentVoting({ district, location, session, onNeedS
 
   async function castVote(billId, position) {
     if (lastAction?.billId === billId && lastAction.phase === "submitting") return;
-    if (!activeSession?.token) { setLastAction({ billId, phase: "signin" }); return; }
+    if (!activeSession?.token) {
+      setLastAction({ billId, phase: "signin" });
+      // Anonymous counter: a signed-out visitor tried to vote, the moment
+      // of intent the sign-in funnel exists to capture. See /privacy.
+      fetch("/api/metric?m=vote_intent", { method: "POST" }).catch(() => {});
+      return;
+    }
 
     setLastAction({ billId, phase: "submitting", position });
     try {
@@ -172,7 +178,11 @@ export default function ConstituentVoting({ district, location, session, onNeedS
         return;
       }
       if (res.status === "rejected") {
-        if (res.reason === "signin_required") { setLastAction({ billId, phase: "signin" }); return; }
+        if (res.reason === "signin_required") {
+          setLastAction({ billId, phase: "signin" });
+          fetch("/api/metric?m=vote_intent", { method: "POST" }).catch(() => {});
+          return;
+        }
         setLastAction({ billId, phase: "error", error: humanize(res.reason) });
         return;
       }

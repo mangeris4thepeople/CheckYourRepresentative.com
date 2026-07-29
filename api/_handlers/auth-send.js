@@ -8,6 +8,7 @@
 // made magic links silently never send. Now a real failure returns
 // { ok: false, error } so the UI can actually show it.
 import { sql } from "../_db.js";
+import { bumpMetric } from "./metrics.js";
 import crypto from "crypto";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -43,7 +44,8 @@ export default async function handler(req, res) {
     await sql`
       INSERT INTO profiles (email, email_channel, unsub_token)
       VALUES (${email.toLowerCase()}, 'off', ${crypto.randomBytes(16).toString("hex")})
-      ON CONFLICT (email) DO NOTHING`;
+      ON CONFLICT (email) DO NOTHING
+      RETURNING email`.then(rows => rows.length ? bumpMetric("new_account") : null);
 
     await sql`
       INSERT INTO sessions (email, magic_token, magic_expires, session_token)
@@ -99,6 +101,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, sent: false, dev_link: link });
     }
 
+    await bumpMetric("signin_request");
     return res.status(200).json({ ok: true, sent: true });
   } catch (err) {
     console.error("auth/send fatal error:", err);

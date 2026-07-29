@@ -5,16 +5,19 @@
 // =============================================================================
 import judgesList from "./_handlers/judges-list.js";
 import judgeDetail from "./_handlers/judge-detail.js";
-import judgesNationalList from "./_handlers/judges-national-list.js";
-import judgeNationalDetail from "./_handlers/judge-national-detail.js";
+import nationalJudges from "./_handlers/national-judges.js";
+import judgesGeo from "./_handlers/judges-geo.js";
 
 const OPS = {
   "judges-list": judgesList,
   "judge-detail": judgeDetail,
   "judge-courts": judgeDetail,
-  "judges-national-list": judgesNationalList,
-  "judge-national-detail": judgeNationalDetail,
-  "judge-national-courts": judgeNationalDetail,
+  "national-judges-list": nationalJudges,
+  "national-courts": nationalJudges,
+  "judges-map": judgesGeo,
+  "state-judges": judgesGeo,
+  "county-courts": judgesGeo,
+  "national-judge-detail": judgesGeo,
 };
 
 export default async function handler(req, res) {

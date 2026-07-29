@@ -56,10 +56,12 @@ export const ABOUT = {
       "exists to give power back to people, not to become another place your data gets " +
       "monetized.",
     "Accountability does not stop at Congress. Judges shape daily life as much as any " +
-      "legislator, and in Colorado you do not elect them in contested races, you vote to " +
-      "retain or remove them. Know Your Judge puts the state's own performance evaluations " +
-      "and every past retention result in front of you, so that ballot line gets the same " +
-      "scrutiny as every vote in Washington.",
+      "legislator, so Know Your Judge covers the whole country: a heat map of every state's " +
+      "sitting judges that drills from state to county to courthouse and city, with each " +
+      "judge's Ruling Record built from public court data, raw counts of the opinions they " +
+      "authored, never a score or a grade. Colorado gets the deepest treatment, with the " +
+      "state's own performance evaluations and every past retention election result, so a " +
+      "retention ballot line gets the same scrutiny as every vote in Washington.",
     "This is not a partisan project. Progressive, Conservative, Independent, Libertarian, " +
       "Green, Socialist, it does not matter where you start. The bills are the same for " +
       "everyone, and so is the record. Freedom does not erode all at once, it erodes one " +
@@ -119,10 +121,24 @@ export const HOW_IT_WORKS = {
         "name or district. NGO Funding shows how much of an advocacy organization's " +
         "reported revenue can be traced to a public, dollar-level disclosure, and how much " +
         "the law leaves as an aggregate lump, using only what is already public. Social " +
-        "Security shows retirement, survivors, and disability beneficiary counts and total " +
-        "monthly benefits by state, sourced from the Social Security Administration, " +
-        "currently 2015 data, the most recent state-level breakdown published in this form. " +
-        "Medicare and Medicaid spending by state is coming soon to the same tab.",
+        "Security shows retirement, survivors, and disability beneficiary counts by state, " +
+        "sourced from the Social Security Administration. Medicaid and SNAP each get a " +
+        "national heat map that drills from every state to every county and city the Census " +
+        "publishes. And the Money Map overlays six public money flows, Medicare, Medicaid, " +
+        "SNAP, Social Security income, federal NGO awards, and campaign contributions, on " +
+        "one county level map with per capita heat maps, blended two program views, and a " +
+        "correlation matrix computed from public records. Statistical relationships, not " +
+        "causes: the numbers are offered for your own analysis, with every source named.",
+    },
+    {
+      n: "7",
+      title: "Take it with you.",
+      body:
+        "Check Your Representative is available as an Android app on Google Play, and it " +
+        "installs straight from the browser too: on your phone, choose Add to Home Screen " +
+        "or Install App from the browser menu. Same site, same public records, one tap " +
+        "away. Bills, votes, and money data always load fresh from the record, never from " +
+        "a stale cache.",
     },
   ],
 };
@@ -232,6 +248,12 @@ export const PRIVACY_POLICY = {
         "We do not use Google Analytics, Vercel Web Analytics, or any other product " +
           "analytics or user-tracking tool. We do not track your page views or tie any " +
           "browsing activity to your account.",
+        "We keep our own anonymous daily counters: total visits, walkthrough dismissals, " +
+          "and sign ins, each stored as a single number per day. These counters contain no " +
+          "IP address, no device information, no cookies, and no account identifiers, so " +
+          "they cannot be tied to you. They exist only so we can tell whether the site is " +
+          "working for people, and the running totals are publicly readable at " +
+          "/api/metrics-summary because our transparency standard applies to us too.",
         "The only third-party resource loaded in your browser is Google Fonts, used for the " +
           "site's typography, which is not analytics. Our hosting and database providers keep " +
           "standard operational server logs, which can include IP addresses, for security and " +
@@ -313,7 +335,6 @@ export const TUTORIAL_PAGES = {
       { label: "Verified", desc: "How many of your positions were cast from a network location that matched your district's state. It is a location signal on each vote, not an identity check." },
       { label: "District", desc: "The congressional district you were matched to." },
       { label: "Find Your District", desc: "Enter your address to match yourself to your congressional district and representative. Your address is only ever used for this match, never stored, never shown or shared." },
-      { label: "Or explore the map", desc: "Browse districts on the map to look around, without changing the district your account is registered to." },
       { label: "Display Name (optional)", desc: "What shows instead of your email if your profile is public. Leave blank to stay anonymous even when public." },
       { label: "City / Town", desc: "A general location shown on your public profile. This is not your full address, which is only ever used privately to match your district." },
       { label: "Bio (optional)", desc: "A short personal statement shown on your public card if your profile is public." },
@@ -352,19 +373,30 @@ export const TUTORIAL_PAGES = {
       { label: "NGO Funding, funding transparency score", desc: "The percent of reported revenue traced to a dollar-level disclosure. A low score usually means the org relies on donors the law does not require to be itemized, not that anything is being hidden improperly." },
       { label: "NGO Funding, traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
       { label: "NGO Funding, reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
-      { label: "Medicare and Medicaid", desc: "Coming soon. Will show state-level Medicare and Medicaid spending trends from public federal data." },
+      { label: "Medicaid, the national map", desc: "A heat map of all 50 states colored by the share of people covered by Medicaid or other means-tested public health coverage, darkest red where coverage is highest. Hover any state for its numbers." },
+      { label: "Medicaid, state breakdowns", desc: "Click any state on the map or in the ranked list for its full breakdown by county and by city or town, with a search across every place the Census publishes." },
+      { label: "Medicaid, where the data comes from", desc: "US Census Bureau American Community Survey 5-year estimates, table S2704. Counts people with Medicaid or means-tested public coverage, alone or in combination with other insurance. CMS publishes dollar spending at the state level only." },
+      { label: "SNAP / Food Stamps, the national map", desc: "A heat map of all 50 states colored by the share of households receiving SNAP benefits, darkest red where participation is highest. Hover any state for its numbers." },
+      { label: "SNAP / Food Stamps, state breakdowns", desc: "Click any state on the map or in the ranked list to see its full breakdown by county and by city or town, with a search across every place the Census publishes." },
+      { label: "SNAP / Food Stamps, where the data comes from", desc: "US Census Bureau American Community Survey 5-year estimates, table S2201, the only public dataset covering every city and county. It reports households receiving benefits; USDA publishes dollar payouts at the state level only." },
+      { label: "Money Map, what it overlays", desc: "Six public money flows on one county level map: Medicare, Medicaid, SNAP, Social Security income, federal awards to NGOs, and campaign contributions to the tracked delegation. Pick one program for a heat map, two for a blended overlap view, three or more for side by side mini maps." },
+      { label: "Money Map, the correlation panel", desc: "Pairwise Pearson correlations across counties for the programs you can see, nationally or within one state, with the strongest relationships called out in plain language. These are statistical relationships in public spending data, offered for your own analysis. Correlation is not causation." },
+      { label: "Money Map, honesty rules", desc: "Census estimates carry a visible badge and are never presented as administrative counts. Every figure shows its data year and named government source. Counties without a program's data are shaded neutral and excluded from that pair's correlation. Campaign contributions appear at state level only because the FEC does not publish county data." },
     ],
   },
   judges: {
     title: "Know Your Judge",
-    intro: "Judges shape daily life as much as any legislator, and most people cannot name one. This section covers the bench in two scopes: the National Directory and the Colorado Deep Dive.",
+    intro: "Colorado judges do not run in contested elections, you vote to retain or remove them. This section exists so that ballot line is never a blind guess.",
     items: [
-      { label: "National Directory", desc: "The federal bench, from the Supreme Court through every circuit and district court, plus the supreme and appellate courts of all fifty states. Pick a state (or the federal courts) to see who sits on each court, their position, and who appointed them." },
-      { label: "Colorado Deep Dive", desc: "Every Colorado judge we track, down to the county courts: their court, the state's official performance evaluation of them, and how their past retention votes went." },
-      { label: "Search and court filter", desc: "In either scope, search by judge or court name, or narrow to one court, from the U.S. Supreme Court down to every Colorado county court." },
+      { label: "What this section is", desc: "One national directory of sitting state court judges, built on the Free Law Project's CourtListener database. It opens on a heat map of the whole country and drills all the way down to a single judge's public ruling record." },
+      { label: "The national heat map", desc: "Every state colored by its sitting judges on file, with a toggle between total judges and judges per 100,000 residents. Click any state to drill in." },
+      { label: "State and county drill down", desc: "A state's page shows its statewide courts first (supreme and appellate), then a county heat map. Click a county for its courts grouped by city, each with a plain language explanation of what that court handles and its sitting judges." },
+      { label: "Ruling Record", desc: "Each judge's profile shows raw public record counts from opinions they authored: totals, the majority, concurrence, and dissent split, and outcomes where the public feed carries them. Counts only, never a score, grade, or ranking, with a link to every opinion on CourtListener." },
+      { label: "Search", desc: "Below the national map, search every judge by name or court and filter by state." },
+      { label: "Colorado retention data", desc: "Colorado's state page keeps the full retention section: every judge's official OJPE performance evaluation and the actual yes and no vote counts from past retention elections." },
       { label: "Performance evaluations (OJPE)", desc: "The Colorado Office of Judicial Performance Evaluation formally evaluates every judge before their retention election and publishes a recommendation. We show that recommendation and link the full published narrative." },
       { label: "Retention election results", desc: "The actual yes and no vote counts from each retention election a judge has faced, from official Secretary of State records." },
-      { label: "Where the data comes from", desc: "The national directory and appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official Colorado state publications." },
+      { label: "Where the data comes from", desc: "Appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official state publications." },
       { label: "Social Security, what this section shows", desc: "Retirement, survivors, and disability insurance (OASDI) beneficiary counts and total monthly benefits, by state, sourced from the Social Security Administration. The current data is from 2015, the most recent state-level breakdown SSA has published in this form." },
       { label: "Social Security, your state", desc: "Pinned to the top once your district is matched, so you see your own state's figures first." },
       { label: "Social Security, search", desc: "Search the full list of states and territories by name or abbreviation." },
@@ -375,6 +407,14 @@ export const TUTORIAL_PAGES = {
 // Remaining in-app areas, for the full Site Tutorial page. These pages do not
 // get a contextual sidebar, so they only appear on the tutorial page.
 export const TUTORIAL_OTHER = [
+  {
+    title: "Get the app",
+    body:
+      "Check Your Representative is available on Android from Google Play, and installs " +
+      "directly from the browser on any phone: choose Add to Home Screen or Install App " +
+      "from your browser's menu. It is the same site with the same public records; bills, " +
+      "votes, and money data always load fresh, never from a stale cache.",
+  },
   {
     title: "All Active Bills",
     body:

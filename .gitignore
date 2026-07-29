@@ -8,3 +8,8 @@ dist
 .DS_Store
 *.log
 .env*
+# Android signing: never commit the keystore or its passwords
+twa/android.keystore
+twa/*.jks
+twa/build/
+twa/app-release*

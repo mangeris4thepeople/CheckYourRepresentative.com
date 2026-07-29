@@ -1,0 +1,48 @@
+{
+  "packageId": "com.checkyourrepresentative.app",
+  "host": "checkyourrepresentative.com",
+  "name": "Check Your Representative",
+  "launcherName": "CheckYourRep",
+  "display": "standalone",
+  "themeColor": "#0A1A3F",
+  "navigationColor": "#0A1A3F",
+  "navigationColorDark": "#0A1A3F",
+  "navigationDividerColor": "#C9A227",
+  "backgroundColor": "#FBF7EC",
+  "startUrl": "/",
+  "iconUrl": "https://checkyourrepresentative.com/icons/icon-512.png",
+  "maskableIconUrl": "https://checkyourrepresentative.com/icons/icon-512-maskable.png",
+  "splashScreenFadeOutDuration": 300,
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "minSdkVersion": 21,
+  "orientation": "default",
+  "fallbackType": "customtabs",
+  "enableNotifications": false,
+  "features": {},
+  "shortcuts": [
+    {
+      "name": "Vote on Bills",
+      "short_name": "Vote",
+      "url": "https://checkyourrepresentative.com/?tab=vote",
+      "chosenIconUrl": "https://checkyourrepresentative.com/icons/icon-192.png"
+    },
+    {
+      "name": "Follow the Money",
+      "short_name": "Money",
+      "url": "https://checkyourrepresentative.com/?tab=followthemoney",
+      "chosenIconUrl": "https://checkyourrepresentative.com/icons/icon-192.png"
+    },
+    {
+      "name": "Know Your Judge",
+      "short_name": "Judges",
+      "url": "https://checkyourrepresentative.com/?tab=judges",
+      "chosenIconUrl": "https://checkyourrepresentative.com/icons/icon-192.png"
+    }
+  ],
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "upload"
+  },
+  "webManifestUrl": "https://checkyourrepresentative.com/manifest.webmanifest"
+}

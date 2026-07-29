@@ -1,23 +1,16 @@
 // =============================================================================
-// KnowYourJudge.jsx - the Know Your Judge tab, in two scopes:
+// KnowYourJudge.jsx - the Know Your Judge tab. Colorado's judiciary: every
+// judge we track, their court, their official OJPE performance evaluations,
+// and their retention election results. Follows the same state-view pattern
+// as KnowYourRep.jsx (this app has no router): a searchable, filterable
+// list and a detail view per judge.
 //
-//   National  - the National Judge Directory (NationalJudgeDirectory.jsx):
-//               the federal bench and every state's supreme and appellate
-//               courts, synced from CourtListener.
-//   Colorado  - the original Colorado deep dive below: every judge we track
-//               down to the county courts, their official OJPE performance
-//               evaluations, and their retention election results.
-//
-// Colorado stays its own scope rather than folding into the national tables
-// because its trial-court coverage comes from hand-transcribed official
-// state publications (OJPE reports, Secretary of State election results),
-// which CourtListener does not carry. Follows the same state-view pattern as
-// KnowYourRep.jsx (this app has no router): a searchable, filterable list
-// and a detail view per judge.
+// Directory sources: appellate judges from the CourtListener sync, trial
+// court judges and all evaluation/retention data transcribed from official
+// state publications (OJPE reports, Secretary of State election results).
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
 import RetentionBar from "./RetentionBar.jsx";
-import NationalJudgeDirectory from "./NationalJudgeDirectory.jsx";
 
 const C = {
   navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
@@ -27,31 +20,6 @@ const serif = "Georgia, 'Times New Roman', serif";
 const PAGE_SIZE = 20;
 
 export default function KnowYourJudge() {
-  const [scope, setScope] = useState("national"); // national | colorado
-
-  const scopeBtn = (key, label) => (
-    <button onClick={() => setScope(key)}
-      style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, padding: "8px 18px",
-               borderRadius: 6, cursor: "pointer",
-               border: `1px solid ${scope === key ? C.navy : C.line}`,
-               background: scope === key ? C.navy : "#fff",
-               color: scope === key ? "#fff" : C.navy }}>
-      {label}
-    </button>
-  );
-
-  return (
-    <div>
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
-        {scopeBtn("national", "🇺🇸 National Directory")}
-        {scopeBtn("colorado", "🏔️ Colorado Deep Dive")}
-      </div>
-      {scope === "national" ? <NationalJudgeDirectory /> : <ColoradoJudgeDirectory />}
-    </div>
-  );
-}
-
-function ColoradoJudgeDirectory() {
   const [phase, setPhase] = useState("loading"); // loading | ready | notready | error
   const [judges, setJudges] = useState([]);
   const [courts, setCourts] = useState([]);

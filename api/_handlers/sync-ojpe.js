@@ -35,6 +35,33 @@ const RECOMMENDATIONS =
   "MEETS PERFORMANCE STANDARDS|DOES NOT MEET PERFORMANCE STANDARDS|" +
   "NO RECOMMENDATION|NO OPINION|MEETS PERFORMANCE STANDARD|DOES NOT MEET PERFORMANCE STANDARD";
 
+// The page's county labels sit in flowing text, so the regex's 1-2 word
+// capture can swallow the preceding word ("...up for Retention Montrose
+// County Court Judges" captured "Retention Montrose"; verified live). The
+// capture is validated against the real county list, dropping leading
+// words until it matches.
+const COUNTIES = new Set([
+  "Adams", "Alamosa", "Arapahoe", "Archuleta", "Baca", "Bent", "Boulder",
+  "Broomfield", "Chaffee", "Cheyenne", "Clear Creek", "Conejos", "Costilla",
+  "Crowley", "Custer", "Delta", "Denver", "Dolores", "Douglas", "Eagle",
+  "Elbert", "El Paso", "Fremont", "Garfield", "Gilpin", "Grand", "Gunnison",
+  "Hinsdale", "Huerfano", "Jackson", "Jefferson", "Kiowa", "Kit Carson",
+  "Lake", "La Plata", "Larimer", "Las Animas", "Lincoln", "Logan", "Mesa",
+  "Mineral", "Moffat", "Montezuma", "Montrose", "Morgan", "Otero", "Ouray",
+  "Park", "Phillips", "Pitkin", "Prowers", "Pueblo", "Rio Blanco",
+  "Rio Grande", "Routt", "Saguache", "San Juan", "San Miguel", "Sedgwick",
+  "Summit", "Teller", "Washington", "Weld", "Yuma",
+]);
+
+function resolveCounty(raw) {
+  const parts = String(raw).trim().split(/\s+/);
+  for (let i = 0; i < parts.length; i++) {
+    const candidate = parts.slice(i).join(" ");
+    if (COUNTIES.has(candidate)) return candidate;
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (!hasDb) return res.status(500).json({ error: "no database configured" });
 
@@ -59,10 +86,14 @@ export default async function handler(req, res) {
     // every judge lands under the court heading that precedes them. County
     // court sections carry their county in the label, e.g. "El Paso County
     // Court Judges", and map onto the seeded "<County> County Court" rows.
+    // "Supreme Court" appears without the "Colorado" prefix on the live page
+    // (verified: the three justices had no court context before this match
+    // was added). Only Colorado's supreme court appears on this page, so the
+    // bare form is unambiguous.
     const walker = new RegExp(
-      "(Colorado Supreme Court|Court of Appeals" +
+      "(Colorado Supreme Court|Supreme Court|Court of Appeals" +
       "|((?:Twenty-)?[A-Z][a-z]+) Judicial District\\s*\\(" +
-      "|([A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*)?) County Court Judges|District Court Judges" +
+      "|([A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*){0,2}) County Court Judges|District Court Judges" +
       `|Honorable ([^]*?) (${RECOMMENDATIONS}))`,
       "g"
     );
@@ -74,7 +105,7 @@ export default async function handler(req, res) {
     let m;
     while ((m = walker.exec(text)) !== null) {
       const token = m[1];
-      if (token === "Colorado Supreme Court") { courtName = "Colorado Supreme Court"; continue; }
+      if (token === "Colorado Supreme Court" || token === "Supreme Court") { courtName = "Colorado Supreme Court"; continue; }
       if (token === "Court of Appeals") { courtName = "Colorado Court of Appeals"; continue; }
       if (m[2]) {
         const n = ORDINALS[m[2]];
@@ -82,7 +113,12 @@ export default async function handler(req, res) {
         if (!n) unparsed.push(`district heading: ${m[2]}`);
         continue;
       }
-      if (m[3]) { courtName = `${m[3]} County Court`; continue; }
+      if (m[3]) {
+        const county = resolveCounty(m[3]);
+        if (!county) { unparsed.push(`county label: ${m[3]}`); courtName = null; continue; }
+        courtName = `${county} County Court`;
+        continue;
+      }
       if (token === "District Court Judges") { continue; }
       if (m[4]) {
         const judge = m[4].trim().replace(/\s+/g, " ");

@@ -12,6 +12,7 @@
 // account abuse) - they are not how we enforce "one vote." That job now
 // belongs entirely to the account (sessions.email -> votes.identity).
 // =============================================================================
+import { bumpMetric } from "./metrics.js";
 import { sql } from "../_db.js";
 
 const MAX_PER_IP_HR = 20;       // spam/bot throttle, NOT a one-vote-per-network rule
@@ -71,6 +72,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: "already_voted", position: existing[0]?.position });
     }
 
+    await bumpMetric("vote_cast");
     return res.status(200).json({ status: "counted", tier });
   } catch (err) {
     return res.status(500).json({ status: "error", reason: String(err.message || err) });

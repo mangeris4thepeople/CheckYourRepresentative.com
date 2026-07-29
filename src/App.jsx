@@ -21,7 +21,7 @@ import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import FollowTheMoney from "./components/FollowTheMoney.jsx";
-import KnowYourJudge from "./components/KnowYourJudge.jsx";
+import KnowYourJudgeNational from "./components/KnowYourJudgeNational.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
 import AboutPage from "./components/marketing/AboutPage.jsx";
@@ -51,6 +51,9 @@ const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthe
 
 // Inject mobile CSS once
 const MOBILE_CSS = `
+  @media (max-width: 900px) {
+    .cyr-tagline { font-size: 10.5px !important; }
+  }
   @media (max-width: 600px) {
     .cyr-header-inner { padding: 12px 14px !important; gap: 10px !important; }
     .cyr-site-title { font-size: 17px !important; }
@@ -78,11 +81,38 @@ export default function App() {
     try { return new URLSearchParams(window.location.search).get("voter"); } catch { return null; }
   })();
 
+  // App-shortcut and deep links: /?tab=vote (and friends) skips the landing
+  // page straight into that tab, which the installed app's shortcuts use.
+  // /privacy (a Vercel rewrite of this same page) opens the privacy policy,
+  // giving it the stable URL app stores require.
+  const initialDeepLink = (() => {
+    try {
+      if (window.location.pathname === "/privacy") return { view: "privacy", tab: null };
+      // The old landing page lives on at /welcome as the campaign page for
+      // ads and social links; the site entry itself is gate free.
+      if (window.location.pathname === "/welcome") return { view: "landing", tab: null };
+      const t = new URLSearchParams(window.location.search).get("tab");
+      const VALID = new Set(["vote", "allbills", "rollcalls", "constituents", "matrix",
+        "followthemoney", "judges", "profile", "merch"]);
+      if (t && VALID.has(t)) return { view: "tool", tab: t };
+    } catch {}
+    return null;
+  })();
+
+  // Signed-in visitors land on their profile; signed-out visitors land on
+  // something worth looking at (the national judges map) with a sign-in
+  // nudge in the header, instead of a sign-in form as the front door.
+  const hasStoredSession = !!getStoredSession();
+
   // view is one of: "landing" | "about" | "benefits" | "tutorial" |
-  // "howitworks" | "privacy" | "tool". The marketing views are the pre-tool
-  // content pages; the app has no router so they are plain state.
-  const [view, setView] = useState(initialVoterId ? "tool" : "landing");
-  const [tab, setTab] = useState(initialVoterId ? "constituents" : "profile");
+  // "howitworks" | "privacy" | "tool". The marketing views are content
+  // pages; the app has no router so they are plain state. Visitors land
+  // straight in the tool: the old landing page gated entry behind a click
+  // and deterred constituents, so the first-run walkthrough (below) now
+  // carries the introduction instead.
+  const [view, setView] = useState(initialVoterId ? "tool" : (initialDeepLink?.view || "tool"));
+  const [tab, setTab] = useState(initialVoterId ? "constituents"
+    : (initialDeepLink?.tab || (hasStoredSession ? "profile" : "judges")));
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
   const [showTutorial, setShowTutorial] = useState(false);
@@ -102,6 +132,8 @@ export default function App() {
   function dismissTutorial() {
     try { localStorage.setItem("cyr_tutorial_seen", "1"); } catch {}
     setShowTutorial(false);
+    // Anonymous aggregate counter, nothing identifying: see /privacy.
+    fetch("/api/metric?m=walkthrough_dismissed", { method: "POST" }).catch(() => {});
   }
 
   // Reopened on demand from My Profile, so people can revisit it anytime.
@@ -112,6 +144,26 @@ export default function App() {
   useEffect(() => {
     try { window.scrollTo(0, 0); } catch {}
   }, [view]);
+
+  // With no landing gate, the first visit opens the walkthrough on top of
+  // the tool itself. Dismissing it (or jumping to one of its intro pages)
+  // marks it seen; it never auto-opens again after that.
+  useEffect(() => {
+    try {
+      if (view === "tool" && !initialVoterId && localStorage.getItem("cyr_tutorial_seen") !== "1") {
+        setShowTutorial(true);
+      }
+    } catch {}
+    // One anonymous visit tick per browser session; a pure daily counter
+    // with no identifiers, consistent with the privacy policy.
+    try {
+      if (sessionStorage.getItem("cyr_visit_counted") !== "1") {
+        sessionStorage.setItem("cyr_visit_counted", "1");
+        fetch("/api/metric?m=visit", { method: "POST" }).catch(() => {});
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Called by VoterProfile once it has confirmed a session and loaded the
   // profile. Pulls the saved district straight into `resolved` so Vote /
@@ -156,14 +208,23 @@ export default function App() {
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
       <header style={{ background: C.navy, color: "#fff", borderBottom: `4px solid ${C.gold}` }}>
         <div className="cyr-header-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+          <img className="cyr-seal" src="/icons/mark-96.png" alt=""
+            style={{ width: 46, height: 46, borderRadius: 10, flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="cyr-site-title" style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Check Your Representative</div>
-            <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW THE BILLS · KNOW YOUR VOTE · HOLD THE LINE</div>
+            <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW YOUR BILLS · KNOW YOUR VOTE · KNOW YOUR MONEY · HOLD THE LINE</div>
           </div>
-          <button className="cyr-home-btn" onClick={() => setView("landing")}
+          {!session && tab !== "profile" && (
+            <button className="cyr-home-btn" onClick={() => { setView("tool"); setTab("profile"); }}
+              style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: C.gold,
+                       border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
+              Sign In to Vote →
+            </button>
+          )}
+          <button className="cyr-home-btn" onClick={openTutorial}
             style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff", background: "transparent",
                      border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
-            ← Home
+            How It Works
           </button>
         </div>
         <StarStrip />
@@ -187,7 +248,10 @@ export default function App() {
         </div>
       </nav>
 
-      {showTutorial && <FirstRunTutorial onDismiss={dismissTutorial} />}
+      {showTutorial && (
+        <FirstRunTutorial onDismiss={dismissTutorial}
+          onNavigate={(v) => { dismissTutorial(); setView(v); }} />
+      )}
 
       <main className="cyr-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
         {tab === "vote" && (
@@ -230,7 +294,7 @@ export default function App() {
 
         {tab === "judges" && (
           <HelpLayout page="judges">
-            <KnowYourJudge />
+            <KnowYourJudgeNational />
           </HelpLayout>
         )}
 
