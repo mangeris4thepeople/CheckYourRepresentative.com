@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Static sitemap of the site's public routes. The app is a single page
+     tool: sections live at /?tab= addresses and the content pages have
+     their own paths. Individual bills, judges, and districts open inside
+     the app rather than at per item URLs, so there is nothing dynamic to
+     enumerate; if per bill URLs ever ship, switch this to a generated
+     sitemap. Keep this list in sync with ROUTE_META in src/lib/seo.js. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://checkyourrepresentative.com/</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=matrix</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=rollcalls</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=followthemoney</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=judges</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=allbills</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=vote</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=constituents</loc></url>
+  <url><loc>https://checkyourrepresentative.com/?tab=merch</loc></url>
+  <url><loc>https://checkyourrepresentative.com/about</loc></url>
+  <url><loc>https://checkyourrepresentative.com/tutorial</loc></url>
+  <url><loc>https://checkyourrepresentative.com/how-it-works</loc></url>
+  <url><loc>https://checkyourrepresentative.com/benefits</loc></url>
+  <url><loc>https://checkyourrepresentative.com/privacy</loc></url>
+  <url><loc>https://checkyourrepresentative.com/welcome</loc></url>
+</urlset>

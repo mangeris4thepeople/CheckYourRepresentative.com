@@ -1,0 +1,10 @@
+# CheckYourRepresentative.com - open to all crawlers.
+# The API is data plumbing for the app, not pages; auth and session
+# endpoints live under /api/auth/ and are covered by the same block.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /api/auth/
+
+Sitemap: https://checkyourrepresentative.com/sitemap.xml

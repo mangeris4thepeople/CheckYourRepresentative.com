@@ -62,6 +62,11 @@ export const ABOUT = {
       "authored, never a score or a grade. Colorado gets the deepest treatment, with the " +
       "state's own performance evaluations and every past retention election result, so a " +
       "retention ballot line gets the same scrutiny as every vote in Washington.",
+    "Everything public here is built to be found and passed along. The site is open to " +
+      "search engines, every section has its own address, and any page you are looking at " +
+      "can be shared with a single link. Sunlight only works when people can reach it, so " +
+      "if something here changes how you see a vote, a dollar, or a judge, send it to " +
+      "someone who should see it too.",
     "This is not a partisan project. Progressive, Conservative, Independent, Libertarian, " +
       "Green, Socialist, it does not matter where you start. The bills are the same for " +
       "everyone, and so is the record. Freedom does not erode all at once, it erodes one " +

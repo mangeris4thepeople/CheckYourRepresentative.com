@@ -30,6 +30,7 @@ import HowItWorksPage from "./components/marketing/HowItWorksPage.jsx";
 import PrivacyCommitment from "./components/marketing/PrivacyCommitment.jsx";
 import SiteTutorialPage, { FirstRunTutorial } from "./components/marketing/SiteTutorial.jsx";
 import { getStoredSession } from "./lib/session.js";
+import { applySeo } from "./lib/seo.js";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
@@ -91,6 +92,16 @@ export default function App() {
       // The old landing page lives on at /welcome as the campaign page for
       // ads and social links; the site entry itself is gate free.
       if (window.location.pathname === "/welcome") return { view: "landing", tab: null };
+      // The other content pages get stable paths too (Vercel rewrites of
+      // this same page), so search engines and shared links can reach them
+      // directly. Listed in public/sitemap.xml.
+      const PATH_VIEWS = {
+        "/about": "about", "/tutorial": "tutorial",
+        "/how-it-works": "howitworks", "/benefits": "benefits",
+      };
+      if (PATH_VIEWS[window.location.pathname]) {
+        return { view: PATH_VIEWS[window.location.pathname], tab: null };
+      }
       const t = new URLSearchParams(window.location.search).get("tab");
       const VALID = new Set(["vote", "allbills", "rollcalls", "constituents", "matrix",
         "followthemoney", "judges", "profile", "merch"]);
@@ -117,12 +128,22 @@ export default function App() {
   const [session, setSession] = useState(() => getStoredSession());
   const [showTutorial, setShowTutorial] = useState(false);
 
+  // Per route titles and social tags. Until the visitor navigates somewhere
+  // themselves, the bare / URL keeps the homepage title rather than the
+  // default tab's, so search results for the site root read as the site,
+  // not as whichever tab happens to open first.
+  const [navigated, setNavigated] = useState(!!initialDeepLink?.tab || !!initialVoterId);
+  function goTab(k) { setNavigated(true); setTab(k); }
+  useEffect(() => {
+    applySeo(view !== "tool" ? view : (navigated ? tab : "home"));
+  }, [view, tab, navigated]);
+
   // "Enter the Tool" always lands on the Profile tab - sign in first,
   // vote second. Also covers re-entering after having browsed elsewhere.
   // The very first time anyone enters, show the walkthrough automatically;
   // after they dismiss it once we never auto-show it again (localStorage).
   function handleEnter() {
-    setTab("profile");
+    goTab("profile");
     setView("tool");
     try {
       if (localStorage.getItem("cyr_tutorial_seen") !== "1") setShowTutorial(true);
@@ -215,7 +236,7 @@ export default function App() {
             <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW YOUR BILLS · KNOW YOUR VOTE · KNOW YOUR MONEY · HOLD THE LINE</div>
           </div>
           {!session && tab !== "profile" && (
-            <button className="cyr-home-btn" onClick={() => { setView("tool"); setTab("profile"); }}
+            <button className="cyr-home-btn" onClick={() => { setView("tool"); goTab("profile"); }}
               style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: C.gold,
                        border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
               Sign In to Vote →
@@ -233,7 +254,7 @@ export default function App() {
       <nav style={{ background: C.panel, borderBottom: `1px solid ${C.line}`, overflowX: "auto" }}>
         <div className="cyr-nav-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "0 20px", display: "flex", gap: 0, minWidth: "min-content" }}>
           {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)}
+            <button key={t.key} onClick={() => goTab(t.key)}
               className="cyr-tab"
               style={{ fontFamily: serif, fontSize: 15, padding: "13px 18px", cursor: "pointer", border: "none",
                        background: "transparent", fontWeight: 700, whiteSpace: "nowrap",
@@ -260,7 +281,7 @@ export default function App() {
               district={resolved?.district}
               location={resolved?.location}
               session={session}
-              onNeedSignIn={() => setTab("profile")}
+              onNeedSignIn={() => goTab("profile")}
             />
           </HelpLayout>
         )}

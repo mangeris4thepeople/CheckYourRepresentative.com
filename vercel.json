@@ -25,6 +25,10 @@
     { "source": "/api/money-map", "destination": "/api/reps?op=money-map" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/welcome", "destination": "/index.html" },
+    { "source": "/about", "destination": "/index.html" },
+    { "source": "/tutorial", "destination": "/index.html" },
+    { "source": "/how-it-works", "destination": "/index.html" },
+    { "source": "/benefits", "destination": "/index.html" },
     { "source": "/api/metric", "destination": "/api/account?op=metric" },
     { "source": "/api/metrics-summary", "destination": "/api/account?op=metrics-summary" },
 
