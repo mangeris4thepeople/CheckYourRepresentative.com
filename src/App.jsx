@@ -29,6 +29,7 @@ import BenefitsPage from "./components/marketing/BenefitsPage.jsx";
 import HowItWorksPage from "./components/marketing/HowItWorksPage.jsx";
 import PrivacyCommitment from "./components/marketing/PrivacyCommitment.jsx";
 import SiteTutorialPage, { FirstRunTutorial } from "./components/marketing/SiteTutorial.jsx";
+import AdminCrosswalk from "./components/AdminCrosswalk.jsx";
 import { getStoredSession } from "./lib/session.js";
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
@@ -88,6 +89,10 @@ export default function App() {
   const initialDeepLink = (() => {
     try {
       if (window.location.pathname === "/privacy") return { view: "privacy", tab: null };
+      // Admin-only review queue for NGO Money Loop name matches; a Vercel
+      // rewrite serves this same page at that path. The API enforces access,
+      // this is just routing.
+      if (window.location.pathname === "/admin/crosswalk") return { view: "admin-crosswalk", tab: null };
       // The old landing page lives on at /welcome as the campaign page for
       // ads and social links; the site entry itself is gate free.
       if (window.location.pathname === "/welcome") return { view: "landing", tab: null };
@@ -203,6 +208,7 @@ export default function App() {
   if (view === "tutorial")   return <SiteTutorialPage onNavigate={setView} onEnter={handleEnter} />;
   if (view === "howitworks") return <HowItWorksPage onNavigate={setView} onEnter={handleEnter} />;
   if (view === "privacy")    return <PrivacyCommitment onNavigate={setView} onEnter={handleEnter} />;
+  if (view === "admin-crosswalk") return <AdminCrosswalk />;
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>

@@ -20,6 +20,18 @@ export default function AboutPage({ onNavigate, onEnter }) {
           {p}
         </p>
       ))}
+
+      {/* Data sources list, kept in siteCopy.js with the rest of the copy. */}
+      <h2 style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: C.navy,
+                   borderBottom: `2px solid ${C.gold}`, paddingBottom: 6, margin: "36px 0 14px" }}>
+        {ABOUT.dataSourcesHeading}
+      </h2>
+      <p style={{ fontFamily: serif, fontSize: 16, lineHeight: 1.7, color: "#222", marginBottom: 12 }}>
+        {ABOUT.dataSourcesIntro}
+      </p>
+      <ul style={{ fontFamily: serif, fontSize: 16, lineHeight: 1.9, color: "#222", paddingLeft: 24, margin: 0 }}>
+        {ABOUT.dataSources.map((s, i) => <li key={i}>{s}</li>)}
+      </ul>
     </MarketingPage>
   );
 }

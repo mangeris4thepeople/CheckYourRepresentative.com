@@ -67,6 +67,22 @@ export const ABOUT = {
       "everyone, and so is the record. Freedom does not erode all at once, it erodes one " +
       "unwatched vote at a time. This site exists so nobody has to watch alone.",
   ],
+  dataSourcesHeading: "Where the data comes from",
+  dataSourcesIntro:
+    "Every number on this site traces to a named public record. These are the sources:",
+  dataSources: [
+    "Congress.gov, bills, sponsors, and roll call votes",
+    "Federal Election Commission (FEC), campaign finance filings and contributions",
+    "USASpending.gov, federal awards and grants",
+    "Foreign Agents Registration Act (FARA) filings, US Department of Justice",
+    "Colorado TRACER (Secretary of State), state campaign finance disclosures",
+    "ProPublica Nonprofit Explorer / IRS Form 990 data, nonprofit identities and finances",
+    "IRS Auto-Revocation List, automatically revoked tax exemptions",
+    "US Census Bureau American Community Survey, Medicaid and SNAP coverage estimates",
+    "Social Security Administration, OASDI beneficiary counts",
+    "Free Law Project CourtListener, judges and judicial opinions",
+    "Colorado Office of Judicial Performance Evaluation and official retention election results",
+  ],
 };
 
 export const HOW_IT_WORKS = {
@@ -373,6 +389,11 @@ export const TUTORIAL_PAGES = {
       { label: "NGO Funding, funding transparency score", desc: "The percent of reported revenue traced to a dollar-level disclosure. A low score usually means the org relies on donors the law does not require to be itemized, not that anything is being hidden improperly." },
       { label: "NGO Funding, traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
       { label: "NGO Funding, reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
+      { label: "NGO Money Loop, what this section is", desc: "Inside NGO Funding, the Money Loop table connects three public records: contributions that organizations made to Colorado political committees, who each contributing organization legally is according to the IRS, and whether its tax exemption has been revoked. One row per contribution, with the committee, the amount, the date, the org's IRS legal name and 501(c) status, and its latest reported revenue." },
+      { label: "NGO Money Loop, what TRACER is", desc: "TRACER is the Colorado Secretary of State's campaign finance disclosure system. Committees active in Colorado elections are required by law to report the contributions they receive, and TRACER publishes those reports. The Money Loop loads TRACER's public bulk data and keeps only contributions from organizations, not individual people." },
+      { label: "NGO Money Loop, what a 990 is", desc: "Form 990 is the annual return most tax-exempt organizations must file with the IRS, and it is a public document. It states the organization's legal name, its 501(c) subsection, and its finances, including total revenue. We read 990 data through ProPublica's Nonprofit Explorer and link each organization to its page there so you can read the filings yourself." },
+      { label: "NGO Money Loop, the revoked badge", desc: "A red badge means the organization appears on the IRS Auto-Revocation List, which records exemptions revoked automatically after three consecutive years without a required filing. Reinstated organizations are not flagged." },
+      { label: "NGO Money Loop, appearing here is not an accusation", desc: "Contributing to political committees is legal, and the disclosure exists by design so the public can see it. Appearing in this table does not imply wrongdoing by the organization or the committee. Name matches between TRACER and IRS records are suggested by software and reviewed by a person; until a match is confirmed it is labeled as an unreviewed match." },
       { label: "Medicaid, the national map", desc: "A heat map of all 50 states colored by the share of people covered by Medicaid or other means-tested public health coverage, darkest red where coverage is highest. Hover any state for its numbers." },
       { label: "Medicaid, state breakdowns", desc: "Click any state on the map or in the ranked list for its full breakdown by county and by city or town, with a search across every place the Census publishes." },
       { label: "Medicaid, where the data comes from", desc: "US Census Bureau American Community Survey 5-year estimates, table S2704. Counts people with Medicaid or means-tested public coverage, alone or in combination with other insurance. CMS publishes dollar spending at the state level only." },
