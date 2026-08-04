@@ -38,6 +38,8 @@ jobs:
         with:
           node-version: "20"
       - run: npm install
+      - name: 0. Apply schema (idempotent)
+        run: node etl/apply_schema.mjs
       - name: 1. TRACER contributions
         # Scheduled runs load the current year; the previous years only need
         # the one-time backfill (manual run with the years input).

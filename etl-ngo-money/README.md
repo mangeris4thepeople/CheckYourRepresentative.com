@@ -20,7 +20,8 @@ cd etl-ngo-money
 npm install
 ```
 
-Apply the schema (idempotent) to Neon:
+The schema is applied automatically at the start of every pipeline run
+(`node etl/apply_schema.mjs`, idempotent). To apply it by hand instead:
 
 ```bash
 psql "$DATABASE_URL" -f sql/ngo_money_schema.sql
