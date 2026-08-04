@@ -28,7 +28,11 @@ jobs:
   ngo-money-loop:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Reads the DATABASE_URL repo secret, falling back to an Actions
+      # variable of the same name in case it was added under Variables
+      # instead of Secrets. Either way, add it under the repo's
+      # Settings -> Secrets and variables -> Actions.
+      DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
     defaults:
       run:
         working-directory: etl-ngo-money
