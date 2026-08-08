@@ -34,6 +34,8 @@ import syncMedicaid from "./_handlers/sync-medicaid.js";
 import syncMoneySources from "./_handlers/sync-money-sources.js";
 import syncMoneyMap from "./_handlers/sync-money-map.js";
 import syncOjpe from "./_handlers/sync-ojpe.js";
+import syncRepspace from "./_handlers/sync-repspace.js";
+import syncRepspaceActivity from "./_handlers/sync-repspace-activity.js";
 import importRetention from "./_handlers/import-retention.js";
 import testEmail from "./_handlers/test-email.js";
 
@@ -57,6 +59,8 @@ const OPS = {
   "sync-money-sources": syncMoneySources,
   "sync-money-map": syncMoneyMap,
   "sync-ojpe": syncOjpe,
+  "sync-repspace": syncRepspace,
+  "sync-repspace-activity": syncRepspaceActivity,
   "import-retention": importRetention,
   "test-email": testEmail,
 };

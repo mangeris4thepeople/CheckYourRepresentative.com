@@ -102,6 +102,11 @@ export default function App() {
       if (PATH_VIEWS[window.location.pathname]) {
         return { view: PATH_VIEWS[window.location.pathname], tab: null };
       }
+      // Shared RepSpace profile links land inside Follow the Money;
+      // KnowYourRepTabs and RepSpaceTab read the rest of the path themselves.
+      if (window.location.pathname.startsWith("/know-your-rep")) {
+        return { view: "tool", tab: "followthemoney" };
+      }
       const t = new URLSearchParams(window.location.search).get("tab");
       const VALID = new Set(["vote", "allbills", "rollcalls", "constituents", "matrix",
         "followthemoney", "judges", "profile", "merch"]);

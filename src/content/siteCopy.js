@@ -50,11 +50,23 @@ export const ABOUT = {
       "it visible. When someone has held a seat for twenty, thirty, fifty years, you can " +
       "finally see, bill by bill, whether their voting record still matches the people " +
       "who kept sending them back, or whether it quietly stopped a long time ago.",
-    "Your profile can be public or private, your choice, changeable anytime in your " +
-      "account settings. Your information and your votes will never be sold to anyone, " +
-      "not a campaign, not a PAC, not a data broker, not any institution, period. This " +
-      "exists to give power back to people, not to become another place your data gets " +
-      "monetized.",
+    "So the whole record lives here, in one place. Vote on Bills and All Active Bills " +
+      "put every live bill in front of you with a plain language breakdown of who " +
+      "benefits, who pays, and whose money is behind it. Roll Calls shows every recorded " +
+      "vote with every name attached. Accountability lines your district's positions up " +
+      "against your representative's actual votes. Follow the Money traces campaign " +
+      "money, top donors, NGO funding, Social Security, Medicaid, SNAP, and the Money " +
+      "Map's six overlaid public money flows. Know Your Judge covers the bench " +
+      "nationwide, down to a single judge's public ruling record. Constituents shows " +
+      "what districts actually think, in public.",
+    "And then there is RepSpace, where every member of Congress gets a profile page " +
+      "styled like a 2006 social network they never asked to join. The frame is a joke. " +
+      "The data is not. Every number on a RepSpace page is a real public record, every " +
+      "wall item is verbatim from the official record with a link to the source, every " +
+      "donor figure links to the FEC receipts behind it, and every headline is generated " +
+      "by code from those records, labeled as such, never written in the member's voice. " +
+      "Satire is an old American tool for looking at power squarely. We use it with the " +
+      "receipts attached.",
     "Accountability does not stop at Congress. Judges shape daily life as much as any " +
       "legislator, so Know Your Judge covers the whole country: a heat map of every state's " +
       "sitting judges that drills from state to county to courthouse and city, with each " +
@@ -62,11 +74,15 @@ export const ABOUT = {
       "authored, never a score or a grade. Colorado gets the deepest treatment, with the " +
       "state's own performance evaluations and every past retention election result, so a " +
       "retention ballot line gets the same scrutiny as every vote in Washington.",
+    "Your profile can be public or private, your choice, changeable anytime in your " +
+      "account settings. Your information and your votes will never be sold to anyone, " +
+      "not a campaign, not a PAC, not a data broker, not any institution, period. This " +
+      "exists to give power back to people, not to become another place your data gets " +
+      "monetized.",
     "Everything public here is built to be found and passed along. The site is open to " +
-      "search engines, every section has its own address, and any page you are looking at " +
-      "can be shared with a single link. Sunlight only works when people can reach it, so " +
-      "if something here changes how you see a vote, a dollar, or a judge, send it to " +
-      "someone who should see it too.",
+      "search engines, every section has its own address, and any page you are looking " +
+      "at, a bill, a judge, a district, a money map, a RepSpace profile, can be shared " +
+      "with a single link. Sunlight only works when people can reach it.",
     "This is not a partisan project. Progressive, Conservative, Independent, Libertarian, " +
       "Green, Socialist, it does not matter where you start. The bills are the same for " +
       "everyone, and so is the record. Freedom does not erode all at once, it erodes one " +
@@ -318,8 +334,9 @@ export const TUTORIAL_GETTING_STARTED = {
       title: "Enter your address on My Profile.",
       body:
         "This matches you to your congressional district and your representative, and " +
-        "personalizes everything else on the site around that district. That is all the " +
-        "setup there is.",
+        "personalizes everything else on the site around that district. Your address is " +
+        "used only for that match, never stored, never shown. That is all the setup " +
+        "there is; everything except casting votes works without signing in at all.",
     },
   ],
 };
@@ -338,11 +355,8 @@ export const TUTORIAL_PAGES = {
       { label: "Profile / My Votes / Share tabs", desc: "Profile is your account details. My Votes is your own history of every position you have cast. Share generates a public link or card of your voting record, only if your profile is public." },
       { label: "Votes Cast", desc: "The total number of bills you have cast a position on." },
       { label: "Verified", desc: "How many of your positions were cast from a network location that matched your district's state. It is a location signal on each vote, not an identity check." },
-      { label: "District", desc: "The congressional district you were matched to." },
       { label: "Find Your District", desc: "Enter your address to match yourself to your congressional district and representative. Your address is only ever used for this match, never stored, never shown or shared." },
-      { label: "Display Name (optional)", desc: "What shows instead of your email if your profile is public. Leave blank to stay anonymous even when public." },
-      { label: "City / Town", desc: "A general location shown on your public profile. This is not your full address, which is only ever used privately to match your district." },
-      { label: "Bio (optional)", desc: "A short personal statement shown on your public card if your profile is public." },
+      { label: "Display Name, City, Bio (all optional)", desc: "What shows on your public card if your profile is public. Leave them blank to stay anonymous even when public." },
       { label: "Email Digest", desc: "Choose what triggers an email from us, for example an alert when new bills hit the floor. Change or turn it off anytime." },
       { label: "Public Profile / Make Private", desc: "Public means your display name, city, bio, and votes are visible on your shareable card. Private means none of that is visible to anyone but you. Takes effect immediately." },
       { label: "Save Profile", desc: "Commits any changes you made above." },
@@ -353,58 +367,39 @@ export const TUTORIAL_PAGES = {
     intro: "Work through the bills in front of Congress and cast your position on each.",
     items: [
       { label: "Counter at the top", desc: "How many active bills on the floor you still have not voted on, out of the total active right now." },
-      { label: "All bills", desc: "Browse every active bill from the start." },
-      { label: "Next bill", desc: "Jumps to the next active bill you have not voted on yet. Use it to work through your queue one at a time." },
-      { label: "Previous bills", desc: "Steps backward through bills you have already voted on, so you can review your record." },
+      { label: "All bills / Next bill / Previous bills", desc: "Browse every active bill, jump to the next one you have not voted on, or step back through the ones you already have." },
       { label: "Voted on / Not voted on", desc: "Switch between only the bills you have already positioned on, or only the ones still waiting on you." },
-      { label: "The four expandable sections", desc: "Who benefits, who is worse off, PAC and donor money behind it, and industries with a financial stake. Open them to read the plain-English breakdown before you vote." },
+      { label: "The four expandable sections", desc: "Who benefits, who is worse off, PAC and donor money behind it, and industries with a financial stake. Open them to read the plain English breakdown before you vote." },
       { label: "Vote tally bar", desc: "Shows how the country has voted on this bill so far." },
       { label: "Support / Oppose / Undecided", desc: "Your position. One per bill, per account, permanent once cast. It cannot be changed or resubmitted, so read first." },
     ],
   },
   followthemoney: {
     title: "Follow the Money",
-    intro: "Everything about who funds power and who receives public spending, in one tab: Know Your Rep, NGO Funding, Medicare and Medicaid, and Social Security. Switch between the four with the sub-tabs at the top, using only public disclosures.",
+    intro: "Who funds power and who receives public spending, in one tab: Know Your Rep (House, Senate, and RepSpace), NGO Funding, Medicaid, Social Security, SNAP, and the Money Map. Your sub-tab choice is saved in the page's link, so you can share a link straight to any of them.",
     items: [
-      { label: "Sub-tabs", desc: "Know Your Rep, NGO Funding, Medicare and Medicaid, and Social Security. Your choice is saved in the page's link, so you can share a link straight to one of them." },
-      { label: "Know Your Rep, search bar", desc: "Search by representative name, state, or district." },
-      { label: "Know Your Rep, the list", desc: "Twenty representatives at a time. Use Load More to keep browsing rather than loading all 435 at once." },
-      { label: "Know Your Rep, per-cycle financial totals", desc: "How much each representative's campaign has raised and spent, and how much came from individuals versus PACs versus the party, by two-year election cycle." },
-      { label: "Know Your Rep, FEC filings", desc: "Every quarterly and periodic report a representative's campaign has filed with the FEC, each with a direct link to the original filing on FEC.gov." },
-      { label: "Know Your Rep, top donors", desc: "The largest disclosed contributors to a representative's campaign, ranked by dollar amount. This is a bounded list of the biggest sources, not every single contribution ever filed." },
-      { label: "NGO Funding, what this section is", desc: "For each organization, it shows how much of its reported revenue can be traced to a public, dollar-level disclosure, and how much the law only requires as an aggregate lump." },
-      { label: "NGO Funding, state / source type / fiscal year filters", desc: "Narrow the list by state, by the kind of funding (federal award, foreign principal, PAC, and so on), or by year." },
-      { label: "NGO Funding, the traceability bar", desc: "Each row shows what percent of that org's revenue is traceable to a named public source. Click a row to open the organization." },
-      { label: "NGO Funding, funding transparency score", desc: "The percent of reported revenue traced to a dollar-level disclosure. A low score usually means the org relies on donors the law does not require to be itemized, not that anything is being hidden improperly." },
-      { label: "NGO Funding, traceable funding events", desc: "The individual disclosed dollars behind the score: federal awards, foreign principal payments (FARA), PAC contributions (FEC), and grants from other nonprofits." },
-      { label: "NGO Funding, reported revenue and grants made", desc: "The organization's total revenue by year from its tax filing, and the grants it passed on to other organizations." },
-      { label: "Medicaid, the national map", desc: "A heat map of all 50 states colored by the share of people covered by Medicaid or other means-tested public health coverage, darkest red where coverage is highest. Hover any state for its numbers." },
-      { label: "Medicaid, state breakdowns", desc: "Click any state on the map or in the ranked list for its full breakdown by county and by city or town, with a search across every place the Census publishes." },
-      { label: "Medicaid, where the data comes from", desc: "US Census Bureau American Community Survey 5-year estimates, table S2704. Counts people with Medicaid or means-tested public coverage, alone or in combination with other insurance. CMS publishes dollar spending at the state level only." },
-      { label: "SNAP / Food Stamps, the national map", desc: "A heat map of all 50 states colored by the share of households receiving SNAP benefits, darkest red where participation is highest. Hover any state for its numbers." },
-      { label: "SNAP / Food Stamps, state breakdowns", desc: "Click any state on the map or in the ranked list to see its full breakdown by county and by city or town, with a search across every place the Census publishes." },
-      { label: "SNAP / Food Stamps, where the data comes from", desc: "US Census Bureau American Community Survey 5-year estimates, table S2201, the only public dataset covering every city and county. It reports households receiving benefits; USDA publishes dollar payouts at the state level only." },
-      { label: "Money Map, what it overlays", desc: "Six public money flows on one county level map: Medicare, Medicaid, SNAP, Social Security income, federal awards to NGOs, and campaign contributions to the tracked delegation. Pick one program for a heat map, two for a blended overlap view, three or more for side by side mini maps." },
-      { label: "Money Map, the correlation panel", desc: "Pairwise Pearson correlations across counties for the programs you can see, nationally or within one state, with the strongest relationships called out in plain language. These are statistical relationships in public spending data, offered for your own analysis. Correlation is not causation." },
-      { label: "Money Map, honesty rules", desc: "Census estimates carry a visible badge and are never presented as administrative counts. Every figure shows its data year and named government source. Counties without a program's data are shaded neutral and excluded from that pair's correlation. Campaign contributions appear at state level only because the FEC does not publish county data." },
+      { label: "Know Your Rep, House and Senate", desc: "A full financial profile for every member: per cycle campaign totals, every FEC filing with a direct link to the original document, and the largest disclosed donor buckets ranked by dollar amount. Search by name, state, or district." },
+      { label: "RepSpace, what it is", desc: "Every member of Congress gets a profile page styled like a 2006 social network they never signed up for. The retro frame is satire; every fact on the page is a real public record with a link to its source." },
+      { label: "RepSpace, finding a member", desc: "Three ways in: browse the full 535 member roster in one dropdown, search by name, state, or district, or enter your address and the Census Bureau's public geocoder finds your House member and both senators. Addresses are never stored." },
+      { label: "RepSpace, what is on a page", desc: "Voting attendance counted from the official roll call record, committee assignments as the Top 8, FEC donor buckets that each link to the receipts on FEC.gov, and a wall of verbatim items from the Congressional record. The headline is generated by code from those records and always carries a disclaimer; RepSpace never writes words in a member's voice." },
+      { label: "RepSpace, sharing a page", desc: "Every profile has its own address at /know-your-rep/repspace/ followed by the member's id, so a page can be sent around exactly like the record it is." },
+      { label: "NGO Funding", desc: "For each organization, how much of its reported revenue can be traced to a public, dollar level disclosure, and how much the law only requires as an aggregate lump. Filter by state, source type, or fiscal year; click a row for the individual disclosed dollars behind the score." },
+      { label: "Medicaid", desc: "A national heat map of coverage share by state, drilling to every county and city or town the Census publishes. Data: American Community Survey 5 year estimates, table S2704." },
+      { label: "Social Security", desc: "Retirement, survivors, and disability (OASDI) beneficiary counts and total monthly benefits by state, from the Social Security Administration, with your state pinned to the top once your district is matched." },
+      { label: "SNAP / Food Stamps", desc: "A national heat map of household participation share by state, with the same county and city drill down. Data: American Community Survey 5 year estimates, table S2201." },
+      { label: "Money Map", desc: "Six public money flows on one county level map: Medicare, Medicaid, SNAP, Social Security income, federal NGO awards, and campaign contributions. One program gives a heat map, two a blended overlap view, three or more side by side mini maps, plus a correlation matrix computed from public records. Statistical relationships, not causes." },
     ],
   },
   judges: {
     title: "Know Your Judge",
-    intro: "Colorado judges do not run in contested elections, you vote to retain or remove them. This section exists so that ballot line is never a blind guess.",
+    intro: "Judges shape daily life as much as any legislator, and most people cannot name one. This section covers the bench nationwide and gives Colorado the deepest treatment.",
     items: [
-      { label: "What this section is", desc: "One national directory of sitting state court judges, built on the Free Law Project's CourtListener database. It opens on a heat map of the whole country and drills all the way down to a single judge's public ruling record." },
       { label: "The national heat map", desc: "Every state colored by its sitting judges on file, with a toggle between total judges and judges per 100,000 residents. Click any state to drill in." },
       { label: "State and county drill down", desc: "A state's page shows its statewide courts first (supreme and appellate), then a county heat map. Click a county for its courts grouped by city, each with a plain language explanation of what that court handles and its sitting judges." },
       { label: "Ruling Record", desc: "Each judge's profile shows raw public record counts from opinions they authored: totals, the majority, concurrence, and dissent split, and outcomes where the public feed carries them. Counts only, never a score, grade, or ranking, with a link to every opinion on CourtListener." },
       { label: "Search", desc: "Below the national map, search every judge by name or court and filter by state." },
-      { label: "Colorado retention data", desc: "Colorado's state page keeps the full retention section: every judge's official OJPE performance evaluation and the actual yes and no vote counts from past retention elections." },
-      { label: "Performance evaluations (OJPE)", desc: "The Colorado Office of Judicial Performance Evaluation formally evaluates every judge before their retention election and publishes a recommendation. We show that recommendation and link the full published narrative." },
-      { label: "Retention election results", desc: "The actual yes and no vote counts from each retention election a judge has faced, from official Secretary of State records." },
-      { label: "Where the data comes from", desc: "Appellate judges from the Free Law Project's CourtListener. Evaluations and retention results transcribed from official state publications." },
-      { label: "Social Security, what this section shows", desc: "Retirement, survivors, and disability insurance (OASDI) beneficiary counts and total monthly benefits, by state, sourced from the Social Security Administration. The current data is from 2015, the most recent state-level breakdown SSA has published in this form." },
-      { label: "Social Security, your state", desc: "Pinned to the top once your district is matched, so you see your own state's figures first." },
-      { label: "Social Security, search", desc: "Search the full list of states and territories by name or abbreviation." },
+      { label: "Colorado retention data", desc: "Colorado's state page keeps the full retention section: every judge's official OJPE performance evaluation with a link to the published narrative, and the actual yes and no vote counts from past retention elections, from official Secretary of State records." },
+      { label: "Where the data comes from", desc: "Judges and opinions from the Free Law Project's CourtListener. Colorado evaluations and retention results transcribed from official state publications." },
     ],
   },
 };
@@ -412,14 +407,6 @@ export const TUTORIAL_PAGES = {
 // Remaining in-app areas, for the full Site Tutorial page. These pages do not
 // get a contextual sidebar, so they only appear on the tutorial page.
 export const TUTORIAL_OTHER = [
-  {
-    title: "Get the app",
-    body:
-      "Check Your Representative is available on Android from Google Play, and installs " +
-      "directly from the browser on any phone: choose Add to Home Screen or Install App " +
-      "from your browser's menu. It is the same site with the same public records; bills, " +
-      "votes, and money data always load fresh, never from a stale cache.",
-  },
   {
     title: "All Active Bills",
     body:
@@ -431,7 +418,7 @@ export const TUTORIAL_OTHER = [
     body:
       "Shows how your district has voted, position by position, and once your " +
       "representative casts their actual recorded vote, whether it matched. This is where " +
-      "the long-term pattern becomes visible, one vote does not tell you much, dozens over " +
+      "the long term pattern becomes visible, one vote does not tell you much, dozens over " +
       "years tell you a lot.",
   },
   {
@@ -445,6 +432,14 @@ export const TUTORIAL_OTHER = [
     body:
       "A public directory of positions by district, so you can see whether your view is " +
       "shared by others near you, and so does everyone else.",
+  },
+  {
+    title: "Get the app",
+    body:
+      "Check Your Representative is available on Android from Google Play, and installs " +
+      "directly from the browser on any phone: choose Add to Home Screen or Install App " +
+      "from your browser's menu. It is the same site with the same public records; bills, " +
+      "votes, and money data always load fresh, never from a stale cache.",
   },
   {
     title: "Merch",

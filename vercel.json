@@ -25,6 +25,12 @@
     { "source": "/api/money-map", "destination": "/api/reps?op=money-map" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/welcome", "destination": "/index.html" },
+    { "source": "/api/repspace/members", "destination": "/api/repspace?op=members" },
+    { "source": "/api/repspace/profile", "destination": "/api/repspace?op=profile" },
+    { "source": "/api/repspace/address-lookup", "destination": "/api/repspace?op=address-lookup" },
+    { "source": "/know-your-rep/repspace/:bioguide", "destination": "/index.html" },
+    { "source": "/know-your-rep/repspace", "destination": "/index.html" },
+
     { "source": "/about", "destination": "/index.html" },
     { "source": "/tutorial", "destination": "/index.html" },
     { "source": "/how-it-works", "destination": "/index.html" },
@@ -118,6 +124,14 @@
     {
       "path": "/api/cron?op=sync-money-sources",
       "schedule": "0 13 * * 1"
+    },
+    {
+      "path": "/api/cron?op=sync-repspace",
+      "schedule": "30 5 * * 1"
+    },
+    {
+      "path": "/api/cron?op=sync-repspace-activity",
+      "schedule": "30 14 * * *"
     }
   ]
 }
