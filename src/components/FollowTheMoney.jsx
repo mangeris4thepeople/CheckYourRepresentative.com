@@ -1,14 +1,15 @@
 // =============================================================================
 // FollowTheMoney.jsx - the consolidated "Follow the Money" tab.
 // Four sub-sections: Know Your Rep, NGO Funding, Medicare and Medicaid, and
-// Social Security. Know Your Rep and NGO Funding render the existing
-// KnowYourRepTabs.jsx and NgosDirectory.jsx components unchanged. This app
+// Social Security. Know Your Rep renders the existing KnowYourRepTabs.jsx
+// unchanged; NGO Funding renders NgoFundingTabs.jsx, a toggle between the
+// transparency directory and the NGO Money Loop table. This app
 // has no router, so the active sub-section is plain state, synced to a
 // ?ftm= query param via history.replaceState for shareable links.
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
 import KnowYourRepTabs from "./KnowYourRepTabs.jsx";
-import NgosDirectory from "./NgosDirectory.jsx";
+import NgoFundingTabs from "./NgoFundingTabs.jsx";
 import SocialSecurityPanel from "./SocialSecurityPanel.jsx";
 import SnapMap from "./SnapMap.jsx";
 import MedicaidMap from "./MedicaidMap.jsx";
@@ -74,7 +75,7 @@ export default function FollowTheMoney({ district }) {
       </div>
 
       {section === "know-your-rep" && <KnowYourRepTabs />}
-      {section === "ngo-funding" && <NgosDirectory />}
+      {section === "ngo-funding" && <NgoFundingTabs />}
       {section === "medicare-medicaid" && <MedicaidMap />}
       {section === "social-security" && <SocialSecurityPanel district={district} />}
       {section === "snap" && <SnapMap />}

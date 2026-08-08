@@ -1,0 +1,17 @@
+{
+  "name": "etl-ngo-money",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "NGO Money Loop ETL: Colorado TRACER contributions, ProPublica Nonprofit Explorer enrichment, IRS Auto-Revocation List",
+  "scripts": {
+    "etl:tracer": "node etl/tracer_etl.mjs",
+    "etl:propublica": "node etl/propublica_enrich.mjs",
+    "etl:revocations": "node etl/irs_revocations.mjs"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.18",
+    "csv-parse": "^7.0.1",
+    "pg": "^8.22.0"
+  }
+}

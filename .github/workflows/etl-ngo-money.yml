@@ -1,0 +1,54 @@
+# NGO Money Loop pipeline: Colorado TRACER contributions, ProPublica
+# Nonprofit Explorer enrichment, IRS Auto-Revocation List. Runs in dependency
+# order: contributions first, then the IRS identity crosswalk for whatever is
+# newly unmatched, then the revocation flags for the orgs on file.
+#
+# TRACER republishes its bulk files continuously and the loop table feeds a
+# human review queue, so weekly keeps the candidates flowing without
+# hammering anyone's servers. The manual trigger is for the first backfill.
+#
+# Required repo secret: DATABASE_URL.
+name: etl-ngo-money
+
+on:
+  schedule:
+    - cron: "0 10 * * 2"   # Tuesdays, 10:00 UTC
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "TRACER years to load, space separated"
+        required: false
+        default: "2024 2025 2026"
+      enrich_limit:
+        description: "Max contributors to enrich against ProPublica"
+        required: false
+        default: "200"
+
+jobs:
+  ngo-money-loop:
+    runs-on: ubuntu-latest
+    env:
+      # Reads the DATABASE_URL repo secret, falling back to an Actions
+      # variable of the same name in case it was added under Variables
+      # instead of Secrets. Either way, add it under the repo's
+      # Settings -> Secrets and variables -> Actions.
+      DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
+    defaults:
+      run:
+        working-directory: etl-ngo-money
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - name: 0. Apply schema (idempotent)
+        run: node etl/apply_schema.mjs
+      - name: 1. TRACER contributions
+        # Scheduled runs load the current year; the previous years only need
+        # the one-time backfill (manual run with the years input).
+        run: node etl/tracer_etl.mjs ${{ github.event.inputs.years || '$(date +%Y)' }}
+      - name: 2. ProPublica enrichment
+        run: node etl/propublica_enrich.mjs --limit ${{ github.event.inputs.enrich_limit || '200' }}
+      - name: 3. IRS Auto-Revocation List
+        run: node etl/irs_revocations.mjs
