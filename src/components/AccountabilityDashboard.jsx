@@ -71,10 +71,13 @@ export default function AccountabilityDashboard({ district }) {
     let cancelled = false;
     setBillRowsPhase("loading");
     fetch(`/api/matrix?billId=${encodeURIComponent(activeBill)}`)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(`matrix ${r.status}`); return r.json(); })
       .then(d => {
         if (cancelled) return;
-        setBillRows(d.rows || []);
+        // A server error body has no rows array - show the error state, not
+        // a silent "no votes in any district".
+        if (!Array.isArray(d.rows)) throw new Error(d.error || "bad response");
+        setBillRows(d.rows);
         setBillRowsPhase("ready");
       })
       .catch(() => { if (!cancelled) setBillRowsPhase("error"); });

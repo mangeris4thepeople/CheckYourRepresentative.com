@@ -7,7 +7,9 @@
 // bio, per-cycle FEC financial totals, every FEC filing on record with a
 // direct link to the PDF, and a bounded top-donor breakdown.
 // =============================================================================
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
+
+const ReportCard = lazy(() => import("./ReportCard.jsx"));
 
 const C = {
   navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
@@ -168,6 +170,7 @@ function RepDetail({ district, onBack }) {
   const [phase, setPhase] = useState("loading");
   const [data, setData] = useState(null);
   const [errorDetail, setErrorDetail] = useState(null);
+  const [showCard, setShowCard] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -237,8 +240,21 @@ function RepDetail({ district, onBack }) {
           {rep.contact_url && (
             <a href={rep.contact_url} target="_blank" rel="noopener noreferrer" style={{ color: C.gold, fontWeight: 700 }}>Contact page →</a>
           )}
+          <button onClick={() => setShowCard(s => !s)}
+            style={{ fontFamily: serif, fontSize: 12.5, fontWeight: 700, color: C.navy, background: C.gold,
+                     border: "none", borderRadius: 4, padding: "5px 12px", cursor: "pointer" }}>
+            📋 {showCard ? "Hide Report Card" : "Report Card"}
+          </button>
         </div>
       </div>
+
+      {showCard && (
+        <div style={{ marginBottom: 18 }}>
+          <Suspense fallback={<Center>Loading report card…</Center>}>
+            <ReportCard district={district} onClose={() => setShowCard(false)} />
+          </Suspense>
+        </div>
+      )}
 
       {!matched && (
         <Center>This representative has not been matched to an FEC record yet. Financial data will appear once the sync catches up.</Center>
