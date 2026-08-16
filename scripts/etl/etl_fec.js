@@ -34,19 +34,27 @@ const FEC_API_KEY = process.env.FEC_API_KEY;
 // just raising the page cap on this offset-based endpoint.
 const MIN_AMOUNT = 1000000;
 const PER_PAGE = 100;
-const MAX_PAGES = 200;     // the page-based API caps out; deep history needs keyset paging (v2)
+const MAX_PAGES = 200;     // safety cap on total pages fetched per run
 
 if (!FEC_API_KEY) { console.error('FEC_API_KEY is not set'); process.exit(1); }
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
-async function fetchPage(page) {
+// Schedule A/B on the FEC API only support KEYSET (seek) pagination: you pass
+// back pagination.last_indexes from the previous response instead of a page
+// number. Requesting page=2 the old way returned a 422 and killed the whole
+// run at the first page boundary.
+async function fetchPage(lastIndexes) {
   const url = new URL('https://api.open.fec.gov/v1/schedules/schedule_b/');
   url.searchParams.set('api_key', FEC_API_KEY);
   url.searchParams.set('two_year_transaction_period', String(TWO_YEAR_PERIOD));
   url.searchParams.set('min_amount', String(MIN_AMOUNT));
   url.searchParams.set('per_page', String(PER_PAGE));
-  url.searchParams.set('page', String(page));
   url.searchParams.set('sort', '-disbursement_amount');
+  if (lastIndexes) {
+    for (const [k, v] of Object.entries(lastIndexes)) {
+      if (v !== null && v !== undefined) url.searchParams.set(k, String(v));
+    }
+  }
   const res = await fetch(url);
   if (!res.ok) throw new Error(`FEC API error: ${res.status}`);
   return res.json();
@@ -88,9 +96,9 @@ async function insertEvent(client, orgId, d) {
 async function run() {
   const client = await pool.connect();
   try {
-    let page = 1, count = 0;
+    let lastIndexes = null, page = 1, count = 0;
     while (page <= MAX_PAGES) {
-      const data = await fetchPage(page);
+      const data = await fetchPage(lastIndexes);
       const results = data.results || [];
       if (!results.length) break;
       for (const d of results) {
@@ -99,9 +107,9 @@ async function run() {
         await insertEvent(client, orgId, d);
         count++;
       }
-      const pages = (data.pagination && data.pagination.pages) || 0;
-      console.log(`FEC page ${page} of ${pages}, running total ${count}`);
-      if (page >= pages) break;
+      console.log(`FEC keyset page ${page}, running total ${count}`);
+      lastIndexes = data.pagination && data.pagination.last_indexes;
+      if (!lastIndexes) break; // no more pages
       page++;
     }
     console.log(`Done. Inserted/updated ${count} FEC disbursement records for FY${FISCAL_YEAR}.`);
