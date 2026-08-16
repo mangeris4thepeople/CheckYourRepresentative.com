@@ -15,6 +15,7 @@ import socialSecurityDetail from "./_handlers/social-security-detail.js";
 import snap from "./_handlers/snap.js";
 import medicaid from "./_handlers/medicaid.js";
 import moneyMap from "./_handlers/money-map.js";
+import reportCard from "./_handlers/report-card.js";
 
 const OPS = {
   "representative-detail": representativeDetail,
@@ -32,6 +33,7 @@ const OPS = {
   "medicaid-national": medicaid,
   "medicaid-state-detail": medicaid,
   "money-map": moneyMap,
+  "report-card": reportCard,
 };
 
 export default async function handler(req, res) {

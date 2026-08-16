@@ -8,3 +8,16 @@ export async function resolveEmail(token) {
     SELECT email FROM sessions WHERE session_token=${token} AND session_expires > now()`;
   return sess.length ? sess[0].email : null;
 }
+
+// votes.identity is "sess:{email}:{billId}". When matching by email with
+// LIKE, the email must be escaped: '_' and '%' are LIKE wildcards, so an
+// address like john_doe@x.com would otherwise also match johnXdoe@x.com -
+// leaking another account's votes. Use this for every identity LIKE match.
+export function likeEscape(s) {
+  return String(s).replace(/([\\%_])/g, "\\$1");
+}
+
+// The canonical prefix pattern for all of one account's votes.
+export function identityPrefix(email) {
+  return `sess:${likeEscape(email)}:%`;
+}
