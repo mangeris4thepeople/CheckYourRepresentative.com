@@ -10,28 +10,41 @@
 // - and any newly-resolved district gets written back to the profile so it's
 // there next time too.
 // =============================================================================
-import React, { useState, useEffect } from "react";
-import Landing from "./components/Landing.jsx";
-import ConstituentMap from "./components/ConstituentMap.jsx";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import ConstituentVoting from "./components/ConstituentVoting.jsx";
 import AllBillsBrowser from "./components/AllBillsBrowser.jsx";
-import Merch from "./components/Merch.jsx";
 import AccountabilityDashboard from "./components/AccountabilityDashboard.jsx";
 import VoterProfile from "./components/VoterProfile.jsx";
 import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
-import FollowTheMoney from "./components/FollowTheMoney.jsx";
-import KnowYourJudgeNational from "./components/KnowYourJudgeNational.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
-import AboutPage from "./components/marketing/AboutPage.jsx";
-import BenefitsPage from "./components/marketing/BenefitsPage.jsx";
-import HowItWorksPage from "./components/marketing/HowItWorksPage.jsx";
-import PrivacyCommitment from "./components/marketing/PrivacyCommitment.jsx";
 import SiteTutorialPage, { FirstRunTutorial } from "./components/marketing/SiteTutorial.jsx";
-import AdminCrosswalk from "./components/AdminCrosswalk.jsx";
 import { getStoredSession } from "./lib/session.js";
 import { applySeo } from "./lib/seo.js";
+
+// Heavy or cold views load on demand instead of riding in the main bundle:
+// Follow the Money and Know Your Judge pull the big map trees, and the
+// marketing/merch/admin views only render behind explicit navigation.
+// (ConstituentMap - and with it the whole d3 package - was imported here for
+// nothing at all; it is retired.)
+const Landing = lazy(() => import("./components/Landing.jsx"));
+const Merch = lazy(() => import("./components/Merch.jsx"));
+const FollowTheMoney = lazy(() => import("./components/FollowTheMoney.jsx"));
+const KnowYourJudgeNational = lazy(() => import("./components/KnowYourJudgeNational.jsx"));
+const AboutPage = lazy(() => import("./components/marketing/AboutPage.jsx"));
+const BenefitsPage = lazy(() => import("./components/marketing/BenefitsPage.jsx"));
+const HowItWorksPage = lazy(() => import("./components/marketing/HowItWorksPage.jsx"));
+const PrivacyCommitment = lazy(() => import("./components/marketing/PrivacyCommitment.jsx"));
+const AdminCrosswalk = lazy(() => import("./components/AdminCrosswalk.jsx"));
+const ReportCard = lazy(() => import("./components/ReportCard.jsx"));
+
+// Shared fallback while a lazy view's chunk loads.
+const LazyFallback = (
+  <div style={{ padding: 60, textAlign: "center", fontFamily: "Georgia, serif", color: "#5C5347" }}>
+    Loading…
+  </div>
+);
 
 const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
   panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
@@ -112,6 +125,10 @@ export default function App() {
       if (window.location.pathname.startsWith("/know-your-rep")) {
         return { view: "tool", tab: "followthemoney" };
       }
+      // Shareable report cards: /report-card/M001153 renders the card
+      // full-page (a Vercel rewrite serves this same page at that path).
+      const rc = window.location.pathname.match(/^\/report-card\/([A-Z]\d{6})$/);
+      if (rc) return { view: "report-card", tab: null, bioguide: rc[1] };
       const t = new URLSearchParams(window.location.search).get("tab");
       const VALID = new Set(["vote", "allbills", "rollcalls", "constituents", "matrix",
         "followthemoney", "judges", "profile", "merch"]);
@@ -125,14 +142,24 @@ export default function App() {
   // nudge in the header, instead of a sign-in form as the front door.
   const hasStoredSession = !!getStoredSession();
 
+  // A magic-link redirect arrives as /#session=...  VoterProfile is the only
+  // component that consumes that hash, and it only mounts on the Profile tab.
+  // A first-time sign-in has no stored session yet, so without this check the
+  // person landed on the Judges tab still signed out, with their token
+  // sitting unused in the URL - the #1 "sign-in doesn't work" report.
+  const hasSessionHash = (() => {
+    try { return window.location.hash.includes("session="); } catch { return false; }
+  })();
+
   // view is one of: "landing" | "about" | "benefits" | "tutorial" |
   // "howitworks" | "privacy" | "tool". The marketing views are content
   // pages; the app has no router so they are plain state. Visitors land
   // straight in the tool: the old landing page gated entry behind a click
   // and deterred constituents, so the first-run walkthrough (below) now
   // carries the introduction instead.
-  const [view, setView] = useState(initialVoterId ? "tool" : (initialDeepLink?.view || "tool"));
+  const [view, setView] = useState(initialVoterId ? "tool" : (hasSessionHash ? "tool" : (initialDeepLink?.view || "tool")));
   const [tab, setTab] = useState(initialVoterId ? "constituents"
+    : hasSessionHash ? "profile"
     : (initialDeepLink?.tab || (hasStoredSession ? "profile" : "judges")));
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
@@ -228,13 +255,23 @@ export default function App() {
     }).catch(() => {});
   }, [session?.token, resolved?.district]);
 
-  if (view === "landing") return <Landing onEnter={handleEnter} onNavigate={setView} />;
-  if (view === "about")      return <AboutPage onNavigate={setView} onEnter={handleEnter} />;
-  if (view === "benefits")   return <BenefitsPage onNavigate={setView} onEnter={handleEnter} />;
+  if (view === "landing") return <Suspense fallback={LazyFallback}><Landing onEnter={handleEnter} onNavigate={setView} /></Suspense>;
+  if (view === "about")      return <Suspense fallback={LazyFallback}><AboutPage onNavigate={setView} onEnter={handleEnter} /></Suspense>;
+  if (view === "benefits")   return <Suspense fallback={LazyFallback}><BenefitsPage onNavigate={setView} onEnter={handleEnter} /></Suspense>;
   if (view === "tutorial")   return <SiteTutorialPage onNavigate={setView} onEnter={handleEnter} />;
-  if (view === "howitworks") return <HowItWorksPage onNavigate={setView} onEnter={handleEnter} />;
-  if (view === "privacy")    return <PrivacyCommitment onNavigate={setView} onEnter={handleEnter} />;
-  if (view === "admin-crosswalk") return <AdminCrosswalk />;
+  if (view === "howitworks") return <Suspense fallback={LazyFallback}><HowItWorksPage onNavigate={setView} onEnter={handleEnter} /></Suspense>;
+  if (view === "privacy")    return <Suspense fallback={LazyFallback}><PrivacyCommitment onNavigate={setView} onEnter={handleEnter} /></Suspense>;
+  if (view === "admin-crosswalk") return <Suspense fallback={LazyFallback}><AdminCrosswalk /></Suspense>;
+  if (view === "report-card") {
+    return (
+      <div style={{ fontFamily: serif, background: C.parchment, minHeight: "100vh", padding: "30px 16px" }}>
+        <Suspense fallback={LazyFallback}>
+          <ReportCard bioguide={initialDeepLink?.bioguide}
+            onClose={() => { window.location.href = "/"; }} />
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
@@ -301,7 +338,7 @@ export default function App() {
           <AllBillsBrowser district={resolved?.district} session={session} />
         )}
 
-        {tab === "merch" && <Merch />}
+        {tab === "merch" && <Suspense fallback={LazyFallback}><Merch /></Suspense>}
 
         {tab === "rollcalls" && (
           <RollCallExplorer district={resolved?.district} />
@@ -320,13 +357,13 @@ export default function App() {
 
         {tab === "followthemoney" && (
           <HelpLayout page="followthemoney">
-            <FollowTheMoney district={resolved?.district} />
+            <Suspense fallback={LazyFallback}><FollowTheMoney district={resolved?.district} /></Suspense>
           </HelpLayout>
         )}
 
         {tab === "judges" && (
           <HelpLayout page="judges">
-            <KnowYourJudgeNational />
+            <Suspense fallback={LazyFallback}><KnowYourJudgeNational /></Suspense>
           </HelpLayout>
         )}
 
