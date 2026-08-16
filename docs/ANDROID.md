@@ -66,6 +66,14 @@ cd twa
 bubblewrap build
 ```
 
+**Target API level check (Play requirement):** always build with the LATEST
+`@bubblewrap/cli` (`npm install -g @bubblewrap/cli`) and, after the first
+build, confirm the generated `targetSdkVersion` is at least **35** (Android
+15) - Google rejects new apps below that, and the requirement ratchets up
+roughly every August (API 36 expected required for new submissions after
+Aug 31, 2026). If bubblewrap generated a lower target, update the CLI and
+rebuild before uploading.
+
 Outputs `app-release-bundle.aab` (upload this to Play) and an
 `app-release-signed.apk` for local emulator testing:
 
