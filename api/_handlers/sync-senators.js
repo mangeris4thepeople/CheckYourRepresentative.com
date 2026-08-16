@@ -31,9 +31,12 @@ export default async function handler(req, res) {
       )
     `;
 
-    // Databases whose senators table predates the class column never get it
-    // from CREATE TABLE IF NOT EXISTS, so add it explicitly.
+    // Databases whose senators table predates these columns never get them
+    // from CREATE TABLE IF NOT EXISTS, so add them explicitly. fec_candidate_id
+    // is read by senators-list/senator-detail even before the finance sync
+    // (which also adds it) has ever run - without it those endpoints 500.
     await sql`ALTER TABLE senators ADD COLUMN IF NOT EXISTS class TEXT`;
+    await sql`ALTER TABLE senators ADD COLUMN IF NOT EXISTS fec_candidate_id TEXT`;
 
     let count = 0;
     for (const m of members) {

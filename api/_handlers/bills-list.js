@@ -24,6 +24,7 @@ const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
 const BILL_TYPES = ["hr", "s", "hjres", "sjres", "hres", "sres"];
 const PAGE_SIZE = 250; // Congress.gov's max limit per request
 import { sql, hasDb } from "../_db.js";
+import { identityPrefix } from "../_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -52,11 +53,10 @@ export default async function handler(req, res) {
         const sess = await sql`
           SELECT email FROM sessions WHERE session_token=${token} AND session_expires > now()`;
         if (sess.length) {
-          const prefix = `sess:${sess[0].email}:`;
           const ids = bills.map(b => b.id);
           const rows = await sql`
             SELECT bill_id FROM votes
-            WHERE identity LIKE ${prefix + "%"} AND bill_id = ANY(${ids})`;
+            WHERE identity LIKE ${identityPrefix(sess[0].email)} AND bill_id = ANY(${ids})`;
           votedBillIds = rows.map(r => r.bill_id);
         }
       } catch {}

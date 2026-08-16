@@ -23,8 +23,13 @@
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
 
-const YEAR = 2023;               // ACS 5-year vintage
-const NGO_FY = 2025;             // federal fiscal year for USASpending
+// ACS 5-year vintage: the Census releases year N's ACS 5-year each December
+// of N+1, so the newest safe vintage is (current year - 2). Was hardcoded
+// 2023, which silently goes stale every release cycle.
+const YEAR = new Date().getFullYear() - 2;
+// Federal fiscal year rolls over October 1 - compute it, don't hardcode it.
+const NOW = new Date();
+const NGO_FY = NOW.getMonth() >= 9 ? NOW.getFullYear() + 1 : NOW.getFullYear();
 const ACS_SUBJECT = `https://api.census.gov/data/${YEAR}/acs/acs5/subject`;
 const ACS_DETAIL = `https://api.census.gov/data/${YEAR}/acs/acs5`;
 const USA_SPENDING = "https://api.usaspending.gov/api/v2/search/spending_by_geography/";

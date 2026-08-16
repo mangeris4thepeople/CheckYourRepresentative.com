@@ -8,14 +8,23 @@
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
 
-const YEARS = {
-  medicare: "2023 ACS 5-year (Census estimate)",
-  medicaid: "2023 ACS 5-year (Census estimate)",
-  snap: "2023 ACS 5-year (Census estimate)",
-  ss_income: "2023 ACS 5-year (Census estimate)",
-  ngo: "Federal FY2025 (USASpending)",
-  contributions: "Latest FEC cycle on file",
-};
+// Data-vintage labels are derived from what is actually loaded in the tables,
+// not hardcoded strings that drift out of sync with the data (they used to
+// claim 2023/FY2025 forever regardless of what the syncs had loaded).
+async function buildYears() {
+  const label = (y) => (y ? `${y} ACS 5-year (Census estimate)` : "ACS 5-year (Census estimate)");
+  let acsYear = null, ngoFy = null;
+  try { acsYear = (await sql`SELECT max(data_year) AS y FROM medicare_acs`)[0]?.y; } catch {}
+  try { ngoFy = (await sql`SELECT max(fiscal_year) AS y FROM ngo_geo`)[0]?.y; } catch {}
+  return {
+    medicare: label(acsYear),
+    medicaid: label(acsYear),
+    snap: label(acsYear),
+    ss_income: label(acsYear),
+    ngo: ngoFy ? `Federal FY${ngoFy} (USASpending)` : "USASpending",
+    contributions: "Latest FEC cycle on file",
+  };
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -63,7 +72,7 @@ export default async function handler(req, res) {
       contribStates = [...byState.entries()].map(([state_abbr, dollars]) => ({ state_abbr, dollars }));
     } catch { /* senator buckets table absent: rep buckets alone stand */ }
 
-    return res.status(200).json({ ready: true, years: YEARS, counties, correlations, contribStates });
+    return res.status(200).json({ ready: true, years: await buildYears(), counties, correlations, contribStates });
   } catch (err) {
     const msg = String(err.message || err);
     // A missing table, or a pre-existing table with a different shape that
