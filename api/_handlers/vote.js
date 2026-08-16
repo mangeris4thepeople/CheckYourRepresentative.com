@@ -26,8 +26,10 @@ export default async function handler(req, res) {
     if (!billId || !position) return reject(res, "missing_fields");
     if (honeypot) return reject(res, "honeypot_tripped");
 
-    const elapsed = (Date.now() - Number(renderedAt || 0)) / 1000;
-    if (!Number.isFinite(elapsed)) return reject(res, "too_fast");
+    // A real person needs a moment between seeing a bill and voting on it.
+    // Missing renderedAt, a malformed value, or a sub-3-second submission is a bot.
+    const elapsed = (Date.now() - Number(renderedAt)) / 1000;
+    if (!renderedAt || !Number.isFinite(elapsed) || elapsed < 3) return reject(res, "too_fast");
 
     // ---- Must be signed in to vote. No anonymous ballots, period. ----
     if (!sessionToken) return reject(res, "signin_required");
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
 
     // verified vs open: does the connection place in the district's state?
     // (Kept as a signal, not a gate - accounts are the real gate now.)
-    const tier = await geoTier(ip, district);
+    const tier = geoTier(req, district);
 
     const identity = `sess:${email}:${billId}`;
 
@@ -96,13 +98,16 @@ async function verifyTurnstile(token, ip) {
   } catch { return false; }
 }
 
-async function geoTier(ip, district) {
+function geoTier(req, district) {
+  // Vercel supplies the connection's geolocation in request headers - free and
+  // synchronous. (The previous ip-api.com call required HTTPS, which that
+  // service only offers on paid plans, so it failed silently on every vote and
+  // the "verified" tier never fired.)
   try {
     const state = String(district || "").split("-")[0];
-    if (!state || !ip) return "open";
-    const r = await fetch(`https://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,region`);
-    const d = await r.json();
-    if (d.status === "success" && d.country === "United States" && d.region === state) return "verified";
+    const country = req.headers["x-vercel-ip-country"] || "";
+    const region = req.headers["x-vercel-ip-country-region"] || "";
+    if (state && country === "US" && region === state) return "verified";
     return "open";
   } catch { return "open"; }
 }

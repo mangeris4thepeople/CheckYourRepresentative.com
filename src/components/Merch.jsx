@@ -333,13 +333,20 @@ export default function Merch() {
 
   function handleSubmit(productName) {
     if (!email) return;
-    setSubmitted(true);
-    // In production: POST to /api/notify or Formspree
-    fetch("https://formspree.io/f/xlgkwwyl", {
+    // Goes to the site's own contact endpoint (same inbox as Contact Us),
+    // and only shows success when the request actually succeeded. The old
+    // version faked success and posted to a placeholder Formspree ID.
+    fetch("/api/contact-us", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, product: productName, _subject: `Merch interest: ${productName}` }),
-    }).catch(() => {});
+      body: JSON.stringify({
+        name: "Merch notify list",
+        email,
+        comment: `Please notify me at ${email} when "${productName}" merch launches.`,
+      }),
+    })
+      .then(r => { if (r.ok) setSubmitted(true); })
+      .catch(() => {});
   }
 
   return (

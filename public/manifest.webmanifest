@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Check Your Representative",
   "short_name": "CheckYourRep",
   "description": "KNOW YOUR BILLS, KNOW YOUR VOTE, KNOW YOUR MONEY, HOLD THE LINE",
@@ -15,16 +16,19 @@
   "shortcuts": [
     {
       "name": "Vote on Bills",
+      "short_name": "Vote",
       "url": "/?tab=vote",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Follow the Money",
+      "short_name": "Money",
       "url": "/?tab=followthemoney",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Know Your Judge",
+      "short_name": "Judges",
       "url": "/?tab=judges",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }

@@ -12,6 +12,7 @@
 //     because every query re-checks is_public at read time.
 // =============================================================================
 import { sql } from "../_db.js";
+import { identityPrefix } from "../_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -38,7 +39,7 @@ export default async function handler(req, res) {
                  WHERE bs.bill_id = v.bill_id
                  ORDER BY bs.generated_at DESC LIMIT 1) AS headline
         FROM votes v
-        WHERE v.identity LIKE ${"sess:" + p.email + ":%"}
+        WHERE v.identity LIKE ${identityPrefix(p.email)}
           AND v.quarantined = FALSE
         ORDER BY v.created_at DESC
         LIMIT 100`;
@@ -66,7 +67,7 @@ export default async function handler(req, res) {
       ? await sql`
           SELECT p.id, p.display_name, p.bio, p.city, p.district, p.created_at,
                  (SELECT count(*)::int FROM votes v
-                   WHERE v.identity LIKE 'sess:' || p.email || ':%'
+                   WHERE split_part(v.identity, ':', 2) = p.email
                      AND v.quarantined = FALSE) AS vote_count
           FROM profiles p
           WHERE p.is_public = true AND p.district = ${district}
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
       : await sql`
           SELECT p.id, p.display_name, p.bio, p.city, p.district, p.created_at,
                  (SELECT count(*)::int FROM votes v
-                   WHERE v.identity LIKE 'sess:' || p.email || ':%'
+                   WHERE split_part(v.identity, ':', 2) = p.email
                      AND v.quarantined = FALSE) AS vote_count
           FROM profiles p
           WHERE p.is_public = true

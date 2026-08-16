@@ -35,6 +35,11 @@ jobs:
       - name: 2. FEC disbursements
         run: npm run etl:fec -- --fy $(date +%Y)
       - name: 3. FARA foreign principals
+        # etl_fara.js deliberately throws until a working FARA endpoint is
+        # found (its documented candidate URL is a dead end). Without
+        # continue-on-error that guaranteed failure also killed steps 4-6,
+        # so EINs, 990 revenue, and transparency scores never loaded.
+        continue-on-error: true
         run: npm run etl:fara
       - name: 4. IRS EO BMF EIN crosswalk
         run: npm run etl:irs-bmf

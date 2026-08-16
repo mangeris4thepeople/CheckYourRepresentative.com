@@ -14,6 +14,8 @@ export default async function handler(req, res) {
   if (!hasDb) return res.status(200).json({ ready: false, reason: "no_database" });
 
   try {
+    // Only the most recent vintage: once a newer SSA edition loads alongside
+    // an older one, returning all years would hand the UI duplicate states.
     const rows = await sql`
       SELECT state, state_abbr, data_year, total_beneficiaries,
              retirement_workers, retirement_spouses, retirement_children,
@@ -21,6 +23,7 @@ export default async function handler(req, res) {
              disability_workers, disability_spouses, disability_children,
              men_65_older, women_65_older, total_monthly_benefits
       FROM ssa_oasdi_state
+      WHERE data_year = (SELECT max(data_year) FROM ssa_oasdi_state)
       ORDER BY state ASC`;
 
     return res.status(200).json({ ready: true, rows });

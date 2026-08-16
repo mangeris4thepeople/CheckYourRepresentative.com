@@ -18,9 +18,12 @@ const MAX_BILLS_PER_RUN = 3;      // at most 3 bill alerts per run
 const MAX_RECIPIENTS = 2000;      // safety ceiling while the list is young
 
 export default async function handler(req, res) {
-  // Vercel cron sends Authorization: Bearer CRON_SECRET
+  // Authorization already happened in api/cron.js (Bearer header for Vercel
+  // cron, ?key= for manual runs). Re-checking only the header here rejected
+  // legitimate manual runs, so accept either form the router accepts.
   const auth = req.headers.authorization || "";
-  if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+  const key = req.query?.key || "";
+  if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}` && key !== CRON_SECRET) {
     return res.status(401).json({ error: "unauthorized" });
   }
   if (!CONGRESS_API_KEY || !RESEND_API_KEY) {

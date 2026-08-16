@@ -2,6 +2,7 @@
 // POST /api/auth/session - update profile fields
 // DELETE /api/auth/session?token=xxx - logout
 import { sql } from "../_db.js";
+import { identityPrefix } from "../_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -41,23 +42,23 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  // GET - return profile + recent votes (capped preview) + full totals
+  // GET - return profile + recent votes (capped preview) + full totals.
+  // identityPrefix() is the colon-terminated, wildcard-escaped pattern -
+  // the old un-terminated preview pattern here let doug@x.co read the vote
+  // preview of doug@x.com.
+  const myVotes = identityPrefix(user.email);
   const votes = await sql`
     SELECT bill_id, position, tier, district, created_at
-    FROM votes WHERE identity LIKE ${'sess:' + user.email + '%'}
+    FROM votes WHERE identity LIKE ${myVotes}
     ORDER BY created_at DESC LIMIT 50`;
 
-  // votes.identity is "sess:{email}:{billId}" (see api/vote.js), so the
-  // colon-terminated prefix below is the precise match; the preview query
-  // above is left exactly as it already was.
-  const identityPrefix = `sess:${user.email}:%`;
   const totalVotesRows = await sql`
-    SELECT count(*)::int AS n FROM votes WHERE identity LIKE ${identityPrefix}`;
+    SELECT count(*)::int AS n FROM votes WHERE identity LIKE ${myVotes}`;
   const totalVotes = totalVotesRows[0]?.n ?? 0;
 
   const voteTally = await sql`
     SELECT split_part(bill_id, '-', 1) AS bill_type, count(*)::int AS n
-    FROM votes WHERE identity LIKE ${identityPrefix}
+    FROM votes WHERE identity LIKE ${myVotes}
     GROUP BY 1 ORDER BY n DESC`;
 
   return res.status(200).json({

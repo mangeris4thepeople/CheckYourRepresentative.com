@@ -144,6 +144,12 @@ export default function MoneyMap({ onGoSection }) {
       if (!d.ready) { setPhase("notready"); return; }
       setData(d);
       setPhase("ready");
+    }).catch((err) => {
+      // A rejected county-chunk import (e.g. stale hashed URLs right after a
+      // redeploy) used to leave the panel on "Loading" forever.
+      if (cancelled) return;
+      setErrorDetail(String(err?.message || err));
+      setPhase("error");
     });
     return () => { cancelled = true; };
   }, []);

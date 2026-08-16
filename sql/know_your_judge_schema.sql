@@ -15,7 +15,7 @@
 CREATE TABLE IF NOT EXISTS co_courts (
   id                 SERIAL PRIMARY KEY,
   name               TEXT NOT NULL UNIQUE,
-  court_type         TEXT NOT NULL,  -- supreme | appeals | district | probate | juvenile
+  court_type         TEXT NOT NULL,  -- supreme | appeals | district | probate | juvenile | county
   judicial_district  INT,            -- 1..22 for district courts, NULL otherwise
   courtlistener_id   TEXT            -- CourtListener court id where one exists
 );
@@ -82,3 +82,74 @@ INSERT INTO co_courts (name, court_type, judicial_district, courtlistener_id) VA
   ('Denver Probate Court', 'probate', NULL, NULL),
   ('Denver Juvenile Court', 'juvenile', NULL, NULL)
 ON CONFLICT (name) DO NOTHING;
+
+-- Every Colorado county court, mirroring sync-judges.js exactly - the OJPE
+-- and retention imports throw 'unknown court' for county judges without
+-- these rows, so a database provisioned from this file alone must have them.
+INSERT INTO co_courts (name, court_type, judicial_district, courtlistener_id) VALUES
+  ('Adams County Court', 'county', NULL, NULL),
+  ('Alamosa County Court', 'county', NULL, NULL),
+  ('Arapahoe County Court', 'county', NULL, NULL),
+  ('Archuleta County Court', 'county', NULL, NULL),
+  ('Baca County Court', 'county', NULL, NULL),
+  ('Bent County Court', 'county', NULL, NULL),
+  ('Boulder County Court', 'county', NULL, NULL),
+  ('Broomfield County Court', 'county', NULL, NULL),
+  ('Chaffee County Court', 'county', NULL, NULL),
+  ('Cheyenne County Court', 'county', NULL, NULL),
+  ('Clear Creek County Court', 'county', NULL, NULL),
+  ('Conejos County Court', 'county', NULL, NULL),
+  ('Costilla County Court', 'county', NULL, NULL),
+  ('Crowley County Court', 'county', NULL, NULL),
+  ('Custer County Court', 'county', NULL, NULL),
+  ('Delta County Court', 'county', NULL, NULL),
+  ('Denver County Court', 'county', NULL, NULL),
+  ('Dolores County Court', 'county', NULL, NULL),
+  ('Douglas County Court', 'county', NULL, NULL),
+  ('Eagle County Court', 'county', NULL, NULL),
+  ('Elbert County Court', 'county', NULL, NULL),
+  ('El Paso County Court', 'county', NULL, NULL),
+  ('Fremont County Court', 'county', NULL, NULL),
+  ('Garfield County Court', 'county', NULL, NULL),
+  ('Gilpin County Court', 'county', NULL, NULL),
+  ('Grand County Court', 'county', NULL, NULL),
+  ('Gunnison County Court', 'county', NULL, NULL),
+  ('Hinsdale County Court', 'county', NULL, NULL),
+  ('Huerfano County Court', 'county', NULL, NULL),
+  ('Jackson County Court', 'county', NULL, NULL),
+  ('Jefferson County Court', 'county', NULL, NULL),
+  ('Kiowa County Court', 'county', NULL, NULL),
+  ('Kit Carson County Court', 'county', NULL, NULL),
+  ('Lake County Court', 'county', NULL, NULL),
+  ('La Plata County Court', 'county', NULL, NULL),
+  ('Larimer County Court', 'county', NULL, NULL),
+  ('Las Animas County Court', 'county', NULL, NULL),
+  ('Lincoln County Court', 'county', NULL, NULL),
+  ('Logan County Court', 'county', NULL, NULL),
+  ('Mesa County Court', 'county', NULL, NULL),
+  ('Mineral County Court', 'county', NULL, NULL),
+  ('Moffat County Court', 'county', NULL, NULL),
+  ('Montezuma County Court', 'county', NULL, NULL),
+  ('Montrose County Court', 'county', NULL, NULL),
+  ('Morgan County Court', 'county', NULL, NULL),
+  ('Otero County Court', 'county', NULL, NULL),
+  ('Ouray County Court', 'county', NULL, NULL),
+  ('Park County Court', 'county', NULL, NULL),
+  ('Phillips County Court', 'county', NULL, NULL),
+  ('Pitkin County Court', 'county', NULL, NULL),
+  ('Prowers County Court', 'county', NULL, NULL),
+  ('Pueblo County Court', 'county', NULL, NULL),
+  ('Rio Blanco County Court', 'county', NULL, NULL),
+  ('Rio Grande County Court', 'county', NULL, NULL),
+  ('Routt County Court', 'county', NULL, NULL),
+  ('Saguache County Court', 'county', NULL, NULL),
+  ('San Juan County Court', 'county', NULL, NULL),
+  ('San Miguel County Court', 'county', NULL, NULL),
+  ('Sedgwick County Court', 'county', NULL, NULL),
+  ('Summit County Court', 'county', NULL, NULL),
+  ('Teller County Court', 'county', NULL, NULL),
+  ('Washington County Court', 'county', NULL, NULL),
+  ('Weld County Court', 'county', NULL, NULL),
+  ('Yuma County Court', 'county', NULL, NULL)
+ON CONFLICT (name) DO NOTHING;
+

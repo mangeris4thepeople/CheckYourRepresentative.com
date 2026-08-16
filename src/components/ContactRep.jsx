@@ -6,6 +6,7 @@
 // =============================================================================
 
 import React, { useState, useEffect, useRef } from "react";
+import { getStoredSession } from "../lib/session.js";
 
 const C = {
   crimson: "#8B0000",
@@ -50,7 +51,6 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
       district,
       billId,
       position: position || "undecided",
-      billTitle: billTitle || billId,
     });
     fetch(`/api/contact?${params}`)
       .then(r => r.json())
@@ -60,13 +60,18 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
         setLetter(data.letter || "");
         setLetterEdited(data.letter || "");
         setPhase("ready");
-      // Track that this constituent opened Contact Rep (intent to contact)
+      // Track that this constituent opened Contact Rep (intent to contact).
+      // The server derives the identity from the session; signed-out viewers
+      // aren't tracked (the accountability matrix only counts real accounts).
       try {
-        fetch("/api/contact-track", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ billId, district, position, identity: null })
-        });
+        const sess = getStoredSession();
+        if (sess?.token) {
+          fetch("/api/contact-track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ billId, district, position, sessionToken: sess.token })
+          });
+        }
       } catch {}
       })
       .catch(() => {

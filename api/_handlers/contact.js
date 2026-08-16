@@ -1,7 +1,9 @@
 // =============================================================================
 // /api/contact  -  look up all 3 legislators for a district + draft a letter
 // -----------------------------------------------------------------------------
-// GET /api/contact?district=CO-04&billId=hr-1234-119&position=support&billTitle=...
+// GET /api/contact?district=CO-04&billId=hr-1234-119&position=support
+// (billTitle is resolved server-side from the bills table - never from the
+// query string, which was an open door for prompt/token abuse)
 //
 // Returns:
 //   { legislators: [...], letter: "...", billTitle: "..." }
@@ -9,6 +11,8 @@
 // legislators: [ { name, chamber, party, state, contactUrl, phone, bioguideId } ]
 // letter: AI-drafted plain-language message the constituent can send
 // =============================================================================
+
+import { sql } from "../_db.js";
 
 const CONGRESS = 119;
 const CONGRESS_API_KEY = process.env.CONGRESS_API_KEY;
@@ -23,7 +27,6 @@ export default async function handler(req, res) {
     const district = String(req.query.district || "").trim();
     const billId    = String(req.query.billId || "").trim();
     const position  = String(req.query.position || "").trim();
-    const billTitle = String(req.query.billTitle || "").trim();
 
     if (!district) return res.status(400).json({ error: "missing district" });
     if (!CONGRESS_API_KEY) return res.status(500).json({ error: "CONGRESS_API_KEY not set" });
@@ -107,8 +110,21 @@ export default async function handler(req, res) {
       console.warn("Senate lookup failed:", e.message);
     }
 
-    // 3) Draft the letter with AI (or fallback template)
-    const letter = await draftLetter({ legislators, billTitle, billId, position, state, district, ANTHROPIC_API_KEY, SUMMARY_MODEL });
+    // 3) Resolve the bill title SERVER-SIDE. The title used to arrive as a
+    // query-string parameter, which let anyone feed arbitrary text into the
+    // AI letter drafter (and burn tokens with junk requests). The bills table
+    // is the source of truth; an unknown billId simply gets the template.
+    let billTitle = "";
+    if (billId) {
+      try {
+        const rows = await sql`SELECT title FROM bills WHERE id = ${billId} LIMIT 1`;
+        billTitle = rows[0]?.title || "";
+      } catch { /* table missing - fall through to template */ }
+    }
+
+    // 3b) Draft the letter with AI, cached per (billId, position) so repeat
+    // opens cost nothing. Only cache real bills; template letters are free.
+    const letter = await draftLetterCached({ legislators, billTitle, billId, position, state, district });
 
     return res.status(200).json({ legislators, letter, billTitle, district, position });
 
@@ -118,7 +134,39 @@ export default async function handler(req, res) {
 }
 
 // ---------------------------------------------------------------------------
-async function draftLetter({ legislators, billTitle, billId, position, state, district, ANTHROPIC_API_KEY, SUMMARY_MODEL }) {
+// Cache wrapper: one AI draft per (bill, position), shared by every visitor.
+// The letter is district-agnostic enough (it names the district only in the
+// body intro) that per-district caching would just multiply cost 435x, so the
+// district line is patched into the cached text instead.
+async function draftLetterCached({ legislators, billTitle, billId, position, state, district }) {
+  const canCache = !!(billId && billTitle);
+  const cacheKey = `letter:${billId}:${position || "undecided"}`;
+  if (canCache) {
+    try {
+      const hit = await sql`SELECT plain FROM bill_summaries WHERE cache_key = ${cacheKey} LIMIT 1`;
+      if (hit.length && hit[0].plain) {
+        return hit[0].plain.replaceAll("[[DISTRICT]]", district).replaceAll("[[STATE]]", state);
+      }
+    } catch { /* cache miss on error is fine */ }
+  }
+
+  const letter = await draftLetter({
+    legislators, billTitle, billId, position,
+    state: "[[STATE]]", district: "[[DISTRICT]]",
+  });
+
+  if (canCache) {
+    try {
+      await sql`
+        INSERT INTO bill_summaries (cache_key, bill_id, headline, plain, affects, status)
+        VALUES (${cacheKey}, ${billId}, ${"letter"}, ${letter}, ${""}, ${"ok"})
+        ON CONFLICT (cache_key) DO NOTHING`;
+    } catch { /* caching is best-effort */ }
+  }
+  return letter.replaceAll("[[DISTRICT]]", district).replaceAll("[[STATE]]", state);
+}
+
+async function draftLetter({ legislators, billTitle, billId, position, state, district }) {
   const repNames = legislators.map(l => `${l.name} (${l.chamber})`).join(", ");
   const positionWord = position === "support" ? "support" : position === "oppose" ? "oppose" : "express my uncertainty about";
 
@@ -144,6 +192,10 @@ Constituent info:
 - Their position: They ${positionWord} this bill
 - Bill: ${billTitle}
 - Legislators: ${repNames}
+
+If the district or state placeholders above look like [[DISTRICT]] / [[STATE]],
+copy them into the letter EXACTLY as written - they are substituted with the
+real district and state later, so the same letter serves every district.
 
 Write a professional 3-paragraph constituent letter (150-200 words):
 1. Introduction: who they are and why they're writing

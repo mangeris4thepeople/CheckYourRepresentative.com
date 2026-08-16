@@ -8,7 +8,7 @@
 //                                                       hres, sres, hjres, sjres)
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
-import { resolveEmail } from "../_auth.js";
+import { resolveEmail, identityPrefix } from "../_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
 
-    const identity = `sess:${email}:%`;
+    const identity = identityPrefix(email);
     const votes = billType
       ? await sql`
           SELECT bill_id, position, tier, district, created_at

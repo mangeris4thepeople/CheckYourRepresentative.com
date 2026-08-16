@@ -27,6 +27,8 @@
     { "source": "/api/medicaid-national", "destination": "/api/reps?op=medicaid-national" },
     { "source": "/api/medicaid-state-detail", "destination": "/api/reps?op=medicaid-state-detail" },
     { "source": "/api/money-map", "destination": "/api/reps?op=money-map" },
+    { "source": "/api/report-card", "destination": "/api/reps?op=report-card" },
+    { "source": "/report-card/:bioguide", "destination": "/index.html" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/welcome", "destination": "/index.html" },
     { "source": "/api/repspace/members", "destination": "/api/repspace?op=members" },
@@ -34,6 +36,8 @@
     { "source": "/api/repspace/address-lookup", "destination": "/api/repspace?op=address-lookup" },
     { "source": "/know-your-rep/repspace/:bioguide", "destination": "/index.html" },
     { "source": "/know-your-rep/repspace", "destination": "/index.html" },
+    { "source": "/know-your-rep/:path*", "destination": "/index.html" },
+    { "source": "/know-your-rep", "destination": "/index.html" },
 
     { "source": "/about", "destination": "/index.html" },
     { "source": "/tutorial", "destination": "/index.html" },
@@ -136,6 +140,14 @@
     {
       "path": "/api/cron?op=sync-repspace-activity",
       "schedule": "30 14 * * *"
+    },
+    {
+      "path": "/api/cron?op=sync-ssa",
+      "schedule": "0 12 * * 2"
+    },
+    {
+      "path": "/api/cron?op=sync-judges",
+      "schedule": "30 9 * * *"
     }
   ]
 }
