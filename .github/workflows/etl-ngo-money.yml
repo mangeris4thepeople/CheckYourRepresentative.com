@@ -47,8 +47,14 @@ jobs:
       - name: 1. TRACER contributions
         # Scheduled runs load the current year; the previous years only need
         # the one-time backfill (manual run with the years input).
-        run: node etl/tracer_etl.mjs ${{ github.event.inputs.years || '$(date +%Y)' }}
+        # Inputs pass through env vars, never interpolated into the script -
+        # direct ${{ }} interpolation in run: is a shell-injection vector.
+        env:
+          YEARS: ${{ github.event.inputs.years }}
+        run: node etl/tracer_etl.mjs ${YEARS:-$(date +%Y)}
       - name: 2. ProPublica enrichment
-        run: node etl/propublica_enrich.mjs --limit ${{ github.event.inputs.enrich_limit || '200' }}
+        env:
+          ENRICH_LIMIT: ${{ github.event.inputs.enrich_limit }}
+        run: node etl/propublica_enrich.mjs --limit "${ENRICH_LIMIT:-200}"
       - name: 3. IRS Auto-Revocation List
         run: node etl/irs_revocations.mjs
