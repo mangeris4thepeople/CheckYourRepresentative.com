@@ -74,13 +74,23 @@ async function loadYear(client, year) {
   if (!entry) throw new Error(`[${year}] zip contained no file`);
   const text = decodeCsv(entry.getData());
 
+  // NO `trim: true` here: with trim enabled, csv-parse hard-fails on TRACER's
+  // malformed rows (stray text after a closing quote, e.g. `"Smith" for
+  // Colorado`) with CSV_NON_TRIMABLE_CHAR_AFTER_CLOSING_QUOTE - even with
+  // relax_quotes. Without trim, relax_quotes degrades those fields to literal
+  // text and properly-quoted comma fields still parse. Values are trimmed
+  // in JS below instead.
   const rows = parse(text, {
     columns: true,
     bom: true,
     skip_empty_lines: true,
     relax_quotes: true,
     relax_column_count: true,
-    trim: true,
+  }).map((row) => {
+    for (const k of Object.keys(row)) {
+      if (typeof row[k] === "string") row[k] = row[k].trim();
+    }
+    return row;
   });
   console.log(`[${year}] ${rows.length} raw rows`);
 
