@@ -1,6 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import { startAnalytics } from "./lib/analytics.js";
+
+// Cookieless Vercel Web Analytics; production only. See src/lib/analytics.js.
+startAnalytics();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

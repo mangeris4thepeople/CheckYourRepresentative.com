@@ -10,6 +10,7 @@ export default function PrivacyCommitment({ onNavigate, onEnter }) {
 
       <div style={{ fontFamily: serif, fontSize: 14, color: C.gray, marginBottom: 28 }}>
         Effective date: {PRIVACY_POLICY.effectiveDate}
+        {PRIVACY_POLICY.lastUpdated && <> &middot; Last updated: {PRIVACY_POLICY.lastUpdated}</>}
       </div>
 
       {PRIVACY_POLICY.sections.map((section, i) => (

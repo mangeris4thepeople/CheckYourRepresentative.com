@@ -22,6 +22,7 @@ import ContactUsForm from "./components/ContactUsForm.jsx";
 import SiteTutorialPage, { FirstRunTutorial } from "./components/marketing/SiteTutorial.jsx";
 import { getStoredSession } from "./lib/session.js";
 import { applySeo } from "./lib/seo.js";
+import { trackPageview } from "./lib/analytics.js";
 
 // Heavy or cold views load on demand instead of riding in the main bundle:
 // Follow the Money and Know Your Judge pull the big map trees, and the
@@ -172,7 +173,10 @@ export default function App() {
   const [navigated, setNavigated] = useState(!!initialDeepLink?.tab || !!initialVoterId);
   function goTab(k) { setNavigated(true); setTab(k); }
   useEffect(() => {
-    applySeo(view !== "tool" ? view : (navigated ? tab : "home"));
+    const routeKey = view !== "tool" ? view : (navigated ? tab : "home");
+    applySeo(routeKey);
+    // Cookieless page view for the same route key; see src/lib/analytics.js.
+    trackPageview(routeKey);
   }, [view, tab, navigated]);
 
   // "Enter the Tool" always lands on the Profile tab - sign in first,

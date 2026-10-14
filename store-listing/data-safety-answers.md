@@ -30,14 +30,32 @@ App activity, Other user-generated content
   name only if their profile is public, otherwise only in anonymous
   aggregates)
 
+App activity, App interactions
+- Collected: YES (page views through cookieless Vercel Web Analytics:
+  which page was viewed, the referring site, browser, OS, device type)
+- Shared: NO. Processed ephemerally: NO. Required: YES (no opt out toggle)
+- Purpose: Analytics
+- Not linked to the user's account or identity; the visitor hash Vercel
+  uses is discarded after 24 hours. Page addresses are scrubbed in the
+  browser before sending (src/lib/analytics.js), so sign in tokens and
+  profile card IDs are never included.
+
+Location, Approximate location
+- Collected: YES (country, region, city derived by Vercel Web Analytics
+  from the request; no IP address stored by the analytics tool)
+- Shared: NO. Required: YES
+- Purpose: Analytics
+- Note: separate from the district lookup address, which is still used
+  once for matching and never stored.
+
 App info and performance, Other app performance data
-- Collected: NO product analytics of any kind. Server hosts keep standard
+- Collected: NO crash or performance SDKs. Server hosts keep standard
   operational logs (IP addresses) for security and rate limiting only.
 
 ## Data types NOT collected (answer NO)
 
-Location (precise or approximate; the district lookup address is used once
-for matching and never stored), Financial info, Health and fitness,
+Precise location (the district lookup address is used once for matching
+and never stored), Financial info, Health and fitness,
 Messages, Photos and videos, Audio, Files and docs, Calendar, Contacts,
 Browsing history, Search history, Installed apps, Device or other IDs for
 advertising.
@@ -48,7 +66,7 @@ advertising.
 - Data sold: NO, to anyone, ever
 - Third parties data is shared with: none for user data. Infrastructure
   processors only: Neon (database), Resend (sign in email), Vercel
-  (hosting), consistent with the privacy policy
+  (hosting and cookieless Web Analytics), consistent with the privacy policy
 - Account creation: YES, email based (one time link, no password)
 - Account deletion URL: https://checkyourrepresentative.com/privacy
   (Your Rights section documents the deletion request path)

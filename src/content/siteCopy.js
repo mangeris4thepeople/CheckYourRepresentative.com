@@ -206,12 +206,15 @@ export const PRIVACY_SHORT =
 
 // The Privacy Policy shown on the footer "Privacy" page. The data storage,
 // analytics, and contact sections are filled from the real infrastructure
-// (Neon PostgreSQL, Resend, Vercel, no analytics tooling). This draft still
-// needs legal review before it is treated as final.
+// (Neon PostgreSQL, Resend, Vercel, cookieless Vercel Web Analytics wired in
+// src/lib/analytics.js). If the analytics setup changes, this copy changes
+// with it. This draft still needs legal review before it is treated as final.
 export const PRIVACY_POLICY = {
   title: "Privacy Policy",
   // Set to the publish date. Update if the policy is approved on a later date.
   effectiveDate: "July 4, 2026",
+  // Bump whenever a section below changes.
+  lastUpdated: "October 14, 2026",
   sections: [
     {
       heading: "What we collect",
@@ -282,17 +285,29 @@ export const PRIVACY_POLICY = {
     {
       heading: "Analytics",
       body: [
-        "We do not use Google Analytics, Vercel Web Analytics, or any other product " +
-          "analytics or user-tracking tool. We do not track your page views or tie any " +
-          "browsing activity to your account.",
-        "We keep our own anonymous daily counters: total visits, walkthrough dismissals, " +
+        "We use Vercel Web Analytics, a cookieless, privacy focused analytics tool provided " +
+          "by our hosting company, to see which pages people use and how they found the " +
+          "site. It sets no cookies and stores nothing in your browser. Visitors are counted " +
+          "with an anonymous hash of the incoming request that is discarded after 24 hours, " +
+          "so a visit cannot be tied to you, followed across other websites, or linked to " +
+          "your account.",
+        "For each page view it records the page address, the referring site, your " +
+          "approximate location (country, region, and city, derived from the request, with " +
+          "no IP address stored), and your browser, operating system, and device type. Before " +
+          "any page address leaves your browser, we strip out everything except the page " +
+          "itself and standard campaign tags, so sign in links, profile card IDs, and other " +
+          "personal details in a link are never sent.",
+        "We do not use Google Analytics, advertising pixels, or any tool that builds a " +
+          "profile of you, and we never tie browsing activity to your account.",
+        "We also keep our own anonymous daily counters: total visits, walkthrough dismissals, " +
           "and sign ins, each stored as a single number per day. These counters contain no " +
           "IP address, no device information, no cookies, and no account identifiers, so " +
           "they cannot be tied to you. They exist only so we can tell whether the site is " +
           "working for people, and the running totals are publicly readable at " +
           "/api/metrics-summary because our transparency standard applies to us too.",
-        "The only third-party resource loaded in your browser is Google Fonts, used for the " +
-          "site's typography, which is not analytics. Our hosting and database providers keep " +
+        "Apart from the analytics script above, which is served by our host, the only " +
+          "third-party resource loaded in your browser is Google Fonts, used for the site's " +
+          "typography, which is not analytics. Our hosting and database providers keep " +
           "standard operational server logs, which can include IP addresses, for security and " +
           "reliability.",
       ],
