@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Static sitemap of the site's public routes. The app is a single page
      tool: sections live at /?tab= addresses and the content pages have
-     their own paths. Individual bills, judges, and districts open inside
+     their own paths. Individual bills and districts open inside
      the app rather than at per item URLs, so there is nothing dynamic to
      enumerate; if per bill URLs ever ship, switch this to a generated
      sitemap. Keep this list in sync with ROUTE_META in src/lib/seo.js. -->
@@ -10,7 +10,6 @@
   <url><loc>https://checkyourrepresentative.com/?tab=matrix</loc></url>
   <url><loc>https://checkyourrepresentative.com/?tab=rollcalls</loc></url>
   <url><loc>https://checkyourrepresentative.com/?tab=followthemoney</loc></url>
-  <url><loc>https://checkyourrepresentative.com/?tab=judges</loc></url>
   <url><loc>https://checkyourrepresentative.com/?tab=allbills</loc></url>
   <url><loc>https://checkyourrepresentative.com/?tab=vote</loc></url>
   <url><loc>https://checkyourrepresentative.com/?tab=constituents</loc></url>
