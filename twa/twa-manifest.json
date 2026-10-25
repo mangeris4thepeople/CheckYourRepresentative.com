@@ -32,12 +32,6 @@
       "short_name": "Money",
       "url": "https://checkyourrepresentative.com/?tab=followthemoney",
       "chosenIconUrl": "https://checkyourrepresentative.com/icons/icon-192.png"
-    },
-    {
-      "name": "Know Your Judge",
-      "short_name": "Judges",
-      "url": "https://checkyourrepresentative.com/?tab=judges",
-      "chosenIconUrl": "https://checkyourrepresentative.com/icons/icon-192.png"
     }
   ],
   "signingKey": {
