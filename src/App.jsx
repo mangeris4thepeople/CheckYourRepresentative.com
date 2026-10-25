@@ -118,14 +118,14 @@ export default function App() {
   })();
 
   // Signed-in visitors land on their profile; signed-out visitors land on
-  // something worth looking at (the live Home tab) with a sign-in
+  // something worth looking at (the live Home page) with a sign-in
   // nudge in the header, instead of a sign-in form as the front door.
   const hasStoredSession = !!getStoredSession();
 
   // A magic-link redirect arrives as /#session=...  VoterProfile is the only
   // component that consumes that hash, and it only mounts on the Profile tab.
   // A first-time sign-in has no stored session yet, so without this check the
-  // person landed on a public tab still signed out, with their token
+  // person landed on another tab still signed out, with their token
   // sitting unused in the URL - the #1 "sign-in doesn't work" report.
   const hasSessionHash = (() => {
     try { return window.location.hash.includes("session="); } catch { return false; }
@@ -385,7 +385,7 @@ export default function App() {
               <button onClick={() => setView("privacy")} className="cyr-footer-link">Privacy</button>
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.7, color: "#AFC0E2" }}>
-              Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, spending from USASpending.gov and the Census.
+              Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, spending from USASpending and the Census Bureau.
             </div>
             <div style={{ marginTop: 14, display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff",
                           border: "1px solid rgba(255,255,255,.3)", borderRadius: 8, padding: "6px 10px" }}>
