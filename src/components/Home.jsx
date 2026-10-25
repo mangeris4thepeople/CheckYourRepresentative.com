@@ -17,6 +17,8 @@ const FEATURES = [
     body: "FEC filings, top donor buckets, NGO funding, Medicaid, SNAP, Social Security, and the six layer Money Map." },
   { tab: "rollcalls", icon: "📋", title: "Roll Calls", tone: "#7C3AED",
     body: "Every recorded vote in Congress with every name attached. No summaries, the primary record." },
+  { tab: "allbills", icon: "📄", title: "All Active Bills", tone: "#B7791F",
+    body: "Every active bill in the 119th Congress, newest action first, searchable by keyword or topic." },
   { tab: "constituents", icon: "🌐", title: "Constituents", tone: "#0891B2",
     body: "Public voter cards by district, so you can see what people near you actually think." },
 ];
@@ -26,8 +28,6 @@ const STAT_TILES = [
   { key: "votes", label: "Positions cast by constituents", hint: "real votes, quarantined ones excluded" },
   { key: "votingDistricts", label: "Districts heard from", hint: "with at least one position cast" },
   { key: "fecFilings", label: "Campaign finance filings", hint: "House and Senate, from the FEC" },
-  { key: "publicProfiles", label: "Public voter cards", hint: "constituents who share their record" },
-  { key: "alertsSent", label: "Floor alerts sent", hint: "heads up before a vote hits the floor" },
   { key: "bills", label: "Bills in the 119th Congress", hint: "every bill, not a curated subset" },
   { key: "ngos", label: "Nonprofits matched to IRS records", hint: "Form 990 and revocation data" },
   { key: "members", label: "Members of Congress profiled", hint: "House and Senate rosters" },
@@ -150,7 +150,7 @@ export default function Home({ session, district, onGoTab, onNavigate }) {
             {[
               ["activeBills", "active bills before Congress"],
               ["votes", "positions cast by constituents"],
-              ["votingDistricts", "districts heard from"],
+              ["fecFilings", "campaign finance filings on record"],
             ].map(([k, label]) => (
               <div key={k} style={{ padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,.16)" }}>
                 {pulse ? (
