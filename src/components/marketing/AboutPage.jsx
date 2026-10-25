@@ -15,7 +15,6 @@ const SITE_MAP = [
   ["📊", "Accountability", "Your district's positions against your representative's votes."],
   ["📋", "Roll Calls", "Every recorded vote, every name attached."],
   ["💰", "Follow the Money", "FEC money, RepSpace, NGO funding, Medicaid, SNAP, Social Security, Money Map."],
-  ["⚖️", "Know Your Judge", "Judges nationwide, down to the courthouse, with ruling records."],
   ["🌐", "Constituents", "Public voter cards, so districts can see what neighbors think."],
 ];
 

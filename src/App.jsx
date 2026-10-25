@@ -27,14 +27,13 @@ import { applySeo } from "./lib/seo.js";
 import { trackPageview } from "./lib/analytics.js";
 
 // Heavy or cold views load on demand instead of riding in the main bundle:
-// Follow the Money and Know Your Judge pull the big map trees, and the
+// Follow the Money pulls the big map trees, and the
 // marketing/merch/admin views only render behind explicit navigation.
 // (ConstituentMap - and with it the whole d3 package - was imported here for
 // nothing at all; it is retired.)
 const Landing = lazy(() => import("./components/Landing.jsx"));
 const Merch = lazy(() => import("./components/Merch.jsx"));
 const FollowTheMoney = lazy(() => import("./components/FollowTheMoney.jsx"));
-const KnowYourJudgeNational = lazy(() => import("./components/KnowYourJudgeNational.jsx"));
 const AboutPage = lazy(() => import("./components/marketing/AboutPage.jsx"));
 const BenefitsPage = lazy(() => import("./components/marketing/BenefitsPage.jsx"));
 const HowItWorksPage = lazy(() => import("./components/marketing/HowItWorksPage.jsx"));
@@ -62,13 +61,12 @@ const TABS = [
   { key: "matrix",       icon: "📊", label: "Accountability" },
   { key: "rollcalls",    icon: "📋", label: "Roll Calls" },
   { key: "followthemoney", icon: "💰", label: "Follow the Money" },
-  { key: "judges",       icon: "⚖️", label: "Know Your Judge" },
   { key: "constituents", icon: "🌐", label: "Constituents" },
   { key: "merch",        icon: "👕", label: "Merch" },
 ];
 
 // Tabs that get a left-hand contextual help sidebar.
-const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthemoney", judges: "judges" };
+const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthemoney" };
 
 export default function App() {
   // Shared public-card links look like /?voter=123 - if present, skip the
@@ -113,21 +111,21 @@ export default function App() {
       if (rc) return { view: "report-card", tab: null, bioguide: rc[1] };
       const t = new URLSearchParams(window.location.search).get("tab");
       const VALID = new Set(["home", "vote", "allbills", "rollcalls", "constituents", "matrix",
-        "followthemoney", "judges", "profile", "merch"]);
+        "followthemoney", "profile", "merch"]);
       if (t && VALID.has(t)) return { view: "tool", tab: t };
     } catch {}
     return null;
   })();
 
   // Signed-in visitors land on their profile; signed-out visitors land on
-  // something worth looking at (the national judges map) with a sign-in
+  // something worth looking at (the live Home page) with a sign-in
   // nudge in the header, instead of a sign-in form as the front door.
   const hasStoredSession = !!getStoredSession();
 
   // A magic-link redirect arrives as /#session=...  VoterProfile is the only
   // component that consumes that hash, and it only mounts on the Profile tab.
   // A first-time sign-in has no stored session yet, so without this check the
-  // person landed on the Judges tab still signed out, with their token
+  // person landed on another tab still signed out, with their token
   // sitting unused in the URL - the #1 "sign-in doesn't work" report.
   const hasSessionHash = (() => {
     try { return window.location.hash.includes("session="); } catch { return false; }
@@ -353,12 +351,6 @@ export default function App() {
           </HelpLayout>
         )}
 
-        {tab === "judges" && (
-          <HelpLayout page="judges">
-            <Suspense fallback={LazyFallback}><KnowYourJudgeNational /></Suspense>
-          </HelpLayout>
-        )}
-
         {tab === "profile" && (
           <HelpLayout page="profile">
             <VoterProfile
@@ -393,7 +385,7 @@ export default function App() {
               <button onClick={() => setView("privacy")} className="cyr-footer-link">Privacy</button>
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.7, color: "#AFC0E2" }}>
-              Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, courts from CourtListener.
+              Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, spending from USASpending and the Census Bureau.
             </div>
             <div style={{ marginTop: 14, display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff",
                           border: "1px solid rgba(255,255,255,.3)", borderRadius: 8, padding: "6px 10px" }}>

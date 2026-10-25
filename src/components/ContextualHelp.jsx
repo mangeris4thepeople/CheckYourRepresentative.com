@@ -1,6 +1,6 @@
 // =============================================================================
 // ContextualHelp.jsx - the "About this page" help card shown beside several
-// tabs (My Profile, Follow the Money, Know Your Judge). Explains every
+// tabs (My Profile, Vote on Bills, Follow the Money). Explains every
 // control on the page in plain language, using the same copy as the Site
 // Tutorial (trimmed to short lines), so someone landing here understands the
 // page without leaving to read a separate tutorial.
