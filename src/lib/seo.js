@@ -82,7 +82,7 @@ export const ROUTE_META = {
     title: `What We Stand For | ${SITE}`,
     description:
       "Why this site exists: every member of Congress works for you, and the full record, " +
-      "votes, money, and who benefits, should be one search away.",
+      "votes and money, should be one search away.",
   },
   tutorial: {
     path: "/tutorial",
