@@ -63,13 +63,6 @@ export const ROUTE_META = {
       "Campaign money, top donors, NGO funding, Social Security, Medicaid, SNAP, and the " +
       "Money Map: six public money flows on one county level map.",
   },
-  judges: {
-    path: "/?tab=judges",
-    title: `Know Your Judge, the National Judicial Directory | ${SITE}`,
-    description:
-      "A national heat map of sitting judges in every state, drilling from state to county " +
-      "to courthouse, with ruling records built from public court data.",
-  },
   constituents: {
     path: "/?tab=constituents",
     title: `Constituents Directory | ${SITE}`,
@@ -89,7 +82,7 @@ export const ROUTE_META = {
     title: `What We Stand For | ${SITE}`,
     description:
       "Why this site exists: every member of Congress works for you, and the full record, " +
-      "votes, money, and judges, should be one search away.",
+      "votes, money, and who benefits, should be one search away.",
   },
   tutorial: {
     path: "/tutorial",
