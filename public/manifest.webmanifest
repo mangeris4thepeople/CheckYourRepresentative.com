@@ -25,12 +25,6 @@
       "short_name": "Money",
       "url": "/?tab=followthemoney",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "Know Your Judge",
-      "short_name": "Judges",
-      "url": "/?tab=judges",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

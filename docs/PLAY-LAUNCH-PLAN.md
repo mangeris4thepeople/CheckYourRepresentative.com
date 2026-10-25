@@ -42,7 +42,7 @@ https://play.google.com/console
 One codebase: every site deploy updates the app instantly with no Play
 review. The site is already mobile-responsive, has a service worker with a
 branded offline page, installable manifest, and deep-link shortcuts (Vote /
-Money / Judges). A native or React Native rebuild would be a multi-week
+Money). A native or React Native rebuild would be a multi-week
 parallel codebase for zero user-visible gain at this stage. Revisit native
 only when you need push notifications or offline data (v2 candidates).
 
