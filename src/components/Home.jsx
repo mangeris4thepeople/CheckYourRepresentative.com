@@ -17,8 +17,6 @@ const FEATURES = [
     body: "FEC filings, top donor buckets, NGO funding, Medicaid, SNAP, Social Security, and the six layer Money Map." },
   { tab: "rollcalls", icon: "📋", title: "Roll Calls", tone: "#7C3AED",
     body: "Every recorded vote in Congress with every name attached. No summaries, the primary record." },
-  { tab: "judges", icon: "⚖️", title: "Know Your Judge", tone: "#B7791F",
-    body: "Judges in every state, drilled down to the county courthouse, with each judge's public ruling record." },
   { tab: "constituents", icon: "🌐", title: "Constituents", tone: "#0891B2",
     body: "Public voter cards by district, so you can see what people near you actually think." },
 ];
@@ -28,15 +26,15 @@ const STAT_TILES = [
   { key: "votes", label: "Positions cast by constituents", hint: "real votes, quarantined ones excluded" },
   { key: "votingDistricts", label: "Districts heard from", hint: "with at least one position cast" },
   { key: "fecFilings", label: "Campaign finance filings", hint: "House and Senate, from the FEC" },
-  { key: "judges", label: "Judges on file", hint: "federal and state, from CourtListener" },
-  { key: "opinions", label: "Judicial opinions indexed", hint: "with links to every opinion" },
+  { key: "publicProfiles", label: "Public voter cards", hint: "constituents who share their record" },
+  { key: "alertsSent", label: "Floor alerts sent", hint: "heads up before a vote hits the floor" },
   { key: "bills", label: "Bills in the 119th Congress", hint: "every bill, not a curated subset" },
   { key: "ngos", label: "Nonprofits matched to IRS records", hint: "Form 990 and revocation data" },
   { key: "members", label: "Members of Congress profiled", hint: "House and Senate rosters" },
 ];
 
 // Freshness expectations, in hours, for the color of each status dot.
-const EXPECTED_HOURS = { bills: 30, housefec: 30, senfec: 30, judges: 30, opinions: 30, repspace: 30,
+const EXPECTED_HOURS = { bills: 30, housefec: 30, senfec: 30, repspace: 30,
   reps: 24 * 8, senators: 24 * 8, ngos: 24 * 35, moneymap: 24 * 8 };
 
 function timeAgo(iso) {
@@ -152,7 +150,7 @@ export default function Home({ session, district, onGoTab, onNavigate }) {
             {[
               ["activeBills", "active bills before Congress"],
               ["votes", "positions cast by constituents"],
-              ["judges", "judges on the public record"],
+              ["votingDistricts", "districts heard from"],
             ].map(([k, label]) => (
               <div key={k} style={{ padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,.16)" }}>
                 {pulse ? (
@@ -164,7 +162,7 @@ export default function Home({ session, district, onGoTab, onNavigate }) {
               </div>
             ))}
             <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", marginTop: 12 }}>
-              Counted live from the CYR database. Sources: Congress.gov, FEC, CourtListener.
+              Counted live from the CYR database. Sources: Congress.gov and the FEC.
             </div>
           </div>
         </div>
