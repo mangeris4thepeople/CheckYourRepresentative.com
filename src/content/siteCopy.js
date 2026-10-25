@@ -36,7 +36,7 @@ export const ABOUT = {
     { icon: "🧭", title: "Non-partisan", body: "The bills are the same for everyone, and so is the record. Start wherever you start." },
     { icon: "🔒", title: "Never sold", body: "Your votes and your information are never sold to a campaign, PAC, data broker, or anyone." },
     { icon: "🧾", title: "Every number sourced", body: "Every figure traces to a named public record, with a link to the original wherever one exists." },
-    { icon: "⚡", title: "Live, every day", body: "Bills, campaign finance, judges, and opinions refresh automatically on a daily schedule." },
+    { icon: "⚡", title: "Live, every day", body: "Bills, campaign finance, roll calls, and RepSpace activity refresh automatically on a daily schedule." },
   ],
   missionLine:
     "This site exists to capture what We the People actually think, before our " +
@@ -70,8 +70,7 @@ export const ABOUT = {
       "vote with every name attached. Accountability lines your district's positions up " +
       "against your representative's actual votes. Follow the Money traces campaign " +
       "money, top donors, NGO funding, Social Security, Medicaid, SNAP, and the Money " +
-      "Map's six overlaid public money flows. Know Your Judge covers the bench " +
-      "nationwide, down to a single judge's public ruling record. Constituents shows " +
+      "Map's six overlaid public money flows. Constituents shows " +
       "what districts actually think, in public.",
     "And then there is RepSpace, where every member of Congress gets a profile page " +
       "styled like a 2006 social network they never asked to join. The frame is a joke. " +
@@ -81,13 +80,6 @@ export const ABOUT = {
       "by code from those records, labeled as such, never written in the member's voice. " +
       "Satire is an old American tool for looking at power squarely. We use it with the " +
       "receipts attached.",
-    "Accountability does not stop at Congress. Judges shape daily life as much as any " +
-      "legislator, so Know Your Judge covers the whole country: a heat map of every state's " +
-      "sitting judges that drills from state to county to courthouse and city, with each " +
-      "judge's Ruling Record built from public court data, raw counts of the opinions they " +
-      "authored, never a score or a grade. Colorado gets the deepest treatment, with the " +
-      "state's own performance evaluations and every past retention election result, so a " +
-      "retention ballot line gets the same scrutiny as every vote in Washington.",
     "Your profile can be public or private, your choice, changeable anytime in your " +
       "account settings. Your information and your votes will never be sold to anyone, " +
       "not a campaign, not a PAC, not a data broker, not any institution, period. This " +
@@ -95,7 +87,7 @@ export const ABOUT = {
       "monetized.",
     "Everything public here is built to be found and passed along. The site is open to " +
       "search engines, every section has its own address, and any page you are looking " +
-      "at, a bill, a judge, a district, a money map, a RepSpace profile, can be shared " +
+      "at, a bill, a district, a money map, a RepSpace profile, can be shared " +
       "with a single link. Sunlight only works when people can reach it.",
     "This is not a partisan project. Progressive, Conservative, Independent, Libertarian, " +
       "Green, Socialist, it does not matter where you start. The bills are the same for " +
@@ -115,8 +107,6 @@ export const ABOUT = {
     "IRS Auto-Revocation List, automatically revoked tax exemptions",
     "US Census Bureau American Community Survey, Medicaid and SNAP coverage estimates",
     "Social Security Administration, OASDI beneficiary counts",
-    "Free Law Project CourtListener, judges and judicial opinions",
-    "Colorado Office of Judicial Performance Evaluation and official retention election results",
   ],
 };
 
@@ -398,8 +388,8 @@ export const TUTORIAL_HOME = {
     "The front door. Everything on it is counted live from the database the moment you " +
     "open it, so it doubles as a health check on the whole site.",
   items: [
-    { label: "Right now panel", desc: "Active bills before Congress, positions cast by constituents, and judges on the public record, counted live." },
-    { label: "The record, counted live", desc: "Tiles for every major dataset: bills, campaign finance filings, judges, opinions, nonprofits, and how many districts have been heard from. A number only appears when the database has it." },
+    { label: "Right now panel", desc: "Active bills before Congress, positions cast by constituents, and how many districts have been heard from, counted live." },
+    { label: "The record, counted live", desc: "Tiles for every major dataset: bills, campaign finance filings, nonprofits, members profiled, public voter cards, floor alerts sent, and how many districts have been heard from. A number only appears when the database has it." },
     { label: "Moving in Congress", desc: "The bills with the most recent official action, newest first, straight from the daily Congress.gov sync. Tap one to read and vote." },
     { label: "Data freshness", desc: "Every public source and exactly when it last refreshed. Green means it pulled on schedule, amber means it is due for its next pull." },
     { label: "Pick a thread and pull it", desc: "Shortcuts into every section of the site." },
@@ -460,18 +450,6 @@ export const TUTORIAL_PAGES = {
       { label: "Money Map", desc: "Six public money flows on one county level map: Medicare, Medicaid, SNAP, Social Security income, federal NGO awards, and campaign contributions. One program gives a heat map, two a blended overlap view, three or more side by side mini maps." },
       { label: "Money Map, the correlation panel", desc: "Pairwise Pearson correlations across counties for the programs you can see, nationally or within one state, with the strongest relationships called out in plain language. These are statistical relationships in public spending data, offered for your own analysis. Correlation is not causation." },
       { label: "Money Map, honesty rules", desc: "Census estimates carry a visible badge and are never presented as administrative counts. Every figure shows its data year and named government source. Counties without a program's data are shaded neutral and excluded from that pair's correlation. Campaign contributions appear at state level only because the FEC does not publish county data." },
-    ],
-  },
-  judges: {
-    title: "Know Your Judge",
-    intro: "Judges shape daily life as much as any legislator, and most people cannot name one. This section covers the bench nationwide and gives Colorado the deepest treatment.",
-    items: [
-      { label: "The national heat map", desc: "Every state colored by its sitting judges on file, with a toggle between total judges and judges per 100,000 residents. Click any state to drill in." },
-      { label: "State and county drill down", desc: "A state's page shows its statewide courts first (supreme and appellate), then a county heat map. Click a county for its courts grouped by city, each with a plain language explanation of what that court handles and its sitting judges." },
-      { label: "Ruling Record", desc: "Each judge's profile shows raw public record counts from opinions they authored: totals, the majority, concurrence, and dissent split, and outcomes where the public feed carries them. Counts only, never a score, grade, or ranking, with a link to every opinion on CourtListener." },
-      { label: "Search", desc: "Below the national map, search every judge by name or court and filter by state." },
-      { label: "Colorado retention data", desc: "Colorado's state page keeps the full retention section: every judge's official OJPE performance evaluation with a link to the published narrative, and the actual yes and no vote counts from past retention elections, from official Secretary of State records." },
-      { label: "Where the data comes from", desc: "Judges and opinions from the Free Law Project's CourtListener. Colorado evaluations and retention results transcribed from official state publications." },
     ],
   },
 };
