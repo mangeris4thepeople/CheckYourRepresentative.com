@@ -7,21 +7,24 @@
 // List: search by name or state. Click a senator for their bio, per-cycle
 // FEC financial totals, every FEC filing on record with a direct link to
 // the PDF, and a bounded top-donor breakdown.
+//
+// October 2026 redesign: same look as KnowYourRep.jsx (intro card, pill
+// search, party colored rows, Panel based detail). Presentation only.
 // =============================================================================
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { Panel, StatGrid, Loading, Empty as KitEmpty, ErrorBox } from "./ui/Kit.jsx";
 
 const ReportCard = lazy(() => import("./ReportCard.jsx"));
 
 const C = {
-  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
-  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", green: "#15803D", red: "#DC2626",
+  navy: "#0E2A6B", blue: "#2563EB", red: "#E0313F", gold: "#F5B82E",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", soft: "#F8FAFE", sky: "#E8F0FF",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const PARTY = {
-  D: { label: "Democrat", color: C.navy },
-  R: { label: "Republican", color: C.crimson },
-  I: { label: "Independent", color: C.muted },
+  D: { label: "Democrat", color: C.blue, bg: "#E8F0FF" },
+  R: { label: "Republican", color: C.red, bg: "#FDECEE" },
+  I: { label: "Independent", color: C.muted, bg: "#EEF2F8" },
 };
 
 const usd = (n) => n == null ? "$0" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -79,74 +82,57 @@ export default function SenateDirectory() {
   }
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
-          Know Your Rep - Senate
-        </div>
-        <div style={{ fontSize: 14, color: "#cfd6e4", lineHeight: 1.6 }}>
-          A full financial and biographical profile on every U.S. Senator, sourced
-          straight from the FEC and senate.gov: bio, per-cycle campaign finance totals,
-          every FEC filing with a direct link to the original document, and top donors.
-        </div>
-      </div>
+    <div style={{ color: C.ink, maxWidth: 1000, margin: "0 auto", minWidth: 0 }}>
+      <Intro eyebrow="Know your rep · Senate" title="Every U.S. Senator">
+        A full financial and biographical profile on every U.S. Senator, sourced
+        straight from the FEC and senate.gov: bio, per-cycle campaign finance totals,
+        every FEC filing with a direct link to the original document, and top donors.
+      </Intro>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && runSearch()}
-          placeholder="Search by name or state (e.g. Warren, Colorado, CO)"
-          style={{ flex: 1, fontFamily: serif, fontSize: 14, padding: "10px 12px",
-                   border: `1px solid ${C.line}`, borderRadius: 10 }} />
-        <button onClick={runSearch}
-          style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "10px 18px",
-                   background: C.crimson, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>
-          Search
-        </button>
-      </div>
+      <SearchBar value={searchInput} onChange={setSearchInput} onSubmit={runSearch}
+        placeholder="Search by name or state (e.g. Warren, Colorado, CO)" label="Search senators" />
 
       {matchedVia === "address" && senators.length > 0 && (
-        <div style={{ background: C.parchment, border: `1px solid ${C.gold}`, borderRadius: 12,
-                      padding: "8px 14px", marginBottom: 12, fontSize: 12.5, color: C.muted }}>
+        <div className="cyr-chip" style={{ marginBottom: 12, background: "#FFF6DD", color: "#8A5A00", fontWeight: 600, padding: "6px 12px" }}>
           Matched by address: <strong style={{ color: C.navy }}>{resolvedState}</strong>
         </div>
       )}
 
-      {phase === "loading" && senators.length === 0 && <Center>Loading senators...</Center>}
+      {phase === "loading" && senators.length === 0 && <Loading rows={6} height={64} />}
       {phase === "error" && (
-        <Center color={C.crimson}>
-          Could not load senators. <Link onClick={() => loadList(0, false)}>Try again</Link>
-          {errorDetail && (
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
-          )}
-        </Center>
+        <ErrorBox onRetry={() => loadList(0, false)}>
+          Could not load senators.
+          {errorDetail && <span style={{ display: "block", fontSize: 11.5, fontWeight: 500, marginTop: 4, fontFamily: "var(--cyr-mono)" }}>{errorDetail}</span>}
+        </ErrorBox>
       )}
       {phase === "notready" && (
-        <Center>The senators database is not loaded yet.</Center>
+        <div className="cyr-card"><KitEmpty icon="🏛️" title="Not loaded yet">The senators database is not loaded yet.</KitEmpty></div>
       )}
-      {phase === "ready" && senators.length === 0 && <Center>No senators match that search.</Center>}
+      {phase === "ready" && senators.length === 0 && (
+        <div className="cyr-card"><KitEmpty icon="🔎" title="No matches">No senators match that search.</KitEmpty></div>
+      )}
 
       {senators.length > 0 && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>
-          {senators.map((s, i) => {
-            const party = PARTY[s.party] || { label: s.party || "", color: C.muted };
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))", gap: 10 }}>
+          {senators.map((r, i) => {
+            const party = PARTY[r.party] || { label: r.party || "", color: C.muted, bg: "#EEF2F8" };
             return (
-              <button key={s.bioguide_id} onClick={() => setSelected(s.bioguide_id)}
-                style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "transparent",
-                         border: "none", borderBottom: i < senators.length - 1 ? `1px solid #EEF2F8` : "none",
-                         padding: "12px 16px", display: "flex", alignItems: "center", gap: 14, fontFamily: serif }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {s.name}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: C.muted }}>
-                    {s.state} · {party.label}{s.class ? ` · ${s.class}` : ""}
-                    {!s.fec_candidate_id && " · not yet matched to FEC"}
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: party.color, flexShrink: 0 }}>
-                  {s.state}
-                </div>
+              <button key={r.bioguide_id} onClick={() => setSelected(r.bioguide_id)} className={`cyr-row${i < 12 ? " cyr-rise" : ""}`}
+                style={{ width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit", minHeight: 64,
+                         animationDelay: `${Math.min(i, 12) * 25}ms` }}>
+                <Avatar name={r.name} party={party} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 15, fontWeight: 700, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {r.name}
+                  </span>
+                  <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 3 }}>
+                    <span className="cyr-chip" style={{ fontSize: 11, padding: "2px 8px", fontFamily: "var(--cyr-mono)" }}>{r.state}</span>
+                    <span style={{ fontSize: 12.5, color: party.color, fontWeight: 600 }}>{party.label}</span>
+                    {r.class && <span style={{ fontSize: 12, color: C.muted }}>{r.class}</span>}
+                    {!r.fec_candidate_id && <span style={{ fontSize: 12, color: C.muted }}>not yet matched to FEC</span>}
+                  </span>
+                </span>
+                <span aria-hidden style={{ color: "#94A3B8", fontSize: 20, flexShrink: 0 }}>›</span>
               </button>
             );
           })}
@@ -154,14 +140,13 @@ export default function SenateDirectory() {
       )}
 
       {phase === "ready" && hasMore && (
-        <button onClick={() => loadList(offset + PAGE_SIZE, true)}
-          style={{ width: "100%", padding: 12, fontFamily: serif, fontWeight: 700, fontSize: 13,
-                   background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 10 }}>
-          Load More Senators
+        <button onClick={() => loadList(offset + PAGE_SIZE, true)} className="cyr-btn cyr-btn-ghost"
+          style={{ width: "100%", justifyContent: "center", marginTop: 14, padding: 14 }}>
+          Load more senators
         </button>
       )}
       {phase === "loading" && senators.length > 0 && (
-        <div style={{ textAlign: "center", color: C.muted, fontSize: 12, padding: 8 }}>Loading more...</div>
+        <div style={{ textAlign: "center", color: C.muted, fontSize: 13, padding: 10 }}>Loading more...</div>
       )}
     </div>
   );
@@ -199,146 +184,238 @@ function SenatorDetail({ bioguideId, onBack }) {
     return () => { cancelled = true; };
   }, [bioguideId]);
 
-  const back = (
-    <button onClick={onBack}
-      style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
-               border: `1px solid ${C.line}`, borderRadius: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
-      ← All senators
-    </button>
-  );
+  const back = <BackButton onClick={onBack}>All senators</BackButton>;
+  const wrap = { color: C.ink, maxWidth: 920, margin: "0 auto", minWidth: 0 };
 
-  if (phase === "loading") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>Loading senator...</Center></div>;
+  if (phase === "loading") return <div style={wrap}>{back}<Loading rows={4} height={90} /></div>;
   if (phase === "error") return (
-    <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>
+    <div style={wrap}>
       {back}
-      <Center color={C.crimson}>
+      <ErrorBox>
         Could not load this senator.
-        {errorDetail && (
-          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
-        )}
-      </Center>
+        {errorDetail && <span style={{ display: "block", fontSize: 11.5, fontWeight: 500, marginTop: 4, fontFamily: "var(--cyr-mono)" }}>{errorDetail}</span>}
+      </ErrorBox>
     </div>
   );
-  if (phase === "notready") return <div style={{ fontFamily: serif, maxWidth: 900, margin: "0 auto" }}>{back}<Center>The senators database is not loaded yet.</Center></div>;
+  if (phase === "notready") return <div style={wrap}>{back}<div className="cyr-card"><KitEmpty icon="🏛️">The senators database is not loaded yet.</KitEmpty></div></div>;
 
   const { sen, matched, totals, filings, topDonors } = data;
-  const party = PARTY[sen.party] || { label: sen.party || "", color: C.muted };
+  const party = PARTY[sen.party] || { label: sen.party || "", color: C.muted, bg: "#EEF2F8" };
+  const latest = totals[0];
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 900, margin: "0 auto" }}>
+    <div style={wrap}>
       {back}
 
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16, border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 20, fontWeight: 900 }}>{sen.name}</div>
-        <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
-          {sen.state} · {party.label}{sen.class ? ` · ${sen.class}` : ""}
-        </div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10, fontSize: 12.5 }}>
-          {sen.phone && <span style={{ color: "#cfd6e4" }}>📞 {sen.phone}</span>}
-          {sen.website && (
-            <a href={sen.website} target="_blank" rel="noopener noreferrer" style={{ color: C.gold, fontWeight: 700 }}>Official site →</a>
-          )}
-          {sen.contact_url && (
-            <a href={sen.contact_url} target="_blank" rel="noopener noreferrer" style={{ color: C.gold, fontWeight: 700 }}>Contact page →</a>
-          )}
-          <button onClick={() => setShowCard(s => !s)}
-            style={{ fontFamily: serif, fontSize: 12.5, fontWeight: 700, color: C.navy, background: C.gold,
-                     border: "none", borderRadius: 8, padding: "5px 12px", cursor: "pointer" }}>
-            📋 {showCard ? "Hide Report Card" : "Report Card"}
-          </button>
-        </div>
-      </div>
+      <MemberHeader name={sen.name} party={party} eyebrow={`U.S. Senate · ${sen.state}`}
+        meta={[sen.state, party.label, sen.class]} phone={sen.phone}
+        website={sen.website} contactUrl={sen.contact_url}
+        showCard={showCard} onToggleCard={() => setShowCard(s => !s)} />
 
       {showCard && (
         <div style={{ marginBottom: 18 }}>
-          <Suspense fallback={<Center>Loading report card…</Center>}>
+          <Suspense fallback={<Loading rows={3} height={80} />}>
             <ReportCard bioguide={bioguideId} onClose={() => setShowCard(false)} />
           </Suspense>
         </div>
       )}
 
       {!matched && (
-        <Center>This senator has not been matched to an FEC record yet. Financial data will appear once the sync catches up.</Center>
+        <div className="cyr-card" style={{ marginBottom: 18 }}>
+          <KitEmpty icon="🧾" title="Not matched to the FEC yet">
+            This senator has not been matched to an FEC record yet. Financial data will appear once the sync catches up.
+          </KitEmpty>
+        </div>
       )}
 
       {matched && (
         <>
-          <Section title="Per-cycle financial totals">
-            {totals.length === 0
-              ? <Empty>No FEC financial totals on record yet.</Empty>
-              : totals.map((t, i) => (
-                <Row key={i} left={`Cycle ${t.cycle}`}
-                  sub={`${usd(t.individual_contributions)} individual · ${usd(t.pac_contributions)} PAC · ${usd(t.party_contributions)} party`}
-                  right={`${usd(t.receipts)} raised, ${usd(t.disbursements)} spent`} />
-              ))}
-          </Section>
-
-          <Section title={`FEC filings (${filings.length})`}>
-            {filings.length === 0
-              ? <Empty>No FEC filings on record yet.</Empty>
-              : filings.map((f, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: "1px solid #EEF3FB" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{f.report_type || "FEC filing"}</div>
-                    <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-                      {f.coverage_start || "?"} to {f.coverage_end || "?"} · filed {f.filed_date || "?"}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, whiteSpace: "nowrap", flexShrink: 0, textAlign: "right" }}>
-                    {usd(f.total_receipts)} raised
-                    {f.pdf_url && (
-                      <div>
-                        <a href={f.pdf_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: C.crimson, fontWeight: 700 }}>
-                          View filing (PDF) →
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-          </Section>
-
-          <Section title="Top donors">
-            {topDonors.length === 0
-              ? <Empty>No donor breakdown on record yet.</Empty>
-              : topDonors.map((d, i) => (
-                <Row key={i} left={d.bucket_label}
-                  sub={d.bucket_type === "size" ? "By contribution size, cycle " + d.cycle : "By donor state, cycle " + d.cycle}
-                  right={`${usd(d.total_amount)}${d.donor_count ? ` · ${d.donor_count} contributions` : ""}`} />
-              ))}
-          </Section>
+          {latest && (
+            <StatGrid min={150} items={[
+              { value: usd(latest.receipts), label: "Raised", hint: `Cycle ${latest.cycle}`, tone: "navy" },
+              { value: usd(latest.disbursements), label: "Spent", hint: `Cycle ${latest.cycle}`, tone: "red" },
+              { value: usd(latest.individual_contributions), label: "From individuals", hint: `Cycle ${latest.cycle}`, tone: "blue" },
+              { value: usd(latest.pac_contributions), label: "From PACs", hint: `Cycle ${latest.cycle}`, tone: "gold" },
+            ]} />
+          )}
+          <FinanceSections totals={totals} filings={filings} topDonors={topDonors} />
         </>
       )}
     </div>
   );
 }
 
-// ---- small presentational helpers (mirrors KnowYourRep.jsx) ----
-function Section({ title, children }) {
+// ---- presentational helpers (mirrors KnowYourRep.jsx) ----
+
+function FinanceSections({ totals, filings, topDonors }) {
+  const bySize = topDonors.filter(d => d.bucket_type === "size");
+  const byState = topDonors.filter(d => d.bucket_type !== "size");
   return (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
-    </div>
+    <>
+      <Panel eyebrow="FEC totals" title="Per-cycle financial totals" pad={0}>
+        {totals.length === 0
+          ? <SmallEmpty>No FEC financial totals on record yet.</SmallEmpty>
+          : totals.map((t, i) => (
+            <ListRow key={i} last={i === totals.length - 1}
+              left={`Cycle ${t.cycle}`}
+              sub={`${usd(t.individual_contributions)} individual · ${usd(t.pac_contributions)} PAC · ${usd(t.party_contributions)} party`}
+              right={<><span className="cyr-num" style={{ fontSize: 16, color: C.navy }}>{usd(t.receipts)}</span><span style={{ display: "block", fontSize: 12, color: C.muted, fontWeight: 500 }}>raised, {usd(t.disbursements)} spent</span></>} />
+          ))}
+      </Panel>
+
+      <Panel eyebrow="Primary documents" title={`FEC filings (${filings.length})`} pad={0}>
+        {filings.length === 0
+          ? <SmallEmpty>No FEC filings on record yet.</SmallEmpty>
+          : filings.map((f, i) => (
+            <ListRow key={i} last={i === filings.length - 1}
+              left={titleCase(f.report_type) || "FEC filing"}
+              sub={`${f.coverage_start || "?"} to ${f.coverage_end || "?"} · filed ${f.filed_date || "?"}`}
+              right={<>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: C.ink }}>{usd(f.total_receipts)} raised</span>
+                {f.pdf_url && (
+                  <a href={f.pdf_url} target="_blank" rel="noopener noreferrer"
+                    style={{ display: "inline-block", marginTop: 4, fontSize: 12.5, fontWeight: 700, color: C.blue, textDecoration: "none" }}>
+                    View filing (PDF) →
+                  </a>
+                )}
+              </>} />
+          ))}
+      </Panel>
+
+      <Panel eyebrow="Where it came from" title="Top donors" pad={topDonors.length ? 18 : 0}>
+        {topDonors.length === 0
+          ? <SmallEmpty>No donor breakdown on record yet.</SmallEmpty>
+          : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 22 }}>
+              {bySize.length > 0 && <DonorBars title="By contribution size" rows={bySize} />}
+              {byState.length > 0 && <DonorBars title="By donor state" rows={byState} />}
+            </div>
+          )}
+      </Panel>
+    </>
   );
 }
-function Row({ left, sub, right }) {
+
+function DonorBars({ title, rows }) {
+  const max = Math.max(...rows.map(r => Number(r.total_amount) || 0), 1);
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: "1px solid #EEF3FB" }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{left}</div>
-        {sub ? <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{sub}</div> : null}
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: C.navy, marginBottom: 10 }}>{title}</div>
+      <div style={{ display: "grid", gap: 10 }}>
+        {rows.map((d, i) => (
+          <div key={i} style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13.5 }}>
+              <span style={{ fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.bucket_label}</span>
+              <span style={{ fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{usd(d.total_amount)}</span>
+            </div>
+            <div style={{ height: 8, borderRadius: 99, background: "#EEF2F8", marginTop: 5, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.max(2, (Number(d.total_amount) || 0) / max * 100)}%`, borderRadius: 99,
+                            background: "linear-gradient(90deg,#2563EB,#0E2A6B)" }} />
+            </div>
+            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3 }}>
+              Cycle {d.cycle}{d.donor_count ? ` · ${d.donor_count} contributions` : ""}
+            </div>
+          </div>
+        ))}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, whiteSpace: "nowrap", flexShrink: 0 }}>{right}</div>
     </div>
   );
 }
-function Empty({ children }) {
-  return <div style={{ padding: "14px", fontSize: 13, color: C.muted }}>{children}</div>;
+
+function MemberHeader({ name, party, eyebrow, meta, phone, website, contactUrl, showCard, onToggleCard }) {
+  return (
+    <div className="cyr-card cyr-rise" style={{ padding: 0, overflow: "hidden", marginBottom: 18 }}>
+      <div style={{ height: 6, background: `linear-gradient(90deg, ${party.color}, ${C.navy})` }} />
+      <div style={{ padding: "20px 22px", display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap",
+                    background: "linear-gradient(120deg,#FFFFFF 40%,#EEF4FF)" }}>
+        <Avatar name={name} party={party} size={56} />
+        <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+          <div className="cyr-eyebrow" style={{ fontSize: 11 }}>{eyebrow}</div>
+          <h2 className="cyr-h2" style={{ fontSize: "clamp(24px, 3.4vw, 32px)", marginTop: 4 }}>{name}</h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+            {meta.filter(Boolean).map((m, i) => (
+              <span key={i} className="cyr-chip" style={i === 1 ? { background: party.bg, color: party.color } : undefined}>{m}</span>
+            ))}
+            {phone && <span className="cyr-chip" style={{ background: "#F1F5FB", color: C.ink }}>📞 {phone}</span>}
+          </div>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+          <button onClick={onToggleCard} className="cyr-btn cyr-btn-primary">
+            📋 {showCard ? "Hide report card" : "Report card"}
+          </button>
+          {website && <a href={website} target="_blank" rel="noopener noreferrer" className="cyr-btn cyr-btn-ghost">Official site →</a>}
+          {contactUrl && <a href={contactUrl} target="_blank" rel="noopener noreferrer" className="cyr-btn cyr-btn-ghost">Contact page →</a>}
+        </div>
+      </div>
+    </div>
+  );
 }
-function Center({ children, color }) {
-  return <div style={{ textAlign: "center", padding: 40, color: color || C.muted, fontSize: 14.5, fontFamily: serif }}>{children}</div>;
+
+function Avatar({ name, party, size = 42 }) {
+  const parts = String(name || "").split(/\s+/).filter(Boolean);
+  const initials = ((parts[0] || "")[0] || "") + ((parts[parts.length - 1] || "")[0] || "");
+  return (
+    <span aria-hidden style={{ width: size, height: size, borderRadius: size * 0.32, flexShrink: 0, display: "grid", placeItems: "center",
+                               background: party.bg, color: party.color, fontWeight: 800, fontSize: size * 0.36,
+                               border: `1px solid ${party.color}33` }}>
+      {initials.toUpperCase()}
+    </span>
+  );
 }
-function Link({ onClick, children }) {
-  return <button onClick={onClick} style={{ background: "none", border: "none", color: C.crimson, fontFamily: serif, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>{children}</button>;
+
+function Intro({ eyebrow, title, children }) {
+  return (
+    <div className="cyr-card cyr-rise" style={{ padding: "18px 20px", marginBottom: 16, background: "linear-gradient(120deg,#FFFFFF 45%,#EEF4FF)" }}>
+      <div className="cyr-eyebrow" style={{ fontSize: 11 }}>{eyebrow}</div>
+      <h2 className="cyr-h2" style={{ fontSize: "clamp(21px, 2.6vw, 26px)", marginTop: 6 }}>{title}</h2>
+      <div style={{ fontSize: 14.5, color: "#475569", lineHeight: 1.6, marginTop: 6, maxWidth: 720 }}>{children}</div>
+    </div>
+  );
+}
+
+function SearchBar({ value, onChange, onSubmit, placeholder, label }) {
+  return (
+    <div className="cyr-card" style={{ padding: 10, borderRadius: 999, marginBottom: 16, display: "flex", gap: 8, alignItems: "center" }}>
+      <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+        <span aria-hidden style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 15, opacity: .55 }}>🔎</span>
+        <input value={value} onChange={e => onChange(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && onSubmit()}
+          placeholder={placeholder} aria-label={label}
+          style={{ width: "100%", fontSize: 15, padding: "11px 14px 11px 40px", border: `1px solid ${C.line}`, borderRadius: 999 }} />
+      </div>
+      <button onClick={onSubmit} className="cyr-btn cyr-btn-primary" style={{ minHeight: 42 }}>Search</button>
+    </div>
+  );
+}
+
+function BackButton({ onClick, children }) {
+  return (
+    <button onClick={onClick} className="cyr-btn cyr-btn-ghost" style={{ marginBottom: 16, minHeight: 40 }}>
+      <span aria-hidden>←</span> {children}
+    </button>
+  );
+}
+
+function ListRow({ left, sub, right, last }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", flexWrap: "wrap",
+                  borderBottom: last ? "none" : "1px solid #EEF2F8" }}>
+      <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+        <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy }}>{left}</div>
+        {sub ? <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, marginTop: 2 }}>{sub}</div> : null}
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, flexShrink: 0, textAlign: "right", marginLeft: "auto" }}>{right}</div>
+    </div>
+  );
+}
+
+function SmallEmpty({ children }) {
+  return <div style={{ padding: "16px 20px", fontSize: 14, color: C.muted }}>{children}</div>;
+}
+
+// "JULY QUARTERLY" -> "July quarterly" so FEC report names read in sentence case.
+function titleCase(s) {
+  if (!s) return s;
+  const t = String(s).toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }

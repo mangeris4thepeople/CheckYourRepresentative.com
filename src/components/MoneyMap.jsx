@@ -15,15 +15,22 @@
 // Layer hues are a fixed six color palette validated colorblind safe with
 // the site's palette checker. Counties without a program's data render in
 // the neutral no-data shade and are excluded from that pair's correlation.
+//
+// October 2026 redesign: intro card, layer chips with each layer's hue dot,
+// Seg pills for the metric, maps and the correlation matrix inside white
+// Panel cards, light tooltips. Presentation only; layer hues, ramps and the
+// bivariate palette are unchanged so every legend stays accurate.
 // =============================================================================
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import STATE_PATHS from "../data/us-state-paths.json";
+import { Panel, Seg, Loading, Empty as KitEmpty, ErrorBox } from "./ui/Kit.jsx";
 
 const C = {
-  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
-  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
+  navy: "#0E2A6B", blue: "#2563EB", red: "#E0313F", gold: "#F5B82E",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", soft: "#F8FAFE",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const TIP = { background: "#fff", color: "#0F172A", fontSize: 12.5, padding: "8px 12px", borderRadius: 12, pointerEvents: "none",
+              border: "1px solid #E2E8F0", boxShadow: "0 10px 24px rgba(14,42,107,.16)", lineHeight: 1.5, zIndex: 5 };
 const NO_DATA = "#E6ECF5";
 
 const ABBR_TO_FIPS = {
@@ -220,23 +227,28 @@ export default function MoneyMap({ onGoSection }) {
       : [...prev, key]);
   }
 
-  if (phase === "loading") return <Center>Loading the Money Map...</Center>;
-  if (phase === "error") return <Center color={C.crimson}>Could not load the Money Map.<Mono>{errorDetail}</Mono></Center>;
+  if (phase === "loading") return <div style={{ maxWidth: 1000, margin: "0 auto" }}><Loading rows={2} height={240} /></div>;
+  if (phase === "error") return (
+    <ErrorBox>
+      Could not load the Money Map.
+      {errorDetail && <span style={{ display: "block", fontSize: 11.5, fontWeight: 500, marginTop: 4, fontFamily: "var(--cyr-mono)" }}>{errorDetail}</span>}
+    </ErrorBox>
+  );
   if (phase === "notready") return (
-    <Center>The Money Map rollup has not been computed yet. Its data job runs weekly; check back shortly.</Center>
+    <div className="cyr-card"><KitEmpty icon="🗺️" title="Not computed yet">
+      The Money Map rollup has not been computed yet. Its data job runs weekly; check back shortly.
+    </KitEmpty></div>
   );
 
   const years = data.years || {};
   const pickedCounty = picked ? data.counties.find(c => c.f === picked) : null;
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
-          Money Map
-        </div>
-        <div style={{ fontSize: 14, color: "#cfd6e4", lineHeight: 1.6 }}>
+    <div style={{ color: C.ink, maxWidth: 1000, margin: "0 auto", minWidth: 0 }}>
+      <div className="cyr-card cyr-rise" style={{ padding: "18px 20px", marginBottom: 16, background: "linear-gradient(120deg,#FFFFFF 45%,#EEF4FF)" }}>
+        <div className="cyr-eyebrow" style={{ fontSize: 11 }}>Six public money flows</div>
+        <h2 className="cyr-h2" style={{ fontSize: "clamp(21px, 2.6vw, 26px)", marginTop: 6 }}>Money Map</h2>
+        <div style={{ fontSize: 14.5, color: "#475569", lineHeight: 1.6, marginTop: 6, maxWidth: 760 }}>
           Six public money flows on one county map. Pick one program for a heat map, two to see
           where they overlap, three or more to compare side by side. The correlation panel shows
           statistical relationships in public spending data, offered for your own analysis:
@@ -244,36 +256,47 @@ export default function MoneyMap({ onGoSection }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-        {LAYERS.map(l => {
-          const on = active.includes(l.key);
-          return (
-            <button key={l.key} onClick={() => toggleLayer(l.key)}
-              style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, padding: "7px 12px",
-                       borderRadius: 16, cursor: "pointer",
-                       border: `2px solid ${l.hue}`,
-                       background: on ? l.hue : "#fff", color: on ? "#fff" : C.ink }}>
-              {l.label}
-              <span style={{ fontWeight: 400, marginLeft: 6, fontSize: 10.5, opacity: 0.85 }}>{years[l.key]}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-        <Pill on={metric === "pc"} onClick={() => setMetric("pc")}>Per capita</Pill>
-        <Pill on={metric === "raw"} onClick={() => setMetric("raw")}>Total figures</Pill>
-        <select value={scope} onChange={e => { setScope(e.target.value); setPicked(null); }}
-          style={{ fontFamily: serif, fontSize: 13, padding: "7px 10px", border: `1px solid ${C.line}`,
-                   borderRadius: 12, background: "#fff", marginLeft: "auto" }}>
-          <option value="US">National</option>
-          {Object.keys(ABBR_TO_FIPS).sort().map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
+      <div className="cyr-card" style={{ padding: 14, marginBottom: 16 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.muted, marginBottom: 8 }}>Layers</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {LAYERS.map(l => {
+            const on = active.includes(l.key);
+            return (
+              <button key={l.key} onClick={() => toggleLayer(l.key)} aria-pressed={on}
+                style={{ fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "7px 14px 7px 12px", minHeight: 44,
+                         borderRadius: 14, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 9, textAlign: "left",
+                         border: `1px solid ${on ? l.hue : C.line}`,
+                         background: on ? l.hue : "#fff", color: on ? "#fff" : C.ink,
+                         boxShadow: on ? `0 6px 14px ${l.hue}40` : "none" }}>
+                <span aria-hidden style={{ width: 10, height: 10, borderRadius: 99, background: on ? "#fff" : l.hue, flexShrink: 0 }} />
+                <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+                  {l.label}
+                  <span style={{ fontWeight: 500, fontSize: 11, opacity: 0.85 }}>{years[l.key]}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
+          <Seg size="sm" value={metric} onChange={setMetric} options={[
+            { value: "pc", label: "Per capita" },
+            { value: "raw", label: "Total figures" },
+          ]} />
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginLeft: "auto", fontSize: 12.5, fontWeight: 700, color: C.muted }}>
+            Scope
+            <select value={scope} onChange={e => { setScope(e.target.value); setPicked(null); }}
+              style={{ fontSize: 14, fontWeight: 600, color: C.ink, padding: "8px 12px", border: `1px solid ${C.line}`,
+                       borderRadius: 12, background: "#fff", minHeight: 40 }}>
+              <option value="US">National</option>
+              {Object.keys(ABBR_TO_FIPS).sort().map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </label>
+        </div>
       </div>
 
       {active.includes("contributions") && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: "12px 16px",
-                      marginBottom: 12, fontSize: 12.5, color: C.muted, lineHeight: 1.6 }}>
+        <div className="cyr-card" style={{ padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#8A5A00", lineHeight: 1.6,
+                                           background: "#FFF6DD", borderColor: "#F5D27A" }}>
           Campaign contributions appear at the state level only: the Federal Election Commission
           publishes itemized contributions by contributor city and state, not by county, a
           government disclosure boundary rather than a site limitation.
@@ -284,7 +307,7 @@ export default function MoneyMap({ onGoSection }) {
       {contribOnly ? (
         <ContributionsStateMap data={data} />
       ) : countyLayers.length <= 2 ? (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 14 }}>
+        <Panel eyebrow={scope === "US" ? "National" : scope} title={countyLayers.map(l => l.label).join(" and ")} pad={16}>
           <CountyCanvas shapes={shapes} fips={visibleFips} viewBox={viewBox}
             fillFor={fillFor} onPick={setPicked} hover={hover} setHover={setHover}
             tooltip={(f) => {
@@ -301,12 +324,13 @@ export default function MoneyMap({ onGoSection }) {
           {countyLayers.length === 2 && (
             <BivariateLegend a={countyLayers[0]} b={countyLayers[1]} />
           )}
-        </div>
+        </Panel>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12, marginBottom: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 12, marginBottom: 18 }}>
           {countyLayers.map(layer => (
-            <div key={layer.key} style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 6 }}>
+            <div key={layer.key} className="cyr-card" style={{ padding: 12, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 13.5, fontWeight: 800, color: C.navy, marginBottom: 8 }}>
+                <span aria-hidden style={{ width: 10, height: 10, borderRadius: 99, background: layer.hue }} />
                 {layer.label} {layer.estimate && <EstimateBadge />}
               </div>
               <CountyCanvas shapes={shapes} fips={visibleFips} viewBox={viewBox} mini
@@ -320,7 +344,7 @@ export default function MoneyMap({ onGoSection }) {
                 tooltip={() => ""} />
             </div>
           ))}
-          <div style={{ gridColumn: "1 / -1", fontSize: 11.5, color: C.muted }}>
+          <div style={{ gridColumn: "1 / -1", fontSize: 12.5, color: C.muted, lineHeight: 1.6 }}>
             Small multiples share a percentile scale within each program: the darkest county in
             each mini map is that program's highest, so shapes compare, not absolute dollars.
           </div>
@@ -335,15 +359,15 @@ export default function MoneyMap({ onGoSection }) {
           onClose={() => setPicked(null)} />
       )}
       {picked && !pickedCounty && shapes[picked] && (
-        <Section title={shapes[picked].name}>
+        <Panel eyebrow="County" title={shapes[picked].name} pad={0}>
           <Empty>
             No Money Map data on file for this county. Its rows are excluded from correlations
             and shaded neutral: a public records gap, not a site failure.
           </Empty>
-        </Section>
+        </Panel>
       )}
 
-      <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginTop: 16 }}>
+      <p style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.6, marginTop: 16 }}>
         Sources: US Census Bureau American Community Survey 5-year estimates (tables S2704, S2201,
         B19055, B19065; Census estimates carry a visible badge), USASpending.gov federal award
         obligations to nonprofit recipients, and FEC itemized receipt aggregates. Correlations are
@@ -373,10 +397,7 @@ function CountyCanvas({ shapes, fips, viewBox, fillFor, onPick, hover, setHover,
         ))}
       </svg>
       {hover && !mini && (
-        <div style={{ position: "absolute", left: Math.min(hover.x + 12, 640), top: hover.y + 10,
-                      background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", fontFamily: serif, fontSize: 12,
-                      padding: "6px 10px", borderRadius: 12, pointerEvents: "none",
-                      border: `1px solid ${C.gold}`, maxWidth: 340, lineHeight: 1.5, zIndex: 5 }}>
+        <div style={{ ...TIP, position: "absolute", left: Math.min(hover.x + 12, 640), top: hover.y + 10, maxWidth: "min(340px, 70vw)" }}>
           {tooltip(hover.f)}
         </div>
       )}
@@ -388,12 +409,12 @@ function SingleLegend({ layer, metric }) {
   const ramp = rampFor(layer.hue);
   const stops = Array.from({ length: 7 }, (_, i) => ramp(i / 6));
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontFamily: serif, flexWrap: "wrap" }}>
-      <span style={{ fontSize: 11.5, color: C.muted }}>Lowest</span>
-      <div style={{ flex: "0 1 240px", height: 12, borderRadius: 12, border: `1px solid ${C.line}`,
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+      <span style={{ fontSize: 12, color: C.muted }}>Lowest</span>
+      <div style={{ flex: "1 1 120px", maxWidth: 240, height: 10, borderRadius: 99,
                     background: `linear-gradient(to right, ${stops.join(",")})` }} />
-      <span style={{ fontSize: 11.5, color: C.muted }}>Highest</span>
-      <span style={{ fontSize: 11.5, color: C.muted }}>
+      <span style={{ fontSize: 12, color: C.muted }}>Highest</span>
+      <span style={{ fontSize: 12, color: C.muted }}>
         {layer.label}, {metric === "pc" ? "per capita" : "totals"}, percentile shading
       </span>
       {layer.estimate && <EstimateBadge />}
@@ -403,13 +424,13 @@ function SingleLegend({ layer, metric }) {
 
 function BivariateLegend({ a, b }) {
   return (
-    <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 12, fontFamily: serif, flexWrap: "wrap" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 22px)", gridTemplateRows: "repeat(3, 22px)" }}>
+    <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 14, flexWrap: "wrap" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 22px)", gridTemplateRows: "repeat(3, 22px)", borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
         {[2, 1, 0].map(y => [0, 1, 2].map(x => (
           <div key={`${x}${y}`} style={{ background: BIVARIATE[y * 3 + x], border: "1px solid #fff" }} />
         )))}
       </div>
-      <div style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
+      <div style={{ flex: "1 1 220px", minWidth: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.7 }}>
         Right = higher {a.label}; up = higher {b.label} (thirds of each).<br />
         Dark corner: high on both. Pale corner: low on both. The off corners show where one
         runs high while the other runs low.
@@ -426,12 +447,14 @@ function ContributionsStateMap({ data }) {
   const max = vals.length ? Math.max(...vals) : 1;
   const ramp = rampFor("#0FA3B1");
   if (!vals.length) {
-    return <Section title="Campaign contributions"><Empty>
+    return <Panel eyebrow="State level" title="Campaign contributions" pad={0}><Empty>
       No contribution geography is on file yet. It loads with the delegation finance sync.
-    </Empty></Section>;
+    </Empty></Panel>;
   }
   return (
-    <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 14, position: "relative" }}>
+    <div className="cyr-card" style={{ padding: 16, marginBottom: 18, position: "relative" }}>
+      <div className="cyr-eyebrow" style={{ fontSize: 11 }}>State level</div>
+      <div className="cyr-h2" style={{ fontSize: 19, margin: "4px 0 10px" }}>Campaign contributions</div>
       <svg viewBox="0 0 975 610" style={{ width: "100%", height: "auto", display: "block" }}>
         {Object.entries(STATE_PATHS).map(([abbr, s]) => {
           const v = byState.get(abbr);
@@ -448,14 +471,11 @@ function ContributionsStateMap({ data }) {
         })}
       </svg>
       {hover && (
-        <div style={{ position: "absolute", left: Math.min(hover.x + 12, 700), top: hover.y + 10,
-                      background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", fontFamily: serif, fontSize: 12,
-                      padding: "6px 10px", borderRadius: 12, pointerEvents: "none",
-                      border: `1px solid ${C.gold}` }}>
+        <div style={{ ...TIP, position: "absolute", left: Math.min(hover.x + 12, 700), top: hover.y + 10 }}>
           {STATE_PATHS[hover.abbr].name}: {byState.has(hover.abbr) ? fmtMoney(byState.get(hover.abbr)) : "no itemized receipts on file"}
         </div>
       )}
-      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 10, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 12.5, color: C.muted, marginTop: 10, lineHeight: 1.6 }}>
         Itemized contributions to the tracked delegation's committees by contributor state, most
         recent cycle on file per candidate, square root shading. Source: FEC.
       </div>
@@ -481,32 +501,32 @@ function CorrelationMatrix({ data, scope, corrFor, onPickPair }) {
   const weakest = sorted[sorted.length - 1];
 
   return (
-    <Section title={`Correlations across counties (${scope === "US" ? "national" : scope})`}>
-      <div style={{ padding: "12px 14px", overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", fontFamily: serif, fontSize: 11.5 }}>
+    <Panel eyebrow="Pearson r" title={`Correlations across counties (${scope === "US" ? "national" : scope})`} pad={0}>
+      <div style={{ padding: "14px 16px", overflowX: "auto" }}>
+        <table style={{ borderCollapse: "separate", borderSpacing: 3, fontSize: 12.5 }}>
           <thead>
             <tr>
-              <th></th>
-              {keys.map(k => <th key={k} style={{ padding: "4px 6px", color: C.muted, fontWeight: 700, textAlign: "center" }}>{label(k)}</th>)}
+              <th style={{ background: "transparent" }}></th>
+              {keys.map(k => <th key={k} style={{ padding: "6px 8px", color: C.muted, fontWeight: 700, textAlign: "center", background: "transparent", fontSize: 11.5, lineHeight: 1.25, minWidth: 64 }}>{label(k)}</th>)}
             </tr>
           </thead>
           <tbody>
             {keys.map(ka => (
               <tr key={ka}>
-                <td style={{ padding: "4px 6px", color: C.muted, fontWeight: 700 }}>{label(ka)}</td>
+                <td style={{ padding: "6px 10px 6px 0", color: C.ink, fontWeight: 700, whiteSpace: "nowrap" }}>{label(ka)}</td>
                 {keys.map(kb => {
-                  if (ka === kb) return <td key={kb} style={{ padding: "4px 6px", textAlign: "center", color: C.muted }}>1</td>;
+                  if (ka === kb) return <td key={kb} style={{ padding: "8px 6px", textAlign: "center", color: C.muted, background: "#F8FAFE", borderRadius: 8 }}>1</td>;
                   if (ka === "contributions" || kb === "contributions") {
                     return <td key={kb} title="The FEC publishes no county level contribution data"
-                      style={{ padding: "4px 6px", textAlign: "center", color: C.muted, background: "#F1F5FB" }}>n/a</td>;
+                      style={{ padding: "8px 6px", textAlign: "center", color: C.muted, background: "#F1F5FB", borderRadius: 8 }}>n/a</td>;
                   }
                   const row = corrFor(ka, kb);
                   const r = row ? Number(row.r) : null;
                   return (
                     <td key={kb} onClick={() => row && onPickPair(ka, kb)}
                       title={row ? `${label(ka)} vs ${label(kb)}: r = ${r} across ${row.n} counties. Click for the bivariate map.` : "Not enough counties with both programs"}
-                      style={{ padding: "4px 8px", textAlign: "center", cursor: row ? "pointer" : "default",
-                               background: cellColor(r), fontWeight: 700, color: C.ink }}>
+                      style={{ padding: "8px 8px", textAlign: "center", cursor: row ? "pointer" : "default", borderRadius: 8,
+                               background: cellColor(r), fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" }}>
                       {r == null ? "n/a" : r.toFixed(2)}
                     </td>
                   );
@@ -516,7 +536,7 @@ function CorrelationMatrix({ data, scope, corrFor, onPickPair }) {
           </tbody>
         </table>
       </div>
-      <div style={{ padding: "0 14px 12px", fontSize: 12, color: C.muted, lineHeight: 1.7 }}>
+      <div style={{ padding: "0 16px 16px", fontSize: 13, color: C.muted, lineHeight: 1.7 }}>
         {strongest && (
           <div>
             Strongest positive: {label(strongest.a)} and {label(strongest.b)} (r = {strongest.r.toFixed(2)}):
@@ -535,22 +555,21 @@ function CorrelationMatrix({ data, scope, corrFor, onPickPair }) {
             </div>
           )
         )}
-        <div style={{ marginTop: 4 }}>
+        <div style={{ marginTop: 6 }}>
           These are statistical relationships in public spending data, offered for your own
           analysis. Correlation is not causation. Click any cell to see that pair on the map.
         </div>
       </div>
-    </Section>
+    </Panel>
   );
 }
 
 function CountyCard({ county, years, onGoSection, onClose }) {
   return (
-    <Section title={`${county.n}`}>
-      <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, borderBottom: "1px solid #EEF3FB", display: "flex" }}>
-        <span>Population {fmtInt(county.p)} (ACS civilian noninstitutionalized)</span>
-        <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none",
-          color: C.crimson, fontFamily: serif, fontWeight: 700, cursor: "pointer" }}>Close</button>
+    <Panel eyebrow="County" title={`${county.n}`} pad={0}
+      action={<button onClick={onClose} className="cyr-btn cyr-btn-ghost" style={{ minHeight: 40 }}>Close</button>}>
+      <div style={{ padding: "10px 20px", fontSize: 12.5, color: C.muted, borderBottom: "1px solid #EEF2F8" }}>
+        Population {fmtInt(county.p)} (ACS civilian noninstitutionalized)
       </div>
       {LAYERS.map(l => {
         if (l.stateOnly) {
@@ -567,66 +586,42 @@ function CountyCard({ county, years, onGoSection, onClose }) {
           : `${l.fmtPc(pcVal)} (${l.fmtRaw(rawVal)})`;
         return <CardRow key={l.key} layer={l} years={years} value={value} onGoSection={onGoSection} />;
       })}
-    </Section>
+    </Panel>
   );
 }
 
 function CardRow({ layer, years, value, onGoSection }) {
   return (
-    <div style={{ display: "flex", gap: 10, padding: "9px 14px", borderBottom: "1px solid #EEF3FB",
-                  fontFamily: serif, alignItems: "baseline", flexWrap: "wrap" }}>
-      <span style={{ flex: "0 0 170px", fontSize: 12.5, fontWeight: 700, color: layer.hue }}>
+    <div style={{ display: "flex", gap: "6px 12px", padding: "12px 20px", borderBottom: "1px solid #EEF2F8",
+                  alignItems: "center", flexWrap: "wrap" }}>
+      <span style={{ flex: "0 0 180px", display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 13.5, fontWeight: 800, color: C.ink }}>
+        <span aria-hidden style={{ width: 10, height: 10, borderRadius: 99, background: layer.hue, flexShrink: 0 }} />
         {layer.label} {layer.estimate && <EstimateBadge />}
       </span>
-      <span style={{ flex: 1, minWidth: 200, fontSize: 13, color: C.ink }}>{value}</span>
-      <span style={{ fontSize: 11, color: C.muted }}>{years[layer.key]}</span>
-      <a href={layer.source.url} target="_blank" rel="noopener noreferrer"
-        style={{ fontSize: 11.5, color: C.crimson, fontWeight: 700 }}>{layer.source.name}</a>
-      {onGoSection && (
-        <button onClick={() => onGoSection(layer.section)}
-          style={{ fontSize: 11.5, color: C.navy, background: "none", border: `1px solid ${C.line}`,
-                   borderRadius: 10, padding: "3px 9px", fontFamily: serif, fontWeight: 700, cursor: "pointer" }}>
-          Open section →
-        </button>
-      )}
+      <span style={{ flex: "1 1 200px", minWidth: 0, fontSize: 13.5, color: C.ink }}>{value}</span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11.5, color: C.muted }}>{years[layer.key]}</span>
+        <a href={layer.source.url} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 12.5, color: C.blue, fontWeight: 700, textDecoration: "none" }}>{layer.source.name}</a>
+        {onGoSection && (
+          <button onClick={() => onGoSection(layer.section)} className="cyr-chip"
+            style={{ border: 0, cursor: "pointer", minHeight: 32, padding: "6px 12px" }}>
+            Open section →
+          </button>
+        )}
+      </span>
     </div>
   );
 }
 
 function EstimateBadge() {
   return (
-    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color: "#fff",
-                   background: C.muted, borderRadius: 8, padding: "1px 6px", verticalAlign: "middle" }}>
-      CENSUS ESTIMATE
+    <span className="cyr-chip" style={{ fontSize: 10.5, padding: "2px 8px", background: "#F1F5FB", color: C.muted, verticalAlign: "middle" }}>
+      Census estimate
     </span>
   );
 }
 
-function Pill({ on, onClick, children }) {
-  return (
-    <button onClick={onClick}
-      style={{ fontFamily: serif, fontSize: 12.5, fontWeight: 700, padding: "7px 16px",
-               borderRadius: 18, cursor: "pointer",
-               border: `1px solid ${on ? C.navy : C.line}`,
-               background: on ? C.navy : "#fff", color: on ? C.gold : C.muted }}>
-      {children}
-    </button>
-  );
-}
-function Section({ title, children }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
-    </div>
-  );
-}
 function Empty({ children }) {
-  return <div style={{ padding: "14px", fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{children}</div>;
-}
-function Center({ children, color }) {
-  return <div style={{ textAlign: "center", padding: 40, color: color || C.muted, fontSize: 14.5, fontFamily: serif, lineHeight: 1.7 }}>{children}</div>;
-}
-function Mono({ children }) {
-  return <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{children}</div>;
+  return <div style={{ padding: "16px 20px", fontSize: 14, color: C.muted, lineHeight: 1.6 }}>{children}</div>;
 }

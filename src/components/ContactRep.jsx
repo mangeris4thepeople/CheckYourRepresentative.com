@@ -7,24 +7,24 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { getStoredSession } from "../lib/session.js";
+import { Loading, ErrorBox } from "./ui/Kit.jsx";
 
 const C = {
-  crimson: "#D62839",
-  crimsonBright: "#B22234",
+  red: "#DC2626",
   navy: "#0E2A6B",
-  gold: "#F5B82E",
-  parchment: "#FFFFFF",
-  parchmentEdge: "#F1F5FB",
+  blue: "#2563EB",
   ink: "#0F172A",
   muted: "#5B6578",
   line: "#E2E8F0",
   green: "#15803D",
-  greenLight: "#E8F5E9",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const sans = "var(--cyr-sans)";
+const SCOPED_CSS = `
+  @media (max-width: 560px) { .cyr-cr-body { padding: 16px 14px 20px !important; } }
+`;
 
 const CHAMBER_ICON = { House: "🏛️", Senate: "⚖️" };
-const PARTY_COLOR  = { Democrat: C.navy, Republican: C.crimson, Independent: C.muted };
+const PARTY_COLOR  = { Democrat: "#1D4ED8", Republican: C.red, Independent: C.muted };
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -104,73 +104,62 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
   }
 
   const positionLabel = position === "support" ? "Support" : position === "oppose" ? "Oppose" : "Undecided";
-  const positionColor = position === "support" ? C.navy : position === "oppose" ? C.crimson : C.muted;
+  const positionTone = position === "support"
+    ? { bg: "#ECFDF3", fg: "#15803D", icon: "✓" }
+    : position === "oppose" ? { bg: "#FEF2F2", fg: "#B91C1C", icon: "✕" } : { bg: "#F1F5F9", fg: "#475569", icon: "?" };
 
   return (
-    <div style={{
-      fontFamily: serif, color: C.ink, background: C.parchment,
-      border: `2px solid ${C.gold}`, borderRadius: 16, overflow: "hidden",
-      maxWidth: 720, margin: "24px auto 0",
-      boxShadow: "0 4px 24px rgba(10,26,63,0.12)"
+    <div className="cyr-card cyr-rise" style={{
+      fontFamily: sans, color: C.ink, overflow: "hidden", borderRadius: 24,
+      maxWidth: 820, margin: "18px auto 0", boxShadow: "var(--cyr-shadow-lg)",
     }}>
+      <style>{SCOPED_CSS}</style>
       {/* Header */}
-      <div style={{ background: C.navy, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: C.gold, marginBottom: 3 }}>
-            MAKE YOUR VOICE HEARD
-          </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>
-            Contact Your Legislators
-          </div>
+      <div className="cyr-panel-head" style={{ alignItems: "flex-start", padding: "18px 20px", flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: "1 1 200px" }}>
+          <div className="cyr-eyebrow" style={{ fontSize: 11 }}>Make your voice heard</div>
+          <div className="cyr-h2" style={{ fontSize: 22, marginTop: 4 }}>Contact your legislators</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{
-            fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20,
-            background: positionColor, color: "#fff"
-          }}>
-            {positionLabel}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <span className="cyr-chip" style={{ background: positionTone.bg, color: positionTone.fg, fontSize: 12.5, padding: "6px 12px" }}>
+            <span aria-hidden>{positionTone.icon}</span> {positionLabel}
           </span>
           {onClose && (
-            <button onClick={onClose} style={{
-              background: "transparent", border: "none", color: "#aaa",
-              fontSize: 20, cursor: "pointer", lineHeight: 1, padding: "0 4px"
-            }}>✕</button>
+            <button onClick={onClose} aria-label="Close" className="cyr-btn cyr-btn-ghost"
+              style={{ width: 40, height: 40, padding: 0, justifyContent: "center", fontSize: 15 }}>✕</button>
           )}
         </div>
       </div>
 
-      {/* Gold strip */}
-      <div style={{ height: 4, background: C.gold }} />
-
-      <div style={{ padding: "20px 22px 28px" }}>
+      <div className="cyr-cr-body" style={{ padding: "20px 22px 24px" }}>
         {phase === "loading" && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: C.muted }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>⚖️</div>
-            <div style={{ fontSize: 15 }}>Looking up your legislators and drafting your letter…</div>
+          <div>
+            <div style={{ fontSize: 14.5, color: C.muted, marginBottom: 14, display: "flex", gap: 8, alignItems: "center" }}>
+              <span aria-hidden>⚖️</span> Looking up your legislators and drafting your letter…
+            </div>
+            <Loading rows={3} height={58} />
           </div>
         )}
 
         {phase === "error" && (
-          <div style={{ textAlign: "center", padding: "30px 0", color: C.crimson }}>
-            <div style={{ fontSize: 14 }}>Couldn't load legislator info. Try again or visit congress.gov directly.</div>
-          </div>
+          <ErrorBox>Couldn't load legislator info. Try again or visit congress.gov directly.</ErrorBox>
         )}
 
         {phase === "ready" && (
           <>
             {/* Intro */}
-            <p style={{ margin: "0 0 20px", fontSize: 13.5, color: C.muted, lineHeight: 1.6 }}>
-              Your position has been recorded. Now take the next step - let your elected officials know directly.
+            <p style={{ margin: "0 0 20px", fontSize: 15, color: "#334155", lineHeight: 1.65 }}>
+              Your position has been recorded. Now take the next step: let your elected officials know directly.
               We've drafted a letter for you. Edit it, then send it to each of your{" "}
               <strong style={{ color: C.navy }}>{legislators.length} legislators</strong> below.
             </p>
 
             {/* Legislator cards */}
             <div style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.navy, marginBottom: 10 }}>
-                YOUR REPRESENTATIVES
+              <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 10 }}>
+                Your representatives
               </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: 10 }}>
                 {legislators.map((leg, i) => (
                   <LegislatorCard
                     key={i}
@@ -185,13 +174,13 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
             {/* Letter editor */}
             <div style={{ marginBottom: 16 }}>
               <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                marginBottom: 8
+                display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                marginBottom: 8, gap: 8, flexWrap: "wrap",
               }}>
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.navy }}>
-                  YOUR LETTER - EDIT AS NEEDED
+                <div style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>
+                  Your letter: edit as needed
                 </div>
-                <div style={{ fontSize: 11, color: C.muted, fontStyle: "italic" }}>
+                <div style={{ fontSize: 12.5, color: C.muted }}>
                   Personalize before sending
                 </div>
               </div>
@@ -200,71 +189,57 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
                 value={letterEdited}
                 onChange={e => setLetterEdited(e.target.value)}
                 style={{
-                  width: "100%", minHeight: 280, fontFamily: serif, fontSize: 13.5,
-                  lineHeight: 1.7, color: C.ink, background: "#fff",
-                  border: `1px solid ${C.line}`, borderRadius: 8, padding: "14px 16px",
+                  width: "100%", minHeight: 280, fontFamily: sans, fontSize: 14.5,
+                  lineHeight: 1.7, color: C.ink, background: "#FBFCFE",
+                  border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 18px",
                   resize: "vertical", boxSizing: "border-box",
                 }}
               />
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
-              <button onClick={copyLetter} style={{
-                fontFamily: serif, fontSize: 14, fontWeight: 700,
-                padding: "10px 20px", borderRadius: 8, cursor: "pointer",
-                background: copied ? C.green : "#fff",
-                color: copied ? "#fff" : C.navy,
-                border: `2px solid ${copied ? C.green : C.navy}`,
-                transition: "all 0.2s",
-              }}>
-                {copied ? "✓ Copied!" : "📋 Copy Letter"}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
+              <button onClick={copyLetter} className="cyr-btn cyr-btn-ghost"
+                style={{ minHeight: 48, padding: "12px 20px", justifyContent: "center",
+                         ...(copied ? { background: "#ECFDF3", borderColor: "#BBF7D0", color: C.green } : {}) }}>
+                {copied ? "✓ Copied!" : "📋 Copy letter"}
               </button>
 
               {legislators[activeTab] && (
                 <button
                   onClick={() => openContact(legislators[activeTab].contactUrl)}
-                  style={{
-                    fontFamily: serif, fontSize: 14, fontWeight: 700,
-                    padding: "10px 20px", borderRadius: 8, cursor: "pointer",
-                    background: C.crimson, color: "#fff", border: "none", flex: 1,
-                  }}>
-                  ✉️ Open Contact Page - {legislators[activeTab].name.split(",")[0]}
+                  className="cyr-btn cyr-btn-primary"
+                  style={{ minHeight: 48, padding: "12px 20px", flex: "1 1 220px", justifyContent: "center",
+                           whiteSpace: "normal", textAlign: "center", minWidth: 0 }}>
+                  ✉️ Open contact page: {legislators[activeTab].name.split(",")[0]}
                 </button>
               )}
             </div>
 
             {/* All contact links */}
-            <div style={{
-              background: "#fff", border: `1px solid ${C.line}`,
-              borderRadius: 8, padding: "14px 16px"
-            }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 10, letterSpacing: 1 }}>
-                ALL CONTACT PAGES
-              </div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 10 }}>
+              All contact pages
+            </div>
+            <div style={{ display: "grid", gap: 8 }}>
               {legislators.map((leg, i) => (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "8px 0",
-                  borderTop: i > 0 ? `1px solid ${C.line}` : "none"
-                }}>
-                  <div>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>
-                      {CHAMBER_ICON[leg.chamber]} {leg.name}
-                    </span>
-                    <span style={{ fontSize: 12, color: C.muted, marginLeft: 8 }}>
-                      {leg.chamber} · {leg.party}
-                    </span>
+                <div key={i} className="cyr-row" style={{ justifyContent: "space-between" }}>
+                  <span aria-hidden style={{ width: 38, height: 38, borderRadius: 12, background: leg.chamber === "Senate" ? "#FDECEE" : "#E8F0FF",
+                                             display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                    {CHAMBER_ICON[leg.chamber]}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14.5, fontWeight: 700, color: C.ink, overflowWrap: "anywhere" }}>
+                      {leg.name}
+                    </div>
+                    <div style={{ fontSize: 12.5, color: C.muted, marginTop: 1 }}>
+                      {leg.chamber}{leg.party ? ` · ${leg.party}` : ""}
+                    </div>
                   </div>
                   <button
                     onClick={() => openContact(leg.contactUrl)}
-                    style={{
-                      fontFamily: serif, fontSize: 12, fontWeight: 700,
-                      padding: "6px 14px", borderRadius: 8, cursor: "pointer",
-                      background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", border: "none",
-                      whiteSpace: "nowrap", marginLeft: 12,
-                    }}>
-                    Contact →
+                    className="cyr-btn cyr-btn-ghost"
+                    style={{ minHeight: 40, flexShrink: 0 }}>
+                    Contact <span aria-hidden>→</span>
                   </button>
                 </div>
               ))}
@@ -272,10 +247,10 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
 
             {/* Tip */}
             <div style={{
-              marginTop: 14, padding: "10px 14px", background: C.parchmentEdge,
-              borderRadius: 8, fontSize: 12, color: C.muted, lineHeight: 1.5
+              marginTop: 16, padding: "12px 16px", background: "#F3F7FF", border: "1px solid #DCE6FA",
+              borderRadius: 14, fontSize: 13.5, color: "#334155", lineHeight: 1.6,
             }}>
-              <strong>Tip:</strong> Clicking "Contact →" copies your letter to the clipboard and opens the
+              <strong style={{ color: C.navy }}>💡 Tip:</strong> Clicking "Contact →" copies your letter to the clipboard and opens the
               official contact page in a new tab. Paste it into the message field, fill in your name and
               address, and submit. Personal messages are more effective than form letters.
             </div>
@@ -290,26 +265,26 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
 function LegislatorCard({ leg, active, onClick }) {
   const partyColor = PARTY_COLOR[leg.party] || C.muted;
   return (
-    <button onClick={onClick} style={{
-      fontFamily: serif, textAlign: "left", cursor: "pointer",
-      flex: "1 1 180px", padding: "10px 14px", borderRadius: 12,
-      border: `2px solid ${active ? C.gold : C.line}`,
-      background: active ? C.navy : "#fff",
-      color: active ? "#fff" : C.ink,
-      transition: "all 0.15s",
+    <button onClick={onClick} aria-pressed={active} style={{
+      fontFamily: sans, textAlign: "left", cursor: "pointer", minWidth: 0,
+      padding: "12px 14px", borderRadius: 16, minHeight: 72,
+      border: `2px solid ${active ? C.blue : C.line}`,
+      background: active ? "#EEF4FF" : "#fff",
+      color: C.ink,
+      boxShadow: active ? "0 8px 20px rgba(37,99,235,.16)" : "none",
     }}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1,
-                    color: active ? C.gold : C.muted, marginBottom: 3 }}>
-        {CHAMBER_ICON[leg.chamber]} {leg.chamber.toUpperCase()}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: active ? C.blue : C.muted }}>
+          {CHAMBER_ICON[leg.chamber]} {leg.chamber}
+        </span>
+        {active && <span aria-hidden style={{ width: 20, height: 20, borderRadius: 99, background: C.blue, color: "#fff", fontSize: 11,
+                                              display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>✓</span>}
       </div>
-      <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3 }}>
+      <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.3, overflowWrap: "anywhere" }}>
         {leg.name}
       </div>
       {leg.party && (
-        <div style={{
-          marginTop: 4, fontSize: 11, fontWeight: 700,
-          color: active ? "#cfd6e4" : partyColor
-        }}>
+        <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: partyColor }}>
           {leg.party}
         </div>
       )}

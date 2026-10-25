@@ -3,18 +3,44 @@
 // see exactly who voted which way. House data via Congress.gov, Senate via
 // senate.gov official records. If the visitor's district is known, their
 // state's members float to the top of every breakdown.
+//
+// October 2026 redesign: PageHero, Seg chamber switch, cyr-row lists, Panels,
+// StatGrid tally and TallyBar. Data flow is unchanged.
 // =============================================================================
 import React, { useState, useEffect } from "react";
+import { PageHero, StatGrid, Panel, Seg, TallyBar as KitTallyBar, Loading, Empty, ErrorBox } from "./ui/Kit.jsx";
 
 const C = {
-  navy:"#0E2A6B", gold:"#F5B82E", crimson:"#D62839",
-  yea:"#15803D", yeaLight:"#E8F5E9",
-  nay:"#DC2626", nayLight:"#FFEBEE",
-  parchment:"#FFFFFF", muted:"#5B6578", line:"#E2E8F0",
+  navy:"#0E2A6B", blue:"#2563EB", ink:"#0F172A",
+  yea:"#15803D", yeaLight:"#ECFDF3",
+  nay:"#DC2626", nayLight:"#FEF2F2",
+  muted:"#5B6578", line:"#E2E8F0",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";
-const PARTY_COLOR = { R: "#DC2626", D: "#0D47A1", I: "#4A148C", ID: "#4A148C" };
+const mono = "var(--cyr-mono)";
+const PARTY_COLOR = { R: "#DC2626", D: "#1D4ED8", I: "#7C3AED", ID: "#7C3AED" };
+const PARTY_BG = { R: "#FEF2F2", D: "#EEF4FF", I: "#F5F3FF", ID: "#F5F3FF" };
+
+// Phone-sized tap targets for the shared Seg pills on this tab.
+const LOCAL_CSS = `.rc-seg .cyr-seg button{min-height:40px;padding-left:20px;padding-right:20px}`;
+
+// Congress.gov sends ISO timestamps; show them as a readable date. Anything
+// else (senate.gov text dates) is shown exactly as sent.
+function fmtDate(d) {
+  if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(d)) return d;
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return d;
+  try {
+    return dt.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric",
+                                        hour: "numeric", minute: "2-digit" }) + " ET";
+  } catch {
+    return d;
+  }
+}
+
+function passed(result) {
+  const r = String(result || "").toLowerCase();
+  return r.includes("pass") || r.includes("agreed");
+}
 
 export default function RollCallExplorer({ district }) {
   const [chamber, setChamber] = useState("house");
@@ -47,141 +73,172 @@ export default function RollCallExplorer({ district }) {
     return () => { cancelled = true; };
   }, [selected, chamber]);
 
+  const chamberName = chamber === "house" ? "House" : "Senate";
+
   return (
-    <div style={{ fontFamily: serif, maxWidth: 860, margin: "0 auto" }}>
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px",
-                    borderRadius: "18px 18px 0 0", borderBottom: `3px solid ${C.gold}` }}>
-        <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1 }}>
-          THE PERMANENT RECORD
-        </div>
-        <div style={{ fontSize: 20, fontWeight: 700 }}>Roll Call Votes</div>
-        <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
-          Every recorded vote. Every name attached to it. Straight from official records.
-        </div>
+    <div style={{ fontFamily: "var(--cyr-sans)", maxWidth: 940, margin: "0 auto", color: C.ink }}>
+      <style>{LOCAL_CSS}</style>
+
+      <PageHero
+        eyebrow="The permanent record"
+        title="Roll call votes"
+        lede="Every recorded vote. Every name attached to it. Straight from official records."
+        chips={[
+          listState === "ready" ? { value: list.length, label: `recent ${chamberName} votes` } : null,
+          district ? { value: district, label: "your district" } : null,
+        ]}
+      />
+
+      {/* Chamber toggle */}
+      <div className="rc-seg" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                                       flexWrap: "wrap", marginBottom: 16 }}>
+        <Seg value={chamber} onChange={setChamber}
+          options={[{ value: "house", label: "House" }, { value: "senate", label: "Senate" }]} />
+        <span style={{ fontSize: 12.5, color: C.muted }}>
+          {chamber === "house" ? "Source: Congress.gov" : "Source: senate.gov official records"}
+        </span>
       </div>
 
-      <div style={{ background: C.parchment, border: `1px solid ${C.line}`, borderTop: "none",
-                    borderRadius: "0 0 18px 18px", padding: "18px 24px" }}>
+      {/* Detail view */}
+      {selected && (
+        <div>
+          <button type="button" onClick={() => setSelected(null)} className="cyr-btn cyr-btn-ghost"
+            style={{ marginBottom: 14, minHeight: 40 }}>
+            <span aria-hidden>←</span> All {chamberName} votes
+          </button>
 
-        {/* Chamber toggle */}
-        <div style={{ display: "flex", border: `1px solid ${C.navy}`, borderRadius: 12,
-                      overflow: "hidden", width: "fit-content", marginBottom: 16 }}>
-          {["house", "senate"].map(ch => (
-            <button key={ch} onClick={() => setChamber(ch)}
-              style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, padding: "9px 20px",
-                       border: "none", cursor: "pointer",
-                       background: chamber === ch ? C.navy : "#fff",
-                       color: chamber === ch ? "#fff" : C.navy }}>
-              {ch === "house" ? "House" : "Senate"}
-            </button>
-          ))}
-        </div>
+          {detailState === "loading" && (
+            <Panel>
+              <div style={{ fontSize: 13.5, color: C.muted, marginBottom: 12 }}>Pulling the official record…</div>
+              <Loading rows={4} height={56} />
+            </Panel>
+          )}
+          {detailState === "error" && <ErrorBox>Could not load this vote. Try again shortly.</ErrorBox>}
 
-        {/* Detail view */}
-        {selected && (
-          <div>
-            <button onClick={() => setSelected(null)}
-              style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy,
-                       background: "none", border: `1px solid ${C.line}`, borderRadius: 8,
-                       padding: "7px 14px", cursor: "pointer", marginBottom: 14 }}>
-              ← All {chamber === "house" ? "House" : "Senate"} votes
-            </button>
+          {detailState === "ready" && detail && (
+            <div>
+              <Panel
+                eyebrow={`Roll call #${detail.vote}${detail.bill ? ` · ${detail.bill}` : ""}`}
+                title={detail.question || "Recorded vote"}
+              >
+                <span className="cyr-chip" style={{ fontSize: 13, padding: "6px 12px",
+                  background: passed(detail.result) ? C.yeaLight : C.nayLight,
+                  color: passed(detail.result) ? C.yea : C.nay }}>
+                  {passed(detail.result) ? "✓" : "✕"} Result: {detail.result || "Recorded"}
+                </span>
 
-            {detailState === "loading" && <Center>Pulling the official record…</Center>}
-            {detailState === "error" && <Center>Could not load this vote. Try again shortly.</Center>}
-
-            {detailState === "ready" && detail && (
-              <div>
-                <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 12,
-                              padding: "16px 18px", marginBottom: 14 }}>
-                  <div style={{ fontFamily: mono, fontSize: 11, color: C.muted, marginBottom: 4 }}>
-                    ROLL CALL #{detail.vote}{detail.bill ? ` · ${detail.bill}` : ""}
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 6 }}>
-                    {detail.question || "Recorded vote"}
-                  </div>
-                  <div style={{ fontSize: 13, color: detail.result?.toLowerCase().includes("pass") || detail.result?.toLowerCase().includes("agreed") ? C.yea : C.crimson, fontWeight: 700 }}>
-                    Result: {detail.result || "Recorded"}
-                  </div>
-                  {detail.summary && (detail.summary.headline || detail.summary.plain) && (
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
-                      <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>
-                        WHAT THIS BILL DOES
+                {detail.summary && (detail.summary.headline || detail.summary.plain) && (
+                  <div style={{ marginTop: 16, padding: "14px 16px", background: "#F8FAFE", border: `1px solid ${C.line}`, borderRadius: 14 }}>
+                    <div className="cyr-eyebrow" style={{ fontSize: 11 }}>What this bill does</div>
+                    {detail.summary.headline && (
+                      <div style={{ fontFamily: "var(--cyr-display)", fontSize: 17, fontWeight: 750, color: C.navy, margin: "6px 0 4px", lineHeight: 1.3 }}>
+                        {detail.summary.headline}
                       </div>
-                      {detail.summary.headline && (
-                        <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy, marginBottom: 4 }}>
-                          {detail.summary.headline}
-                        </div>
-                      )}
-                      {detail.summary.plain && (
-                        <div style={{ fontSize: 13.5, color: "#0F172A", lineHeight: 1.6 }}>
-                          {detail.summary.plain}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    )}
+                    {detail.summary.plain && (
+                      <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.65 }}>
+                        {detail.summary.plain}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Panel>
 
-                {/* Tally bar */}
+              {/* Tally */}
+              <StatGrid min={100} items={[
+                { value: detail.tally.yea, label: "Yea", tone: "green" },
+                { value: detail.tally.nay, label: "Nay", tone: "red" },
+                detail.tally.present ? { value: detail.tally.present, label: "Present", tone: "gold" } : null,
+                detail.tally.not_voting ? { value: detail.tally.not_voting, label: "Not voting", tone: "navy" } : null,
+              ]} />
+
+              <Panel title="How each party voted" pad={18}>
                 <TallyBar tally={detail.tally} />
 
                 {/* Party breakdown */}
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "12px 0 16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginTop: 16 }}>
                   {Object.entries(detail.tally.byParty).map(([party, t]) => (
-                    <div key={party} style={{ background: "#fff", border: `1px solid ${C.line}`,
-                                              borderRadius: 12, padding: "8px 14px", fontSize: 12.5 }}>
-                      <span style={{ fontWeight: 900, color: PARTY_COLOR[party] || C.muted }}>{party}</span>
-                      {"  "}
-                      <span style={{ color: C.yea, fontWeight: 700 }}>{t.yea} yea</span>
-                      {" · "}
-                      <span style={{ color: C.nay, fontWeight: 700 }}>{t.nay} nay</span>
-                      {t.not_voting ? <span style={{ color: C.muted }}> · {t.not_voting} NV</span> : null}
+                    <div key={party} style={{ background: PARTY_BG[party] || "#F8FAFE", border: `1px solid ${C.line}`,
+                                              borderRadius: 14, padding: "12px 14px", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                        <span style={{ width: 28, height: 28, borderRadius: 9, display: "grid", placeItems: "center", flexShrink: 0,
+                                       background: PARTY_COLOR[party] || C.muted, color: "#fff", fontWeight: 800, fontSize: 12.5 }}>{party}</span>
+                        <span style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>{t.yea + t.nay + (t.present || 0) + (t.not_voting || 0)} members</span>
+                      </div>
+                      <KitTallyBar support={t.yea} oppose={t.nay} other={(t.present || 0) + (t.not_voting || 0)} height={8} />
+                      <div style={{ fontSize: 13, marginTop: 8, display: "flex", flexWrap: "wrap", gap: "2px 10px" }}>
+                        <span style={{ color: C.yea, fontWeight: 700 }}>{t.yea} yea</span>
+                        <span style={{ color: C.nay, fontWeight: 700 }}>{t.nay} nay</span>
+                        {t.not_voting ? <span style={{ color: C.muted }}>{t.not_voting} NV</span> : null}
+                      </div>
                     </div>
                   ))}
                 </div>
+              </Panel>
 
+              <Panel title="Every member's vote" pad={16}
+                action={<span className="cyr-chip" style={{ flexShrink: 0 }}>{detail.members.length} members</span>}>
                 {/* Search */}
-                <input value={search} onChange={e => setSearch(e.target.value)}
-                  placeholder={`Search by name or state (e.g. ${myState || "CO"})`}
-                  style={{ width: "100%", boxSizing: "border-box", fontFamily: serif, fontSize: 14,
-                           padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: 10,
-                           marginBottom: 12 }} />
+                <div style={{ position: "relative", marginBottom: 14 }}>
+                  <span aria-hidden style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 15, opacity: .55 }}>🔎</span>
+                  <input value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder={`Search by name or state (e.g. ${myState || "CO"})`}
+                    aria-label="Search members by name or state"
+                    style={{ width: "100%", boxSizing: "border-box", fontFamily: "inherit", fontSize: 15,
+                             padding: "12px 14px 12px 40px", border: `1px solid ${C.line}`, borderRadius: 999 }} />
+                </div>
 
                 {/* Member list, my state first */}
                 <MemberList members={detail.members} search={search} myState={myState} />
-              </div>
-            )}
-          </div>
-        )}
+              </Panel>
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* List view */}
-        {!selected && (
-          <div>
-            {listState === "loading" && <Center>Loading recorded votes…</Center>}
-            {listState === "error" && <Center>Could not load the vote list. Try again shortly.</Center>}
-            {listState === "ready" && list.map(v => (
-              <button key={v.vote} onClick={() => setSelected(v.vote)}
-                style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
-                         textAlign: "left", background: "#fff", border: `1px solid ${C.line}`,
-                         borderRadius: 12, padding: "12px 16px", marginBottom: 8,
-                         cursor: "pointer", fontFamily: serif }}>
-                <div style={{ fontFamily: mono, fontSize: 11, color: C.muted, minWidth: 56, flexShrink: 0 }}>
-                  #{v.vote}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: C.navy,
-                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {v.bill ? `${v.bill}: ` : ""}{v.question || v.description || "Recorded vote"}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: C.muted }}>
-                    {v.date} · {v.result}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* List view */}
+      {!selected && (
+        <Panel title={`Recent ${chamberName} votes`} eyebrow="Newest first" pad={14}
+          action={listState === "ready" ? <span className="cyr-chip" style={{ flexShrink: 0 }}>{list.length} votes</span> : null}>
+          {listState === "loading" && <Loading rows={6} height={64} />}
+          {listState === "error" && <ErrorBox>Could not load the vote list. Try again shortly.</ErrorBox>}
+          {listState === "ready" && list.length === 0 && (
+            <Empty icon="📋" title="No recorded votes yet">No roll call votes are on file for this session yet.</Empty>
+          )}
+          {listState === "ready" && list.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 8 }}>
+              {list.map((v, i) => {
+                const ok = passed(v.result);
+                return (
+                  <button key={v.vote} type="button" onClick={() => setSelected(v.vote)}
+                    className={i < 12 ? "cyr-row cyr-rise" : "cyr-row"}
+                    style={{ width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                             alignItems: "flex-start", padding: "12px 14px", animationDelay: `${Math.min(i, 12) * 25}ms` }}>
+                    <span style={{ flexShrink: 0, minWidth: 58, textAlign: "center", borderRadius: 10, padding: "6px 8px",
+                                   background: "#EEF2F8", color: C.navy, fontFamily: mono, fontSize: 12, fontWeight: 700 }}>
+                      #{v.vote}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 14.5, fontWeight: 700, color: C.ink, lineHeight: 1.35,
+                                     overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                        {v.bill ? <span style={{ color: C.blue }}>{v.bill}: </span> : ""}{v.question || v.description || "Recorded vote"}
+                      </span>
+                      <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 6 }}>
+                        {v.result && (
+                          <span className="cyr-chip" style={{ fontSize: 11, padding: "2px 8px",
+                            background: ok ? C.yeaLight : C.nayLight, color: ok ? C.yea : C.nay }}>{v.result}</span>
+                        )}
+                        <span style={{ fontSize: 12.5, color: C.muted }}>{fmtDate(v.date)}</span>
+                      </span>
+                    </span>
+                    <span aria-hidden style={{ color: "#94A3B8", fontSize: 18, alignSelf: "center", flexShrink: 0 }}>›</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+      )}
     </div>
   );
 }
@@ -191,19 +248,20 @@ function TallyBar({ tally }) {
   const yPct = Math.round((tally.yea / total) * 100);
   return (
     <div>
-      <div style={{ display: "flex", gap: 6, height: 30, borderRadius: 8, overflow: "hidden" }}>
-        <div style={{ flex: tally.yea || 1, background: C.yea, display: "flex",
-                      alignItems: "center", justifyContent: "center" }}>
-          <span style={{ color: "#fff", fontSize: 13, fontWeight: 900 }}>{tally.yea} YEA</span>
-        </div>
-        <div style={{ flex: tally.nay || 1, background: C.nay, display: "flex",
-                      alignItems: "center", justifyContent: "center" }}>
-          <span style={{ color: "#fff", fontSize: 13, fontWeight: 900 }}>{tally.nay} NAY</span>
-        </div>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 14, fontWeight: 700 }}>
+          <span style={{ color: C.yea }}>{tally.yea} yea</span>
+          <span style={{ color: "#94A3B8" }}> / </span>
+          <span style={{ color: C.nay }}>{tally.nay} nay</span>
+        </span>
+        <span className="cyr-num" style={{ fontSize: 18, color: C.navy }}>{yPct}% <span style={{ fontFamily: "var(--cyr-sans)", fontSize: 12.5, fontWeight: 600, color: C.muted }}>in favor</span></span>
       </div>
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>
-        {yPct}% in favor{tally.not_voting ? ` · ${tally.not_voting} not voting` : ""}{tally.present ? ` · ${tally.present} present` : ""}
-      </div>
+      <KitTallyBar support={tally.yea} oppose={tally.nay} height={14} />
+      {(tally.not_voting || tally.present) ? (
+        <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6 }}>
+          {[tally.not_voting ? `${tally.not_voting} not voting` : null, tally.present ? `${tally.present} present` : null].filter(Boolean).join(" · ")}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -218,49 +276,46 @@ function MemberList({ members, search, myState }) {
   const mine = myState ? filtered.filter(m => m.state === myState) : [];
   const rest = myState ? filtered.filter(m => m.state !== myState) : filtered;
 
+  const label = p => p === "yea" ? "Yea" : p === "nay" ? "Nay" : p === "present" ? "Present" : "Not voting";
   const row = (m, i, highlight) => (
-    <div key={`${m.name}-${i}`}
-      style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
-               background: highlight ? "#FFF8E1" : "#fff",
-               border: `1px solid ${highlight ? C.gold : C.line}`,
-               borderRadius: 8, marginBottom: 5 }}>
-      <div style={{ minWidth: 46, textAlign: "center", fontSize: 11, fontWeight: 900,
-                    padding: "4px 0", borderRadius: 3,
-                    background: m.position === "yea" ? C.yeaLight : m.position === "nay" ? C.nayLight : "#f2f2f2",
-                    color: m.position === "yea" ? C.yea : m.position === "nay" ? C.nay : C.muted }}>
-        {m.position === "yea" ? "YEA" : m.position === "nay" ? "NAY" : m.position === "present" ? "PRES" : "NV"}
-      </div>
-      <div style={{ flex: 1, fontSize: 13.5, color: "#0F172A" }}>{m.name}</div>
-      <div style={{ fontFamily: mono, fontSize: 11.5, fontWeight: 700,
-                    color: PARTY_COLOR[m.party] || C.muted, flexShrink: 0 }}>
+    <div key={`${m.name}-${i}`} className={highlight ? "cyr-row cyr-row-mine" : "cyr-row"}
+      style={{ gap: 10, padding: "9px 12px", minHeight: 44 }}>
+      <span style={{ minWidth: 74, textAlign: "center", fontSize: 11.5, fontWeight: 800, flexShrink: 0,
+                     padding: "5px 6px", borderRadius: 999,
+                     background: m.position === "yea" ? C.yeaLight : m.position === "nay" ? C.nayLight : "#F1F5F9",
+                     color: m.position === "yea" ? C.yea : m.position === "nay" ? C.nay : C.muted }}>
+        {label(m.position)}
+      </span>
+      <span title={m.name} style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: C.ink,
+                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+      <span style={{ fontFamily: mono, fontSize: 11.5, fontWeight: 700, flexShrink: 0, borderRadius: 8, padding: "3px 7px",
+                     background: PARTY_BG[m.party] || "#F1F5F9", color: PARTY_COLOR[m.party] || C.muted }}>
         {m.party}-{m.state}
-      </div>
+      </span>
     </div>
   );
+
+  const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 6 };
 
   return (
     <div>
       {mine.length > 0 && (
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1, marginBottom: 6 }}>
-            YOUR STATE ({myState})
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.navy, marginBottom: 8 }}>
+            Your state ({myState})
           </div>
-          {mine.map((m, i) => row(m, i, true))}
+          <div style={grid}>{mine.map((m, i) => row(m, i, true))}</div>
         </div>
       )}
       {mine.length > 0 && rest.length > 0 && (
-        <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, margin: "10px 0 6px" }}>
-          EVERYONE ELSE
+        <div style={{ fontSize: 13, fontWeight: 800, color: C.muted, margin: "6px 0 8px" }}>
+          Everyone else
         </div>
       )}
-      {rest.map((m, i) => row(m, i, false))}
+      <div style={grid}>{rest.map((m, i) => row(m, i, false))}</div>
       {filtered.length === 0 && (
-        <div style={{ color: C.muted, fontSize: 13, padding: "12px 0" }}>No members match that search.</div>
+        <Empty icon="🔎" title="No matches">No members match that search.</Empty>
       )}
     </div>
   );
-}
-
-function Center({ children }) {
-  return <div style={{ textAlign: "center", padding: "34px 16px", color: C.muted }}>{children}</div>;
 }

@@ -7,17 +7,23 @@
 // with a plain language explanation and its sitting judges) -> judge
 // profile with the Ruling Record: raw public record counts from
 // CourtListener opinions, never a score or grade.
+//
+// October 2026 revamp: gradient PageHero per level, white Panel cards,
+// segmented metric switch, ranked rows with a proportional bar, and judge
+// cards with initials. Presentation only; every fetch and state transition
+// is unchanged. House style: no em dashes, no mock data.
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
 import USAHeatMap from "./USAHeatMap.jsx";
 import NationalJudges from "./NationalJudges.jsx";
 import KnowYourJudge from "./KnowYourJudge.jsx";
+import { PageHero, Panel, Loading, Empty as KitEmpty, ErrorBox } from "./ui/Kit.jsx";
 
 const C = {
-  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
-  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
+  navy: "#0E2A6B", blue: "#2563EB", gold: "#F5B82E", crimson: "#E0313F", red: "#DC2626",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", soft: "#F8FAFE", sky: "#E8F0FF",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const sans = "var(--cyr-sans)";
 
 const STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -31,6 +37,10 @@ const STATE_NAMES = {
   SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
   DC: "District of Columbia", PR: "Puerto Rico",
+};
+
+const JURISDICTION_LABELS = {
+  S: "Supreme court", SA: "Appellate court", ST: "Trial court", SS: "Special court",
 };
 
 const fmtInt = (n) => (n == null ? "n/a" : Number(n).toLocaleString());
@@ -144,94 +154,100 @@ function NationalView({ onSelectState, onSelectJudge }) {
   for (const s of states) {
     values[s.state_abbr] = metric === "per_100k" ? (s.per_100k ?? null) : s.judges;
   }
-  const ranked = [...states].sort((a, b) =>
-    Number(b[metric === "per_100k" ? "per_100k" : "judges"] || 0) -
-    Number(a[metric === "per_100k" ? "per_100k" : "judges"] || 0));
-
-  const pill = (key, label, disabled) => (
-    <button key={key} onClick={() => !disabled && setMetric(key)} disabled={disabled}
-      style={{ fontFamily: serif, fontSize: 12.5, fontWeight: 700, padding: "7px 16px",
-               borderRadius: 18, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1,
-               border: `1px solid ${metric === key ? C.navy : C.line}`,
-               background: metric === key ? C.navy : "#fff",
-               color: metric === key ? C.gold : C.muted }}>
-      {label}
-    </button>
-  );
+  const metricKey = metric === "per_100k" ? "per_100k" : "judges";
+  const ranked = [...states].sort((a, b) => Number(b[metricKey] || 0) - Number(a[metricKey] || 0));
+  const maxVal = ranked.length ? Number(ranked[0][metricKey] || 0) : 0;
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
-          Know Your Judge
-        </div>
-        <div style={{ fontSize: 14, color: "#cfd6e4", lineHeight: 1.6 }}>
+    <Wrap>
+      <PageHero
+        eyebrow="Know Your Judge"
+        title="Judges in every state"
+        lede={<>
           The judges of every state{totalJudges ? ` (${fmtInt(totalJudges)} on file)` : ""}, mirrored
           from the Free Law Project's CourtListener database. The map colors each state by its
           sitting judges. Click a state to drill into its courts county by county, down to each
           courthouse and every judge's public ruling record.
-        </div>
-      </div>
+        </>}
+        chips={phase === "ready" ? [
+          { value: totalJudges, label: "judges on file" },
+          { value: states.length || null, label: "jurisdictions with judges on file" },
+        ] : null}
+      />
 
-      {phase === "loading" && <Center>Loading the national map...</Center>}
+      {phase === "loading" && <Loading rows={3} height={120} />}
       {phase === "error" && (
-        <Center color={C.crimson}>
-          Could not load the map. <Link onClick={load}>Try again</Link>
+        <ErrorBox onRetry={load}>
+          Could not load the map.
           {errorDetail && <Mono>{errorDetail}</Mono>}
-        </Center>
+        </ErrorBox>
       )}
-      {phase === "notready" && <Center>The judge registry is still loading its first pass. Check back shortly.</Center>}
+      {phase === "notready" && (
+        <Panel><KitEmpty icon="⚖️" title="Still loading">The judge registry is still loading its first pass. Check back shortly.</KitEmpty></Panel>
+      )}
 
       {phase === "ready" && (
         <>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 12 }}>
-            {pill("judges", "Total judges", false)}
-            {pill("per_100k", "Per 100,000 residents", !hasPop)}
-          </div>
-          <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 18 }}>
-            <USAHeatMap
-              values={values}
-              onSelect={onSelectState}
-              format={(v) => metric === "per_100k" ? `${Number(v).toFixed(2)} per 100k` : `${fmtInt(v)} judges`}
-              legendLow="Fewest judges on file"
-              legendHigh="Most"
-              legendLabel={metric === "per_100k" ? "(per 100,000 residents)" : "(sitting judges)"}
-            />
-          </div>
-
-          <Section title={metric === "per_100k" ? "Every state, ranked by judges per 100,000 residents" : "Every state, ranked by sitting judges on file"}>
-            {ranked.map(s => (
-              <button key={s.state_abbr} onClick={() => onSelectState(s.state_abbr)}
-                style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
-                         padding: "9px 14px", background: "transparent", border: "none",
-                         borderBottom: "1px solid #EEF3FB", cursor: "pointer", fontFamily: serif }}>
-                <span style={{ flex: 2, fontSize: 13.5, fontWeight: 700, color: C.navy }}>
-                  {STATE_NAMES[s.state_abbr] || s.state_abbr}
-                </span>
-                <span style={{ flex: 1, fontSize: 13, color: C.ink, textAlign: "right" }}>{fmtInt(s.judges)} judges</span>
-                <span style={{ flex: 1, fontSize: 13, color: C.muted, textAlign: "right" }}>
-                  {s.per_100k != null ? `${Number(s.per_100k).toFixed(2)} per 100k` : ""}
-                </span>
-              </button>
-            ))}
-          </Section>
-
-          <Section title="Find a judge by name or court">
-            <div style={{ padding: "4px 0 0" }}>
-              <NationalJudges hideHeader onSelectJudge={onSelectJudge} />
+          <Panel
+            eyebrow="National heat map"
+            title={metric === "per_100k" ? "Judges per 100,000 residents" : "Sitting judges on file"}
+            pad={16}
+            className="cyr-rise"
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+              <MetricSeg value={metric} onChange={setMetric} options={[
+                { value: "judges", label: "Total judges" },
+                { value: "per_100k", label: "Per 100,000 residents", disabled: !hasPop },
+              ]} />
+              <div style={{ fontSize: 13, color: C.muted }}>Tap or click any state to open its courts.</div>
             </div>
-          </Section>
+            <div style={{ overflowX: "hidden" }}>
+              <USAHeatMap
+                values={values}
+                onSelect={onSelectState}
+                format={(v) => metric === "per_100k" ? `${Number(v).toFixed(2)} per 100k` : `${fmtInt(v)} judges`}
+                legendLow="Fewest judges on file"
+                legendHigh="Most"
+                legendLabel={metric === "per_100k" ? "(per 100,000 residents)" : "(sitting judges)"}
+              />
+            </div>
+          </Panel>
+
+          <Panel
+            eyebrow="Every state"
+            title={metric === "per_100k" ? "Every state, ranked by judges per 100,000 residents" : "Every state, ranked by sitting judges on file"}
+            pad={12}
+          >
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))", gap: 8 }}>
+              {ranked.map((s, i) => {
+                const v = Number(s[metricKey] || 0);
+                return (
+                  <RankRow key={s.state_abbr} rank={i + 1}
+                    onClick={() => onSelectState(s.state_abbr)}
+                    name={STATE_NAMES[s.state_abbr] || s.state_abbr}
+                    badge={s.state_abbr}
+                    primary={`${fmtInt(s.judges)} judges`}
+                    secondary={s.per_100k != null ? `${Number(s.per_100k).toFixed(2)} per 100k` : ""}
+                    share={maxVal > 0 ? v / maxVal : 0}
+                  />
+                );
+              })}
+            </div>
+          </Panel>
+
+          <Panel eyebrow="Search" title="Find a judge by name or court" pad={16}>
+            <NationalJudges hideHeader onSelectJudge={onSelectJudge} />
+          </Panel>
         </>
       )}
 
-      <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginTop: 18 }}>
+      <SourceNote>
         Source: the Free Law Project's CourtListener judge database, refreshed daily. Coverage
         reflects what CourtListener publishes: complete for supreme and appellate courts, growing
         for trial courts. A light state means fewer judges on file there, which is a public
         records gap, not a measure of the state's judiciary.
-      </p>
-    </div>
+      </SourceNote>
+    </Wrap>
   );
 }
 
@@ -258,18 +274,25 @@ function StateView({ state, onBack, onSelectCounty, onSelectJudge }) {
     return () => { cancelled = true; };
   }, [state]);
 
-  const back = <BackButton onClick={onBack}>← All states</BackButton>;
   const stateName = STATE_NAMES[state] || state;
+  const back = <BackBar onClick={onBack} label="All states" trail={[stateName]} />;
 
-  if (phase === "loading") return <Wrap>{back}<Center>Loading {stateName}...</Center></Wrap>;
-  if (phase === "error") return <Wrap>{back}<Center color={C.crimson}>Could not load this state.{errorDetail && <Mono>{errorDetail}</Mono>}</Center></Wrap>;
+  if (phase === "loading") return <Wrap>{back}<Loading rows={4} height={90} /></Wrap>;
+  if (phase === "error") return (
+    <Wrap>{back}
+      <ErrorBox>Could not load this state.{errorDetail && <Mono>{errorDetail}</Mono>}</ErrorBox>
+    </Wrap>
+  );
   if (phase === "notready") return (
     <Wrap>{back}
-      <Center>
-        No courts are mapped for {stateName} yet. The court location pass runs daily; this fills
-        in as CourtListener's coverage and the mapping grow. That is a public records gap, not a
-        statement about {stateName}'s courts.
-      </Center>
+      <PageHero compact eyebrow="Know Your Judge" title={stateName} />
+      <Panel>
+        <KitEmpty icon="🗺️" title="No courts mapped yet">
+          No courts are mapped for {stateName} yet. The court location pass runs daily; this fills
+          in as CourtListener's coverage and the mapping grow. That is a public records gap, not a
+          statement about {stateName}'s courts.
+        </KitEmpty>
+      </Panel>
     </Wrap>
   );
 
@@ -278,81 +301,92 @@ function StateView({ state, onBack, onSelectCounty, onSelectJudge }) {
   const countyNames = {};
   for (const c of counties) { values[c.county_fips] = c.judge_count; countyNames[c.county_fips] = c.county_name; }
   const rankedCounties = [...counties].sort((a, b) => b.judge_count - a.judge_count);
+  const maxCounty = rankedCounties.length ? Number(rankedCounties[0].judge_count || 0) : 0;
 
   return (
     <Wrap>
       {back}
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 20, fontWeight: 900 }}>{stateName}</div>
-        <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6, lineHeight: 1.6 }}>
-          Statewide courts first, then the county map. Click a county for its courts and judges.
-        </div>
-      </div>
+      <PageHero
+        compact
+        eyebrow="Know Your Judge"
+        title={stateName}
+        lede="Statewide courts first, then the county map. Click a county for its courts and judges."
+        chips={[
+          { value: statewide.length || null, label: statewide.length === 1 ? "statewide court" : "statewide courts" },
+          { value: counties.length || null, label: counties.length === 1 ? "county with courts" : "counties with courts" },
+          { value: unlocated.length || null, label: "courts not yet mapped" },
+        ]}
+      />
 
-      <Section title="Statewide courts">
+      <Panel eyebrow="Top of the system" title="Statewide courts" pad={statewide.length ? 12 : 20}>
         {statewide.length === 0
-          ? <Empty>No statewide courts on file yet for this state.</Empty>
-          : statewide.map(court => (
-            <CourtBlock key={court.cl_id} court={court} onSelectJudge={onSelectJudge} />
-          ))}
-      </Section>
+          ? <Muted>No statewide courts on file yet for this state.</Muted>
+          : <div style={{ display: "grid", gap: 12 }}>
+              {statewide.map(court => (
+                <CourtBlock key={court.cl_id} court={court} onSelectJudge={onSelectJudge} />
+              ))}
+            </div>}
+      </Panel>
 
       {shapes && counties.length > 0 && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 18 }}>
-          <USAHeatMap
-            regions={shapes.counties}
-            viewBox={shapes.viewBox}
-            ariaLabel={`${stateName} county heat map`}
-            values={values}
-            onSelect={(fips) => onSelectCounty({ fips, name: countyNames[fips] || shapes.counties[fips]?.name })}
-            format={(v) => `${fmtInt(v)} judges`}
-            legendLow="Fewest judges on file"
-            legendHigh="Most"
-            legendLabel="(judges at courts seated in the county)"
-          />
-        </div>
+        <Panel eyebrow="County heat map" title={`${stateName} by county`} pad={16}>
+          <div style={{ fontSize: 13, color: C.muted, marginBottom: 10 }}>Tap or click a county to open its courts.</div>
+          <div style={{ overflowX: "hidden" }}>
+            <USAHeatMap
+              regions={shapes.counties}
+              viewBox={shapes.viewBox}
+              ariaLabel={`${stateName} county heat map`}
+              values={values}
+              onSelect={(fips) => onSelectCounty({ fips, name: countyNames[fips] || shapes.counties[fips]?.name })}
+              format={(v) => `${fmtInt(v)} judges`}
+              legendLow="Fewest judges on file"
+              legendHigh="Most"
+              legendLabel="(judges at courts seated in the county)"
+            />
+          </div>
+        </Panel>
       )}
 
-      <Section title="Counties with courts on file">
+      <Panel eyebrow="Local courts" title="Counties with courts on file" pad={rankedCounties.length ? 12 : 20}>
         {rankedCounties.length === 0
-          ? <Empty>
+          ? <Muted>
               No county level courts are mapped for this state yet. CourtListener's trial court
               coverage varies by state; this is a public records gap, not a site failure.
-            </Empty>
-          : rankedCounties.map(c => (
-            <button key={c.county_fips} onClick={() => onSelectCounty({ fips: c.county_fips, name: c.county_name })}
-              style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
-                       padding: "9px 14px", background: "transparent", border: "none",
-                       borderBottom: "1px solid #EEF3FB", cursor: "pointer", fontFamily: serif }}>
-              <span style={{ flex: 2, fontSize: 13.5, fontWeight: 700, color: C.navy }}>{c.county_name} County</span>
-              <span style={{ flex: 1, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(c.court_count)} courts</span>
-              <span style={{ flex: 1, fontSize: 13, color: C.ink, textAlign: "right" }}>{fmtInt(c.judge_count)} judges</span>
-            </button>
-          ))}
-      </Section>
+            </Muted>
+          : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))", gap: 8 }}>
+              {rankedCounties.map((c, i) => (
+                <RankRow key={c.county_fips} rank={i + 1}
+                  onClick={() => onSelectCounty({ fips: c.county_fips, name: c.county_name })}
+                  name={`${c.county_name} County`}
+                  primary={`${fmtInt(c.judge_count)} judges`}
+                  secondary={`${fmtInt(c.court_count)} courts`}
+                  share={maxCounty > 0 ? Number(c.judge_count || 0) / maxCounty : 0}
+                />
+              ))}
+            </div>}
+      </Panel>
 
       {unlocated.length > 0 && (
-        <Section title="Courts not yet mapped to a county">
-          <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, lineHeight: 1.6, borderBottom: "1px solid #EEF3FB" }}>
+        <Panel eyebrow="Flagged" title="Courts not yet mapped to a county" pad={12}>
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, padding: "2px 4px 10px" }}>
             These courts' official names do not name a county, so they are flagged here rather
             than pinned to a guessed location.
           </div>
-          {unlocated.map(c => (
-            <div key={c.cl_id} style={{ display: "flex", gap: 12, padding: "9px 14px", borderBottom: "1px solid #EEF3FB" }}>
-              <span style={{ flex: 3, fontSize: 13, color: C.ink }}>{c.full_name}</span>
-              <span style={{ flex: 1, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(c.judge_count)} judges</span>
-            </div>
-          ))}
-        </Section>
+          <div style={{ display: "grid", gap: 6 }}>
+            {unlocated.map(c => (
+              <div key={c.cl_id} className="cyr-row" style={{ padding: "10px 12px" }}>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: C.ink }}>{c.full_name}</span>
+                <span className="cyr-chip" style={{ flexShrink: 0 }}>{fmtInt(c.judge_count)} judges</span>
+              </div>
+            ))}
+          </div>
+        </Panel>
       )}
 
       {state === "CO" && (
-        <Section title="Colorado retention elections and performance evaluations">
-          <div style={{ padding: "14px" }}>
-            <KnowYourJudge />
-          </div>
-        </Section>
+        <Panel eyebrow="Colorado only" title="Colorado retention elections and performance evaluations" pad={16}>
+          <KnowYourJudge />
+        </Panel>
       )}
     </Wrap>
   );
@@ -378,12 +412,18 @@ function CountyView({ state, county, onBack, onSelectJudge }) {
     return () => { cancelled = true; };
   }, [state, county.fips]);
 
-  const back = <BackButton onClick={onBack}>← {STATE_NAMES[state] || state}</BackButton>;
+  const stateName = STATE_NAMES[state] || state;
+  const back = <BackBar onClick={onBack} label={stateName} trail={[stateName, `${county.name} County`]} />;
 
-  if (phase === "loading") return <Wrap>{back}<Center>Loading {county.name} County...</Center></Wrap>;
-  if (phase === "error") return <Wrap>{back}<Center color={C.crimson}>Could not load this county.{errorDetail && <Mono>{errorDetail}</Mono>}</Center></Wrap>;
+  if (phase === "loading") return <Wrap>{back}<Loading rows={4} height={90} /></Wrap>;
+  if (phase === "error") return (
+    <Wrap>{back}
+      <ErrorBox>Could not load this county.{errorDetail && <Mono>{errorDetail}</Mono>}</ErrorBox>
+    </Wrap>
+  );
 
   const courts = data.courts || [];
+  const judgeTotal = courts.reduce((n, c) => n + (Array.isArray(c.judges) ? c.judges.length : 0), 0);
 
   // Group courts by city; courts without a recorded city group under the
   // county heading itself.
@@ -397,27 +437,34 @@ function CountyView({ state, county, onBack, onSelectJudge }) {
   return (
     <Wrap>
       {back}
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 20, fontWeight: 900 }}>{county.name} County, {STATE_NAMES[state] || state}</div>
-        <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6 }}>
-          {fmtInt(courts.length)} courts on file, grouped by city.
-        </div>
-      </div>
+      <PageHero
+        compact
+        eyebrow={stateName}
+        title={`${county.name} County, ${stateName}`}
+        lede={`${fmtInt(courts.length)} courts on file, grouped by city.`}
+        chips={[
+          { value: courts.length || null, label: courts.length === 1 ? "court" : "courts" },
+          { value: judgeTotal || null, label: "sitting judges" },
+        ]}
+      />
 
       {courts.length === 0 && (
-        <Center>
-          No courts are on file for this county yet. CourtListener's trial court coverage varies
-          by state and grows over time; this is a public records gap, not a site failure.
-        </Center>
+        <Panel>
+          <KitEmpty icon="🏛️" title="No courts on file yet">
+            No courts are on file for this county yet. CourtListener's trial court coverage varies
+            by state and grows over time; this is a public records gap, not a site failure.
+          </KitEmpty>
+        </Panel>
       )}
 
       {[...byCity.entries()].map(([city, cityCourts]) => (
-        <Section key={city} title={city}>
-          {cityCourts.map(court => (
-            <CourtBlock key={court.cl_id} court={court} onSelectJudge={onSelectJudge} />
-          ))}
-        </Section>
+        <Panel key={city} eyebrow="Courts in" title={city} pad={12}>
+          <div style={{ display: "grid", gap: 12 }}>
+            {cityCourts.map(court => (
+              <CourtBlock key={court.cl_id} court={court} onSelectJudge={onSelectJudge} />
+            ))}
+          </div>
+        </Panel>
       ))}
     </Wrap>
   );
@@ -427,36 +474,38 @@ function CountyView({ state, county, onBack, onSelectJudge }) {
 function CourtBlock({ court, onSelectJudge }) {
   const judges = Array.isArray(court.judges) ? court.judges : [];
   return (
-    <div style={{ borderBottom: "1px solid #EEF3FB" }}>
-      <div style={{ padding: "12px 14px 4px" }}>
-        <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy }}>
-          {court.full_name}
-          {court.city && <span style={{ marginLeft: 8, fontSize: 11.5, fontWeight: 700, color: C.gold }}>{court.city}</span>}
-        </div>
-        <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.6, margin: "6px 0 8px" }}>
-          {courtExplanation(court)}
+    <div style={{ border: `1px solid ${C.line}`, borderRadius: 16, background: C.soft, padding: 14 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <span aria-hidden style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center",
+                                   fontSize: 19, background: "linear-gradient(135deg,#E8F0FF,#D6E4FF)", border: "1px solid #C9D7F2" }}>🏛️</span>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontFamily: "var(--cyr-display)", fontWeight: 750, fontSize: 17.5, color: C.navy, lineHeight: 1.25 }}>
+            {court.full_name}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+            {JURISDICTION_LABELS[court.jurisdiction] && <span className="cyr-chip">{JURISDICTION_LABELS[court.jurisdiction]}</span>}
+            {court.city && <span className="cyr-chip" style={{ background: "#FFF6DD", color: "#8A5A00" }}>📍 {court.city}</span>}
+            <span className="cyr-chip" style={{ background: "#fff", border: `1px solid ${C.line}`, color: C.muted }}>
+              {judges.length} {judges.length === 1 ? "judge" : "judges"}
+            </span>
+          </div>
         </div>
       </div>
+      <div style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.6, margin: "10px 0 12px" }}>
+        {courtExplanation(court)}
+      </div>
       {judges.length === 0
-        ? <div style={{ padding: "0 14px 12px", fontSize: 12.5, color: C.muted }}>
+        ? <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, background: "#fff", borderRadius: 12, padding: "10px 12px", border: `1px dashed ${C.line}` }}>
             No sitting judges on file for this court yet, a public records gap that fills in as
             CourtListener's coverage grows.
           </div>
-        : judges.map(j => (
-          <button key={j.cl_person_id} onClick={() => onSelectJudge(j)}
-            style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
-                     padding: "8px 14px 8px 26px", background: "transparent", border: "none",
-                     borderTop: "1px solid #F6F8FC", cursor: "pointer", fontFamily: serif }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{j.full_name}</span>
-              <span style={{ fontSize: 12, color: C.muted, marginLeft: 8 }}>
-                {j.position_title || "Judge"}
-                {j.date_start ? ` · since ${String(j.date_start).slice(0, 4)}` : ""}
-              </span>
-            </div>
-            <span style={{ fontSize: 12, color: C.crimson, fontWeight: 700, flexShrink: 0 }}>View →</span>
-          </button>
-        ))}
+        : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 230px), 1fr))", gap: 8 }}>
+            {judges.map(j => (
+              <JudgeCard key={j.cl_person_id} onClick={() => onSelectJudge(j)}
+                name={j.full_name}
+                sub={`${j.position_title || "Judge"}${j.date_start ? ` · since ${String(j.date_start).slice(0, 4)}` : ""}`} />
+            ))}
+          </div>}
     </div>
   );
 }
@@ -492,133 +541,246 @@ function JudgeProfile({ judgeRow, onBack }) {
   const recent = data?.recentOpinions || [];
   const startDate = judge.date_start ? String(judge.date_start).slice(0, 10) : null;
   const clUrl = `https://www.courtlistener.com/person/${judge.cl_person_id}/${judge.slug || "judge"}/`;
+  const notInFeed = "Not yet in the public feed for this court";
 
   return (
     <Wrap>
-      <BackButton onClick={onBack}>← Back</BackButton>
+      <BackBar onClick={onBack} label="Back" />
 
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 20, fontWeight: 900 }}>{judge.full_name}</div>
-        <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
-          {judge.court_name || "Court not on record"}
-          {judge.position_title ? ` · ${judge.position_title}` : ""}
-          {startDate ? ` · serving since ${startDate}` : ""}
+      <PageHero compact eyebrow="Judge profile">
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+          <Initials name={judge.full_name} size={60} light />
+          <div style={{ minWidth: 0, flex: "1 1 220px" }}>
+            <h1 className="cyr-h1" style={{ fontSize: "clamp(26px, 3.8vw, 38px)", margin: 0 }}>{judge.full_name}</h1>
+            <div style={{ fontSize: 15, color: "rgba(255,255,255,.86)", marginTop: 6, lineHeight: 1.5 }}>
+              {judge.court_name || "Court not on record"}
+              {judge.position_title ? ` · ${judge.position_title}` : ""}
+              {startDate ? ` · serving since ${startDate}` : ""}
+            </div>
+          </div>
         </div>
+        {stats && stats.total_opinions != null && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+            <div className="cyr-hero-chip">
+              <span className="cyr-num" style={{ fontSize: 20 }}>{fmtInt(stats.total_opinions)}</span>
+              <span style={{ fontSize: 12.5, color: "rgba(255,255,255,.85)" }}>authored opinions on file</span>
+            </div>
+          </div>
+        )}
+      </PageHero>
+
+      <div className="cyr-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", alignItems: "start", gap: 18 }}>
+        <Panel eyebrow="Seat" title="Position" pad={8} style={{ marginBottom: 0 }}>
+          <Row label="Court" value={judge.court_name || "Not on record"} />
+          <Row label="State" value={STATE_NAMES[judge.state_abbr] || judge.state_abbr || "Not on record"} />
+          {judge.county_name && <Row label="County" value={`${judge.county_name} County`} />}
+          {judge.city && <Row label="Seat" value={judge.city} />}
+          <Row label="Title" value={judge.position_title || "Judge"} />
+          <Row label="Serving since" value={startDate || "Not on record"} last />
+        </Panel>
+
+        <Panel eyebrow="Public record" title="Ruling record" pad={16} style={{ marginBottom: 0 }}>
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, background: C.sky, borderRadius: 12, padding: "10px 12px", marginBottom: 14 }}>
+            Raw public record counts from opinions this judge authored, as published by
+            CourtListener. These are counts, not a score, grade, or ranking.
+          </div>
+          {phase === "loading" && <Loading rows={2} height={56} />}
+          {phase === "ready" && !stats && (
+            <Muted>
+              No authored opinions on file for this judge yet. CourtListener's opinion coverage
+              varies by court, strongest for supreme and appellate courts, and the nightly sync
+              keeps collecting; an empty record here reflects that coverage, not the judge.
+            </Muted>
+          )}
+          {phase === "ready" && stats && (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 120px), 1fr))", gap: 8, marginBottom: 10 }}>
+                <MiniStat label="Total opinions" value={fmtInt(stats.total_opinions)} tone={C.navy} />
+                <MiniStat label="Majority or lead" value={fmtInt(stats.majority_count)} tone={C.blue} />
+                <MiniStat label="Concurrences" value={fmtInt(stats.concurrence_count)} tone="#7C3AED" />
+                <MiniStat label="Dissents" value={fmtInt(stats.dissent_count)} tone="#B7791F" />
+                {Number(stats.other_count) > 0 && <MiniStat label="Other filings" value={fmtInt(stats.other_count)} tone="#0891B2" />}
+              </div>
+              <Row label="Affirmed / reversed"
+                value={stats.affirmed_count != null || stats.reversed_count != null
+                  ? `${fmtInt(stats.affirmed_count)} / ${fmtInt(stats.reversed_count)}`
+                  : notInFeed} />
+              <Row label="Average citations"
+                value={stats.avg_citations != null ? Number(stats.avg_citations).toFixed(1) : notInFeed}
+                last={!stats.first_opinion_date} />
+              {stats.first_opinion_date && (
+                <Row label="Opinions span" last
+                  value={`${String(stats.first_opinion_date).slice(0, 10)} to ${String(stats.last_opinion_date).slice(0, 10)}`} />
+              )}
+            </>
+          )}
+        </Panel>
       </div>
 
-      <Section title="Position">
-        <Row label="Court" value={judge.court_name || "Not on record"} />
-        <Row label="State" value={STATE_NAMES[judge.state_abbr] || judge.state_abbr || "Not on record"} />
-        {judge.county_name && <Row label="County" value={`${judge.county_name} County`} />}
-        {judge.city && <Row label="Seat" value={judge.city} />}
-        <Row label="Title" value={judge.position_title || "Judge"} />
-        <Row label="Serving since" value={startDate || "Not on record"} />
-      </Section>
-
-      <Section title="Ruling record">
-        <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, lineHeight: 1.6, borderBottom: "1px solid #EEF3FB" }}>
-          Raw public record counts from opinions this judge authored, as published by
-          CourtListener. These are counts, not a score, grade, or ranking.
-        </div>
-        {phase === "loading" && <Empty>Loading ruling record...</Empty>}
-        {phase === "ready" && !stats && (
-          <Empty>
-            No authored opinions on file for this judge yet. CourtListener's opinion coverage
-            varies by court, strongest for supreme and appellate courts, and the nightly sync
-            keeps collecting; an empty record here reflects that coverage, not the judge.
-          </Empty>
-        )}
-        {phase === "ready" && stats && (
-          <>
-            <Row label="Total opinions" value={fmtInt(stats.total_opinions)} />
-            <Row label="Majority or lead" value={fmtInt(stats.majority_count)} />
-            <Row label="Concurrences" value={fmtInt(stats.concurrence_count)} />
-            <Row label="Dissents" value={fmtInt(stats.dissent_count)} />
-            {Number(stats.other_count) > 0 && <Row label="Other filings" value={fmtInt(stats.other_count)} />}
-            <Row label="Affirmed / reversed"
-              value={stats.affirmed_count != null || stats.reversed_count != null
-                ? `${fmtInt(stats.affirmed_count)} / ${fmtInt(stats.reversed_count)}`
-                : "Not yet in the public feed for this court"} />
-            <Row label="Average citations"
-              value={stats.avg_citations != null ? Number(stats.avg_citations).toFixed(1)
-                : "Not yet in the public feed for this court"} />
-            {stats.first_opinion_date && (
-              <Row label="Opinions span"
-                value={`${String(stats.first_opinion_date).slice(0, 10)} to ${String(stats.last_opinion_date).slice(0, 10)}`} />
-            )}
-          </>
-        )}
-        {recent.length > 0 && (
-          <div style={{ borderTop: `1px solid ${C.line}` }}>
-            <div style={{ padding: "10px 14px 4px", fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>
-              Most recent opinions
-            </div>
+      {recent.length > 0 && (
+        <Panel eyebrow="Latest filings" title="Most recent opinions" pad={12} style={{ marginTop: 18 }}>
+          <div style={{ display: "grid", gap: 6 }}>
             {recent.map(o => (
               <a key={o.cl_opinion_id} href={o.url || clUrl} target="_blank" rel="noopener noreferrer"
-                style={{ display: "flex", gap: 12, padding: "8px 14px", borderTop: "1px solid #F6F8FC",
-                         textDecoration: "none", fontFamily: serif, alignItems: "baseline" }}>
-                <span style={{ flex: 2, fontSize: 13, color: C.navy, fontWeight: 700, minWidth: 0 }}>
+                className="cyr-row" style={{ textDecoration: "none", padding: "10px 12px", flexWrap: "wrap", rowGap: 6 }}>
+                <span aria-hidden style={{ fontSize: 16, flexShrink: 0 }}>📄</span>
+                <span style={{ flex: "1 1 200px", minWidth: 0, fontSize: 14, color: C.navy, fontWeight: 700, lineHeight: 1.35 }}>
                   {o.case_name || "Untitled opinion"}
                 </span>
-                <span style={{ flex: 1, fontSize: 12, color: C.muted, textAlign: "right", flexShrink: 0 }}>
-                  {OPINION_TYPE_LABELS[o.opinion_type] || "Opinion"}
-                  {o.date_filed ? ` · ${String(o.date_filed).slice(0, 10)}` : ""}
+                <span style={{ display: "inline-flex", gap: 6, alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
+                  <span className="cyr-chip" style={{ fontSize: 11 }}>{OPINION_TYPE_LABELS[o.opinion_type] || "Opinion"}</span>
+                  {o.date_filed && <span style={{ fontSize: 12.5, color: C.muted }} className="cyr-num">{String(o.date_filed).slice(0, 10)}</span>}
                 </span>
               </a>
             ))}
           </div>
-        )}
-        <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.line}` }}>
-          <a href={clUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-block", fontFamily: serif, fontSize: 13, fontWeight: 700,
-                     color: "#fff", background: C.crimson, borderRadius: 12, padding: "9px 18px",
-                     textDecoration: "none" }}>
-            All opinions and biography on CourtListener →
-          </a>
+        </Panel>
+      )}
+
+      <div className="cyr-card" style={{ marginTop: recent.length ? 0 : 18, padding: "18px 20px", display: "flex", flexWrap: "wrap", gap: 14,
+                                         alignItems: "center", justifyContent: "space-between", background: "linear-gradient(120deg,#FFFFFF,#EEF4FF)" }}>
+        <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+          <div className="cyr-h2" style={{ fontSize: 18 }}>The full record lives on CourtListener</div>
+          <div style={{ fontSize: 13.5, color: "#475569", marginTop: 4 }}>Biography, every opinion, and career history from the Free Law Project.</div>
         </div>
-      </Section>
+        <a href={clUrl} target="_blank" rel="noopener noreferrer" className="cyr-btn cyr-btn-primary"
+          style={{ whiteSpace: "normal", textAlign: "center" }}>
+          All opinions and biography on CourtListener{"\u00a0"}→
+        </a>
+      </div>
     </Wrap>
   );
 }
 
+// ---------- local presentation helpers ----------
+
 function Wrap({ children }) {
-  return <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>{children}</div>;
+  return <div style={{ fontFamily: sans, color: C.ink, maxWidth: 1000, margin: "0 auto", minWidth: 0 }}>{children}</div>;
 }
-function BackButton({ onClick, children }) {
+
+function BackBar({ onClick, label, trail }) {
   return (
-    <button onClick={onClick}
-      style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
-               border: `1px solid ${C.line}`, borderRadius: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
-      {children}
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+      <button onClick={onClick} className="cyr-btn cyr-btn-ghost" style={{ minHeight: 40 }}>
+        <span aria-hidden>←</span> {label}
+      </button>
+      {trail && trail.length > 0 && (
+        <nav aria-label="Breadcrumb" style={{ fontSize: 13, color: C.muted, display: "flex", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
+          <span>All states</span>
+          {trail.map((t, i) => (
+            <React.Fragment key={i}>
+              <span aria-hidden style={{ color: "#94A3B8" }}>/</span>
+              <span style={{ color: i === trail.length - 1 ? C.navy : C.muted, fontWeight: i === trail.length - 1 ? 700 : 500 }}>{t}</span>
+            </React.Fragment>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+}
+
+// Segmented pill switch that also supports a disabled option (Seg in the
+// kit has no disabled state, and the per capita view needs one).
+function MetricSeg({ options, value, onChange }) {
+  return (
+    <div className="cyr-seg cyr-seg-sm" role="tablist" style={{ flexShrink: 0 }}>
+      {options.map(o => (
+        <button key={o.value} type="button" role="tab" aria-pressed={o.value === value} aria-selected={o.value === value}
+          disabled={o.disabled} style={{ opacity: o.disabled ? 0.5 : 1, minHeight: 34 }}
+          onClick={() => !o.disabled && onChange(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RankRow({ rank, name, badge, primary, secondary, share, onClick }) {
+  return (
+    <button onClick={onClick} className="cyr-row"
+      style={{ width: "100%", textAlign: "left", cursor: "pointer", fontFamily: sans, padding: "10px 12px", minHeight: 52 }}>
+      <span className="cyr-num" style={{ width: 28, flexShrink: 0, textAlign: "center", fontSize: 13, color: "#94A3B8" }}>{rank}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "baseline", gap: 8, justifyContent: "space-between" }}>
+          <span style={{ fontSize: 14.5, fontWeight: 700, color: C.navy, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+            {name}
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.ink, whiteSpace: "nowrap", flexShrink: 0 }}>{primary}</span>
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+          <span style={{ flex: 1, height: 6, borderRadius: 99, background: "#EEF2F8", overflow: "hidden", minWidth: 0 }}>
+            <span style={{ display: "block", height: "100%", width: `${Math.max(2, Math.round(share * 100))}%`, borderRadius: 99,
+                           background: "linear-gradient(90deg,#2563EB,#0E2A6B)" }} />
+          </span>
+          {secondary && <span style={{ fontSize: 12, color: C.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{secondary}</span>}
+          {badge && <span className="cyr-chip" style={{ fontSize: 10.5, padding: "2px 7px", flexShrink: 0 }}>{badge}</span>}
+        </span>
+      </span>
+      <span aria-hidden style={{ color: "#94A3B8", fontSize: 18, flexShrink: 0 }}>›</span>
     </button>
   );
 }
-function Section({ title, children }) {
+
+function Initials({ name, size = 38, light }) {
+  const parts = String(name || "").replace(/[^A-Za-z\s.'-]/g, "").split(/\s+/).filter(p => p && /[A-Za-z]/.test(p[0]));
+  const ini = ((parts[0] || "")[0] || "") + ((parts.length > 1 ? parts[parts.length - 1] : "")[0] || "");
   return (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
+    <span aria-hidden style={{ width: size, height: size, borderRadius: size * 0.32, flexShrink: 0, display: "grid", placeItems: "center",
+                               fontFamily: "var(--cyr-display)", fontWeight: 800, fontSize: size * 0.38,
+                               background: light ? "rgba(255,255,255,.16)" : "linear-gradient(135deg,#0E2A6B,#2563EB)",
+                               border: light ? "1px solid rgba(255,255,255,.35)" : "none", color: "#fff" }}>
+      {ini.toUpperCase() || "J"}
+    </span>
+  );
+}
+
+function JudgeCard({ name, sub, onClick }) {
+  return (
+    <button onClick={onClick} className="cyr-row"
+      style={{ width: "100%", textAlign: "left", cursor: "pointer", fontFamily: sans, padding: "10px 12px", minHeight: 56 }}>
+      <Initials name={name} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: C.navy, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+        <span style={{ display: "block", fontSize: 12.5, color: C.muted, marginTop: 1 }}>{sub}</span>
+      </span>
+      <span aria-hidden style={{ color: C.blue, fontSize: 18, flexShrink: 0 }}>›</span>
+    </button>
+  );
+}
+
+function MiniStat({ label, value, tone }) {
+  return (
+    <div style={{ background: C.soft, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 12px 10px", minWidth: 0 }}>
+      <div className="cyr-num" style={{ fontSize: 24, color: tone, lineHeight: 1.05 }}>{value}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, marginTop: 4 }}>{label}</div>
     </div>
   );
 }
-function Row({ label, value }) {
+
+function Row({ label, value, last }) {
   return (
-    <div style={{ display: "flex", gap: 12, padding: "10px 14px", borderBottom: "1px solid #EEF3FB", fontFamily: serif }}>
-      <span style={{ flex: "0 0 160px", fontSize: 12, fontWeight: 700, color: C.muted }}>{label}</span>
-      <span style={{ flex: 1, fontSize: 13.5, color: C.ink }}>{value}</span>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 132px) minmax(0, 1fr)", gap: 12, padding: "11px 12px",
+                  borderBottom: last ? "none" : "1px solid #EEF2F8", fontFamily: sans, alignItems: "baseline" }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: C.muted }}>{label}</span>
+      <span style={{ fontSize: 14, color: C.ink, fontWeight: 600, overflowWrap: "break-word", minWidth: 0 }}>{value}</span>
     </div>
   );
 }
-function Empty({ children }) {
-  return <div style={{ padding: "14px", fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{children}</div>;
+
+function Muted({ children }) {
+  return <div style={{ fontSize: 14, color: C.muted, lineHeight: 1.65 }}>{children}</div>;
 }
-function Center({ children, color }) {
-  return <div style={{ textAlign: "center", padding: 40, color: color || C.muted, fontSize: 14.5, fontFamily: serif, lineHeight: 1.7 }}>{children}</div>;
+
+function SourceNote({ children }) {
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 12.5, color: C.muted, lineHeight: 1.65,
+                  marginTop: 6, padding: "12px 14px", borderRadius: 14, background: "#F1F5FB" }}>
+      <span aria-hidden style={{ fontSize: 14 }}>ℹ️</span>
+      <span style={{ minWidth: 0 }}>{children}</span>
+    </div>
+  );
 }
+
 function Mono({ children }) {
-  return <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{children}</div>;
-}
-function Link({ onClick, children }) {
-  return <button onClick={onClick} style={{ background: "none", border: "none", color: C.crimson, fontFamily: serif, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>{children}</button>;
+  return <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6, fontFamily: "var(--cyr-mono)", fontWeight: 500, overflowWrap: "anywhere" }}>{children}</div>;
 }

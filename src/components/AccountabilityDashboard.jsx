@@ -1,20 +1,23 @@
 // =============================================================================
 // AccountabilityDashboard.jsx - the accountability matrix, bill-first.
-// Left rail: every tracked bill. Click one and the main panel shows how the
+// Bill picker: every tracked bill. Pick one and the main panel shows how the
 // whole nation is voting on it: national tally bar, then every district's
 // split, with the visitor's own district highlighted at the top.
 // One fetch, no filters. The bill is the story.
+//
+// October 2026 redesign: PageHero with live chips, StatGrid of site-wide
+// totals, and bill picker plus breakdown in Panels. Data flow is unchanged.
 // =============================================================================
 import React, { useState, useEffect, useRef } from "react";
 import BillSidebar from "./BillSidebar.jsx";
 import "./BillSidebar.css";
+import { PageHero, StatGrid, Panel, TallyBar, Loading, Empty, ErrorBox } from "./ui/Kit.jsx";
 
-const C = { crimson:"#D62839", navy:"#0E2A6B", gold:"#F5B82E", parchment:"#FFFFFF",
-  ink:"#0F172A", muted:"#5B6578", line:"#E2E8F0", green:"#15803D", red:"#DC2626",
-  greenLight:"#E8F5E9", redLight:"#FFEBEE" };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";
+const C = { navy:"#0E2A6B", blue:"#2563EB", ink:"#0F172A", muted:"#5B6578", line:"#E2E8F0",
+  green:"#15803D", red:"#DC2626", gold:"#B7791F" };
 const POLL_MS = 20000;
+
+function pct(n, d) { return d ? Math.round((n / d) * 100) : 0; }
 
 export default function AccountabilityDashboard({ district }) {
   const [totals, setTotals] = useState(null);
@@ -74,7 +77,7 @@ export default function AccountabilityDashboard({ district }) {
       .then(r => { if (!r.ok) throw new Error(`matrix ${r.status}`); return r.json(); })
       .then(d => {
         if (cancelled) return;
-        // A server error body has no rows array - show the error state, not
+        // A server error body has no rows array: show the error state, not
         // a silent "no votes in any district".
         if (!Array.isArray(d.rows)) throw new Error(d.error || "bad response");
         setBillRows(d.rows);
@@ -155,40 +158,55 @@ export default function AccountabilityDashboard({ district }) {
     setExpandedStates(new Set(userState ? [userState] : []));
   }, [activeBill, userState]);
 
+  const billLabel = activeBill ? activeBill.replace(/-119$/, "").toUpperCase().replace("-", " ") : null;
+
   return (
-    <div style={{ fontFamily:serif, color:C.ink }}>
+    <div style={{ fontFamily: "var(--cyr-sans)", color: C.ink }}>
 
-      {/* HERO NUMBERS */}
-      <div style={{ background:C.navy, color:"#fff", padding:"28px 24px", marginBottom:20,
-                    borderRadius:8, border:"3px solid "+C.gold }}>
-        <div style={{ fontSize:11, fontWeight:700, letterSpacing:3, color:C.gold,
-                      textTransform:"uppercase", marginBottom:14 }}>
-          Constituent Accountability - Live Data
+      <PageHero
+        eyebrow="Constituent accountability"
+        title="How America is voting"
+        lede="Every position constituents have cast on a bill, counted live and broken down by state and district. Pick a bill to see where the country stands."
+        chips={totals ? [
+          { value: totalVotes, label: "positions cast" },
+          { value: Number(totals?.bills_tracked) || 0, label: "bills tracked" },
+          district ? { value: district, label: "your district" } : null,
+        ] : null}
+      >
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 14, fontSize: 13, fontWeight: 600,
+                      color: "rgba(255,255,255,.88)" }}>
+          <span className="cyr-live-dot" />
+          Live data, refreshed every 20 seconds
         </div>
-        <div style={{ display:"flex", gap:16, flexWrap:"wrap", justifyContent:"space-between" }}>
-          <StatBox num={totalVotes.toLocaleString()} label="Total Positions Cast" color="#fff" />
-          <StatBox num={totalSupport.toLocaleString()} label="Support" color="#4CAF50" />
-          <StatBox num={totalOppose.toLocaleString()} label="Oppose" color="#ef5350" />
-          <StatBox num={totalContacts.toLocaleString()} label="Contacted Their Rep" color={C.gold} />
-          <StatBox num={(Number(totals?.bills_tracked) || 0).toLocaleString()} label="Bills Tracked" color="#90CAF9" />
-        </div>
-      </div>
+      </PageHero>
 
-      {phase === "loading" && <Center>Loading accountability data...</Center>}
-      {phase === "empty" && <Center>No positions cast yet. Be the first.</Center>}
-      {phase === "error" && (
-        <Center color={C.crimson}>
-          Could not load data. <button onClick={load} style={{ fontFamily:serif, fontWeight:700,
-            border:"none", background:C.crimson, color:"#fff", borderRadius:4,
-            padding:"6px 14px", cursor:"pointer", marginLeft:8 }}>Try Again</button>
-        </Center>
+      {totals && (
+        <StatGrid min={150} items={[
+          { value: totalSupport, label: "Support", tone: "green", hint: `${pct(totalSupport, totalVotes)}% of positions` },
+          { value: totalOppose, label: "Oppose", tone: "red", hint: `${pct(totalOppose, totalVotes)}% of positions` },
+          { value: totalContacts, label: "Contacted their rep", tone: "gold", hint: "after casting a position" },
+          { value: Number(totals?.bills_tracked) || 0, label: "Bills tracked", tone: "blue", hint: "with at least one position" },
+        ]} />
       )}
 
-      {phase === "ready" && (
-        <div style={{ display:"flex", gap:16, flexWrap:"wrap", alignItems:"flex-start" }}>
+      {phase === "loading" && (
+        <div className="acc-layout">
+          <Loading rows={5} height={52} />
+          <Loading rows={4} height={72} />
+        </div>
+      )}
+      {phase === "empty" && (
+        <Panel pad={8}>
+          <Empty icon="🗳️" title="No positions cast yet">Be the first.</Empty>
+        </Panel>
+      )}
+      {phase === "error" && <ErrorBox onRetry={load}>Could not load data.</ErrorBox>}
 
-          {/* LEFT RAIL: bills */}
-          <div style={{ flex:"0 0 200px", minWidth:180 }}>
+      {phase === "ready" && (
+        <div className="acc-layout">
+
+          {/* Bill picker */}
+          <div style={{ minWidth: 0 }}>
             <BillSidebar
               userVotes={{}}
               selectedBillId={activeBill}
@@ -196,129 +214,127 @@ export default function AccountabilityDashboard({ district }) {
             />
           </div>
 
-          {/* MAIN PANEL: how the nation is voting on this bill */}
-          <div style={{ flex:"1 1 340px", minWidth:300 }}>
-            <div style={{ background:"#fff", border:"1px solid "+C.line, borderRadius:8,
-                          overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.08)" }}>
-
-              <div style={{ background:C.navy, color:"#fff", padding:"14px 18px" }}>
-                <div style={{ fontFamily:mono, fontSize:12, color:C.gold, letterSpacing:1 }}>
-                  {activeBill?.replace(/-119$/,"").toUpperCase()}
-                </div>
-                <div style={{ fontSize:15, fontWeight:700, marginTop:2 }}>
-                  {synopsis?.headline || "How America Is Voting"}
-                </div>
-                {synopsis?.plain ? (
-                  <div style={{ fontSize:12.5, color:"#cfd6e4", lineHeight:1.55, marginTop:6 }}>
-                    {synopsis.plain}
-                  </div>
+          {/* Main panel: how the nation is voting on this bill */}
+          <div style={{ minWidth: 0 }}>
+            <Panel
+              eyebrow={billLabel || "National tally"}
+              title={synopsis?.headline || "How America is voting"}
+              action={billRowsPhase === "loading" ? <span className="cyr-chip" style={{ flexShrink: 0 }}>Updating</span> : null}
+            >
+              {activeBill && (
+                synopsis?.plain ? (
+                  <p style={{ fontSize: 14.5, color: "#334155", lineHeight: 1.65, margin: "0 0 18px" }}>{synopsis.plain}</p>
                 ) : (
-                  <div style={{ fontSize:11, color:"#8fa0c0", marginTop:6 }}>
-                    Loading bill synopsis...
+                  <div style={{ marginBottom: 18 }}>
+                    <div className="cyr-skeleton" style={{ height: 12, width: "92%", marginBottom: 8 }} />
+                    <div className="cyr-skeleton" style={{ height: 12, width: "70%" }} />
+                    <div style={{ fontSize: 12.5, color: C.muted, marginTop: 8 }}>Loading bill synopsis...</div>
                   </div>
-                )}
-              </div>
+                )
+              )}
 
-              <div style={{ padding:"16px 18px" }}>
-                {/* National tally bar */}
-                <NationalBar nat={nat} />
+              {!activeBill && (
+                <Empty icon="📊" title="Pick a bill">Choose any bill from the list to see the national tally and the district by district split.</Empty>
+              )}
 
-                <div style={{ fontSize:11, color:C.muted, margin:"8px 0 16px" }}>
-                  {nat.total} position{nat.total !== 1 ? "s" : ""} across {billRows.length} district{billRows.length !== 1 ? "s" : ""}
-                  {nat.contacted > 0 ? ` · ${nat.contacted} contacted their rep` : ""}
-                  {billRowsPhase === "loading" ? " · updating..." : ""}
-                </div>
+              {activeBill && billRowsPhase === "error" && (
+                <div style={{ marginBottom: 16 }}><ErrorBox>Could not load the breakdown for this bill.</ErrorBox></div>
+              )}
 
-                {/* District breakdown, grouped by state. Each state is a
-                    collapsible row of combined totals; click to reveal its
-                    districts. The user's own state defaults to expanded. */}
-                <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1, marginBottom:8 }}>
-                  BY STATE AND DISTRICT
-                </div>
-                {stateGroups.map((g) => {
-                  const open = expandedStates.has(g.state);
-                  const gTotal = g.total || 1;
-                  const mineState = userState && g.state === userState;
-                  return (
-                    <div key={g.state} style={{ marginBottom:6 }}>
-                      {/* State header row (click to expand/collapse) */}
-                      <button onClick={() => toggleState(g.state)}
-                        style={{ width:"100%", textAlign:"left", cursor:"pointer",
-                                 display:"flex", alignItems:"center", gap:12, padding:"10px 12px",
-                                 borderRadius:6, fontFamily:serif,
-                                 background: mineState ? "#FFF8E1" : "#fff",
-                                 border:"1px solid "+(mineState ? C.gold : C.line) }}>
-                        <div style={{ minWidth:74, fontWeight:900, fontSize:14, color:C.navy }}>
-                          <span style={{ fontSize:11, color:C.muted, marginRight:4 }}>{open ? "▾" : "▸"}</span>
-                          {g.state}
-                          <span style={{ fontSize:10, color:C.muted, fontWeight:700 }}> · {g.rows.length}</span>
-                          {mineState && <div style={{ fontSize:8.5, color:C.gold, fontWeight:700, letterSpacing:1 }}>YOUR STATE</div>}
-                        </div>
-                        <div style={{ flex:1, display:"flex", height:18, borderRadius:3, overflow:"hidden" }}>
-                          <div style={{ flex: g.support || 0.0001, background:C.green }} />
-                          <div style={{ flex: g.oppose || 0.0001, background:C.red }} />
-                          <div style={{ flex: (gTotal - g.support - g.oppose) || 0.0001, background:"#ccc" }} />
-                        </div>
-                        <div style={{ minWidth:110, textAlign:"right", fontSize:12.5, whiteSpace:"nowrap" }}>
-                          <span style={{ color:C.green, fontWeight:700 }}>{g.support}</span>
-                          <span style={{ color:C.muted }}> / </span>
-                          <span style={{ color:C.red, fontWeight:700 }}>{g.oppose}</span>
-                          <span style={{ color:C.muted, fontSize:11 }}> of {g.total}</span>
-                        </div>
-                      </button>
+              {activeBill && (
+                <>
+                  {/* National tally */}
+                  <NationalTally nat={nat} />
 
-                      {/* District rows for this state, shown when expanded */}
-                      {open && g.rows.map((row, i) => {
-                        const total = Number(row.total_votes) || 1;
-                        const sup = Number(row.support_votes);
-                        const opp = Number(row.oppose_votes);
-                        const mine = district && row.district === district;
-                        return (
-                          <div key={i}
-                            style={{ display:"flex", alignItems:"center", gap:12, padding:"9px 12px",
-                                     margin:"6px 0 0 18px", borderRadius:6,
-                                     background: mine ? "#FFF8E1" : C.parchment,
-                                     border:"1px solid "+(mine ? C.gold : C.line) }}>
-                            <div style={{ minWidth:64, fontWeight:900, fontSize:13.5, color:C.navy }}>
-                              {row.district || "??"}
-                              {mine && <div style={{ fontSize:8.5, color:C.gold, fontWeight:700, letterSpacing:1 }}>YOURS</div>}
+                  <div style={{ fontSize: 13, color: C.muted, margin: "10px 0 22px", lineHeight: 1.5 }}>
+                    <span className="cyr-num" style={{ color: C.ink, fontSize: 14 }}>{nat.total}</span> position{nat.total !== 1 ? "s" : ""} across{" "}
+                    <span className="cyr-num" style={{ color: C.ink, fontSize: 14 }}>{billRows.length}</span> district{billRows.length !== 1 ? "s" : ""}
+                    {nat.contacted > 0 ? ` · ${nat.contacted} contacted their rep` : ""}
+                    {billRowsPhase === "loading" ? " · updating..." : ""}
+                  </div>
+
+                  {/* District breakdown, grouped by state. Each state is a
+                      collapsible row of combined totals; click to reveal its
+                      districts. The user's own state defaults to expanded. */}
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+                    <div className="cyr-h2" style={{ fontSize: 17 }}>By state and district</div>
+                    {stateGroups.length > 0 && (
+                      <span style={{ fontSize: 12.5, color: C.muted, whiteSpace: "nowrap" }}>Select a state to expand</span>
+                    )}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 8 }}>
+                    {stateGroups.map((g) => {
+                      const open = expandedStates.has(g.state);
+                      const mineState = userState && g.state === userState;
+                      return (
+                        <div key={g.state} style={{ minWidth: 0 }}>
+                          {/* State header row (click to expand/collapse) */}
+                          <button type="button" onClick={() => toggleState(g.state)} aria-expanded={open}
+                            className={mineState ? "cyr-row cyr-row-mine" : "cyr-row"}
+                            style={{ width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                                     flexDirection: "column", alignItems: "stretch", gap: 8, minHeight: 44 }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                              <span aria-hidden style={{ width: 22, height: 22, borderRadius: 8, flexShrink: 0, display: "grid", placeItems: "center",
+                                                         background: open ? C.navy : "#EEF2F8", color: open ? "#fff" : C.muted, fontSize: 11,
+                                                         transition: "transform .2s ease", transform: open ? "rotate(90deg)" : "none" }}>▸</span>
+                              <span style={{ fontWeight: 800, fontSize: 15, color: C.navy }}>{g.state}</span>
+                              <span className="cyr-chip" style={{ fontSize: 11, padding: "2px 8px", background: mineState ? "#FDE7B0" : undefined }}>
+                                {g.rows.length} district{g.rows.length !== 1 ? "s" : ""}
+                              </span>
+                              {mineState && <span className="cyr-chip" style={{ fontSize: 11, padding: "2px 8px", background: "#0E2A6B", color: "#fff" }}>Your state</span>}
+                              <SplitNums support={g.support} oppose={g.oppose} total={g.total} />
+                            </span>
+                            <TallyBar support={g.support} oppose={g.oppose} other={g.total - g.support - g.oppose} height={10} />
+                          </button>
+
+                          {/* District rows for this state, shown when expanded */}
+                          {open && (
+                            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 6, margin: "6px 0 4px 14px",
+                                          paddingLeft: 12, borderLeft: "2px solid #E2E8F0" }}>
+                              {g.rows.map((row, i) => {
+                                const sup = Number(row.support_votes);
+                                const opp = Number(row.oppose_votes);
+                                const total = Number(row.total_votes) || 0;
+                                const mine = district && row.district === district;
+                                return (
+                                  <div key={i} className={mine ? "cyr-row cyr-row-mine" : "cyr-row"}
+                                    style={{ flexDirection: "column", alignItems: "stretch", gap: 7, padding: "10px 12px" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                                      <span style={{ fontWeight: 800, fontSize: 14, color: C.navy, fontFamily: "var(--cyr-mono)" }}>{row.district || "??"}</span>
+                                      {mine && <span className="cyr-chip" style={{ fontSize: 11, padding: "2px 8px", background: "#0E2A6B", color: "#fff" }}>Yours</span>}
+                                      <SplitNums support={sup} oppose={opp} total={row.total_votes} />
+                                    </span>
+                                    <TallyBar support={sup} oppose={opp} other={total - sup - opp} height={8} />
+                                  </div>
+                                );
+                              })}
                             </div>
-                            <div style={{ flex:1, display:"flex", height:16, borderRadius:3, overflow:"hidden" }}>
-                              <div style={{ flex: sup || 0.0001, background:C.green }} />
-                              <div style={{ flex: opp || 0.0001, background:C.red }} />
-                              <div style={{ flex: (total - sup - opp) || 0.0001, background:"#ccc" }} />
-                            </div>
-                            <div style={{ minWidth:110, textAlign:"right", fontSize:12.5, whiteSpace:"nowrap" }}>
-                              <span style={{ color:C.green, fontWeight:700 }}>{sup}</span>
-                              <span style={{ color:C.muted }}> / </span>
-                              <span style={{ color:C.red, fontWeight:700 }}>{opp}</span>
-                              <span style={{ color:C.muted, fontSize:11 }}> of {row.total_votes}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {billRowsPhase === "ready" && stateGroups.length === 0 && (
+                      <Empty icon="🗺️" title="No district positions yet">Nobody has cast a position on this bill yet.</Empty>
+                    )}
+                  </div>
+                </>
+              )}
+            </Panel>
 
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:12 }}>
-              <button onClick={load}
-                style={{ fontFamily:serif, fontWeight:700, fontSize:13, padding:"8px 16px",
-                         background:C.crimson, color:"#fff", border:"none", borderRadius:6,
-                         cursor:"pointer" }}>
-                Refresh
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: -4 }}>
+              <button type="button" onClick={load} className="cyr-btn cyr-btn-ghost" style={{ minHeight: 40 }}>
+                <span aria-hidden>↻</span> Refresh
               </button>
-              <div style={{ fontSize:11.5, color:C.muted }}>
-                Updated live - every vote recorded instantly
+              <div style={{ fontSize: 12.5, color: C.muted, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span className="cyr-live-dot" /> Updated live, every vote recorded instantly
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div style={{ marginTop:16, fontSize:11.5, color:C.muted, textAlign:"center" }}>
+      <div style={{ marginTop: 22, fontSize: 12.5, color: C.muted, textAlign: "center", lineHeight: 1.6, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
         All positions are anonymous. Bot and rate-limit filters applied.
         "Contacted rep" = constituent opened the Contact Your Rep panel after voting.
       </div>
@@ -326,46 +342,38 @@ export default function AccountabilityDashboard({ district }) {
   );
 }
 
-function NationalBar({ nat }) {
-  const total = nat.total || 1;
-  const supPct = Math.round(nat.support / total * 100);
-  const oppPct = Math.round(nat.oppose / total * 100);
+function SplitNums({ support, oppose, total }) {
   return (
-    <div style={{ display:"flex", gap:6, height:34, borderRadius:5, overflow:"hidden" }}>
-      <div style={{ flex: nat.support || 0.0001, background:C.green, display:"flex",
-                    alignItems:"center", justifyContent:"center" }}>
-        <span style={{ color:"#fff", fontSize:13, fontWeight:900 }}>
-          {nat.support} SUPPORT ({supPct}%)
-        </span>
-      </div>
-      <div style={{ flex: nat.oppose || 0.0001, background:C.red, display:"flex",
-                    alignItems:"center", justifyContent:"center" }}>
-        <span style={{ color:"#fff", fontSize:13, fontWeight:900 }}>
-          {nat.oppose} OPPOSE ({oppPct}%)
-        </span>
-      </div>
-    </div>
+    <span style={{ marginLeft: "auto", fontSize: 13, whiteSpace: "nowrap", flexShrink: 0 }}>
+      <span style={{ color: C.green, fontWeight: 800 }}>{support}</span>
+      <span style={{ color: "#94A3B8" }}> / </span>
+      <span style={{ color: C.red, fontWeight: 800 }}>{oppose}</span>
+      <span style={{ color: C.muted, fontSize: 12 }}> of {total}</span>
+    </span>
   );
 }
 
-function StatBox({ num, label, color }) {
+function NationalTally({ nat }) {
+  const total = nat.total || 0;
+  const cells = [
+    { label: "Support", value: nat.support, color: C.green, bg: "#ECFDF3" },
+    { label: "Oppose", value: nat.oppose, color: C.red, bg: "#FEF2F2" },
+    { label: "Undecided", value: nat.undecided, color: C.muted, bg: "#F1F5F9" },
+  ];
   return (
-    <div style={{ textAlign:"center", minWidth:120 }}>
-      <div style={{ fontSize:36, fontWeight:900, color, fontFamily:serif, lineHeight:1 }}>
-        {num}
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 12 }}>
+        {cells.map(c => (
+          <div key={c.label} style={{ background: c.bg, borderRadius: 14, padding: "12px 12px 10px", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+              <span className="cyr-num" style={{ fontSize: "clamp(22px, 3vw, 28px)", color: c.color, lineHeight: 1 }}>{c.value}</span>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: c.color }}>{pct(c.value, total)}%</span>
+            </div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, marginTop: 4 }}>{c.label}</div>
+          </div>
+        ))}
       </div>
-      <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:"rgba(255,255,255,0.7)",
-                    textTransform:"uppercase", marginTop:4 }}>
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function Center({ children, color }) {
-  return (
-    <div style={{ textAlign:"center", padding:48, color: color || "#5B6578", fontSize:15 }}>
-      {children}
+      <TallyBar support={nat.support} oppose={nat.oppose} other={nat.undecided} height={14} />
     </div>
   );
 }

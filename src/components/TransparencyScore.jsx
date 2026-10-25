@@ -7,6 +7,8 @@ import React from "react";
  * versus the portion that is legally aggregate-only (individual/501c4 donors).
  *
  * Adapted to the site's inline theme (this project does not use Tailwind).
+ * October 2026 redesign: white card, big tabular percentage, tier chip and a
+ * rounded meter. Presentation only.
  *
  * Props:
  *   pctTransparent: number | null   0 to 100, from org_funding_transparency.pct_transparent
@@ -15,11 +17,9 @@ import React from "react";
  *   fiscalYear: number
  */
 const C = {
-  navy: "#0E2A6B", gold: "#F5B82E", muted: "#5B6578", line: "#E2E8F0",
-  ink: "#0F172A", parchment: "#FFFFFF",
-  green: "#15803D", amber: "#B8860B", red: "#DC2626", track: "#F1F5FB",
+  navy: "#0E2A6B", muted: "#5B6578", line: "#E2E8F0", ink: "#0F172A",
+  green: "#16A34A", amber: "#B7791F", red: "#E0313F", track: "#EEF2F8",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export default function TransparencyScore({
   pctTransparent,
@@ -36,8 +36,7 @@ export default function TransparencyScore({
 
   if (pctTransparent === null || pctTransparent === undefined) {
     return (
-      <div style={{ fontFamily: serif, border: `1px solid ${C.line}`, borderRadius: 16,
-                    padding: 16, fontSize: 13.5, color: C.muted, background: "#fff" }}>
+      <div className="cyr-card" style={{ padding: 18, fontSize: 14, color: C.muted }}>
         No revenue filing on record for FY{fiscalYear}.
       </div>
     );
@@ -45,35 +44,34 @@ export default function TransparencyScore({
 
   const tier = pctTransparent >= 75 ? "high" : pctTransparent >= 40 ? "medium" : "low";
   const tierStyles = {
-    high:   { bar: C.green, label: "Mostly traceable" },
-    medium: { bar: C.amber, label: "Partially traceable" },
-    low:    { bar: C.red,   label: "Largely untraceable" },
+    high:   { bar: C.green, bg: "#E8F7EE", label: "Mostly traceable" },
+    medium: { bar: C.amber, bg: "#FFF6DD", label: "Partially traceable" },
+    low:    { bar: C.red,   bg: "#FDECEE", label: "Largely untraceable" },
   }[tier];
 
   return (
-    <div style={{ fontFamily: serif, border: `1px solid ${C.line}`, borderRadius: 16,
-                  padding: 16, background: "#fff" }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
-        <span style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>
-          Funding transparency, FY{fiscalYear}
-        </span>
-        <span style={{ fontSize: 14, fontWeight: 900, color: C.ink }}>
-          {pctTransparent}% traceable
-        </span>
+    <div className="cyr-card" style={{ padding: 20 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="cyr-eyebrow" style={{ fontSize: 11 }}>Funding transparency, FY{fiscalYear}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6 }}>
+            <span className="cyr-num" style={{ fontSize: 38, color: C.navy, lineHeight: 1 }}>{pctTransparent}%</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>traceable</span>
+          </div>
+        </div>
+        <span className="cyr-chip" style={{ background: tierStyles.bg, color: tierStyles.bar }}>{tierStyles.label}</span>
       </div>
 
-      <div style={{ height: 8, width: "100%", borderRadius: 999, background: C.track, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${Math.min(pctTransparent, 100)}%`, background: tierStyles.bar }} />
+      <div style={{ height: 12, width: "100%", borderRadius: 999, background: C.track, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${Math.min(pctTransparent, 100)}%`, minWidth: pctTransparent > 0 ? 6 : 0, background: tierStyles.bar, borderRadius: 999 }} />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: C.muted }}>
-        <span>{tierStyles.label}</span>
-        <span>
-          {formatUSD(disclosedAmount)} traced / {formatUSD(undisclosedAmount)} not itemized
-        </span>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginTop: 10, fontSize: 13, color: C.muted }}>
+        <span><strong style={{ color: C.ink }}>{formatUSD(disclosedAmount)}</strong> traced</span>
+        <span><strong style={{ color: C.ink }}>{formatUSD(undisclosedAmount)}</strong> not itemized</span>
       </div>
 
-      <p style={{ marginTop: 12, marginBottom: 0, fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
+      <p style={{ marginTop: 14, marginBottom: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.6 }}>
         This score reflects what federal law requires organizations to disclose at the
         dollar level, not organizational conduct. A lower score usually means the org
         relies on individual or 501(c)(4)-style donors, whose identities are not publicly

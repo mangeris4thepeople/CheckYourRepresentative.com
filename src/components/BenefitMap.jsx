@@ -7,15 +7,19 @@
 // Both APIs return the same generic row shape: universe_total (the
 // denominator population), benefit_count (people or households receiving
 // the benefit), and benefit_percent.
+//
+// October 2026 redesign: intro card, the map inside a white Panel, ranked
+// rows with a proportional share bar, and a state page with a StatGrid and
+// Panel lists. Presentation only. No em dashes.
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
 import USAHeatMap from "./USAHeatMap.jsx";
+import { Panel, StatGrid, Loading, Empty as KitEmpty, ErrorBox } from "./ui/Kit.jsx";
 
 const C = {
-  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
-  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
+  navy: "#0E2A6B", blue: "#2563EB", red: "#E0313F", gold: "#F5B82E",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", soft: "#F8FAFE",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const fmtInt = (n) => (n == null ? "n/a" : Number(n).toLocaleString());
 const fmtPct = (n) => (n == null ? "n/a" : `${Number(n).toFixed(1)}%`);
@@ -57,34 +61,32 @@ export default function BenefitMap({ config }) {
   for (const s of states) values[s.state_abbr] = s.benefit_percent == null ? null : Number(s.benefit_percent);
   const ranked = [...states].sort((a, b) => Number(b.benefit_percent || 0) - Number(a.benefit_percent || 0));
 
+  const maxPct = Math.max(...states.map(x => Number(x.benefit_percent) || 0), 1);
+
   return (
-    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
-          {config.title}
-        </div>
-        <div style={{ fontSize: 14, color: "#cfd6e4", lineHeight: 1.6 }}>
+    <div style={{ color: C.ink, maxWidth: 1000, margin: "0 auto", minWidth: 0 }}>
+      <div className="cyr-card cyr-rise" style={{ padding: "18px 20px", marginBottom: 16, background: "linear-gradient(120deg,#FFFFFF 45%,#EEF4FF)" }}>
+        <div className="cyr-eyebrow" style={{ fontSize: 11 }}>Census American Community Survey</div>
+        <h2 className="cyr-h2" style={{ fontSize: "clamp(21px, 2.6vw, 26px)", marginTop: 6 }}>{config.title}</h2>
+        <div style={{ fontSize: 14.5, color: "#475569", lineHeight: 1.6, marginTop: 6, maxWidth: 760 }}>
           {config.tagline}
           {dataYear ? ` Data: Census American Community Survey, ${dataYear} five year estimates.` : ""}
           {" "}Click any state for its full breakdown by county and by city or town.
         </div>
       </div>
 
-      {phase === "loading" && <Center>Loading the national map...</Center>}
+      {phase === "loading" && <Loading rows={2} height={220} />}
       {phase === "error" && (
-        <Center color={C.crimson}>
-          Could not load the data. <Link onClick={load}>Try again</Link>
-          {errorDetail && (
-            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
-          )}
-        </Center>
+        <ErrorBox onRetry={load}>
+          Could not load the data.
+          {errorDetail && <span style={{ display: "block", fontSize: 11.5, fontWeight: 500, marginTop: 4, fontFamily: "var(--cyr-mono)" }}>{errorDetail}</span>}
+        </ErrorBox>
       )}
-      {phase === "notready" && <Center>This database is not loaded yet. Check back shortly.</Center>}
+      {phase === "notready" && <div className="cyr-card"><KitEmpty icon="🗺️" title="Not loaded yet">This database is not loaded yet. Check back shortly.</KitEmpty></div>}
 
       {phase === "ready" && (
         <>
-          <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 18 }}>
+          <Panel eyebrow="National map" title={`Share by state ${config.legendLabel}`} pad={16}>
             <USAHeatMap
               values={values}
               onSelect={setSelected}
@@ -93,26 +95,25 @@ export default function BenefitMap({ config }) {
               legendHigh="Most"
               legendLabel={config.legendLabel}
             />
-          </div>
+          </Panel>
 
-          <Section title={config.rankTitle}>
-            <RowHeader cols={["State", config.countLabel, config.universeLabel, "Share"]} />
-            {ranked.map(s => (
-              <button key={s.state_abbr} onClick={() => setSelected(s.state_abbr)}
-                style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
-                         padding: "9px 14px", background: "transparent", border: "none",
-                         borderBottom: "1px solid #EEF3FB", cursor: "pointer", fontFamily: serif }}>
-                <span style={{ flex: 2, fontSize: 13.5, fontWeight: 700, color: C.navy }}>{s.name}</span>
-                <span style={{ flex: 1.4, fontSize: 13, color: C.ink, textAlign: "right" }}>{fmtInt(s.benefit_count)}</span>
-                <span style={{ flex: 1.4, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(s.universe_total)}</span>
-                <span style={{ flex: 0.8, fontSize: 13, fontWeight: 700, color: C.crimson, textAlign: "right" }}>{fmtPct(s.benefit_percent)}</span>
-              </button>
-            ))}
-          </Section>
+          <Panel eyebrow="Ranked" title={config.rankTitle} pad={12}>
+            <ColumnNote countLabel={config.countLabel} universeLabel={config.universeLabel} />
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 6 }}>
+              {ranked.map((s, i) => (
+                <button key={s.state_abbr} onClick={() => setSelected(s.state_abbr)} className="cyr-row"
+                  style={{ width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit", padding: "10px 12px", gap: 12 }}>
+                  <span aria-hidden style={{ width: 26, flexShrink: 0, textAlign: "right", fontSize: 12.5, fontWeight: 800, color: "#94A3B8", fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
+                  <DataBody name={s.name} row={s} maxPct={maxPct} bold />
+                  <span aria-hidden style={{ color: "#94A3B8", fontSize: 18, flexShrink: 0 }}>›</span>
+                </button>
+              ))}
+            </div>
+          </Panel>
         </>
       )}
 
-      <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginTop: 18 }}>
+      <p style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.6, marginTop: 16 }}>
         {config.sourceNote}
       </p>
     </div>
@@ -154,114 +155,128 @@ function StateDetail({ config, state, onBack }) {
   }, [config.detailUrl, state, search]);
 
   const back = (
-    <button onClick={onBack}
-      style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
-               border: `1px solid ${C.line}`, borderRadius: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
-      ← National map
+    <button onClick={onBack} className="cyr-btn cyr-btn-ghost" style={{ marginBottom: 16, minHeight: 40 }}>
+      <span aria-hidden>←</span> National map
     </button>
   );
+  const wrap = { color: C.ink, maxWidth: 1000, margin: "0 auto", minWidth: 0 };
 
-  if (phase === "loading") return <div style={{ fontFamily: serif, maxWidth: 1000, margin: "0 auto" }}>{back}<Center>Loading state breakdown...</Center></div>;
+  if (phase === "loading") return <div style={wrap}>{back}<Loading rows={5} height={64} /></div>;
   if (phase === "error") return (
-    <div style={{ fontFamily: serif, maxWidth: 1000, margin: "0 auto" }}>
+    <div style={wrap}>
       {back}
-      <Center color={C.crimson}>
+      <ErrorBox>
         Could not load this state.
-        {errorDetail && (
-          <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, fontFamily: "monospace" }}>{errorDetail}</div>
-        )}
-      </Center>
+        {errorDetail && <span style={{ display: "block", fontSize: 11.5, fontWeight: 500, marginTop: 4, fontFamily: "var(--cyr-mono)" }}>{errorDetail}</span>}
+      </ErrorBox>
     </div>
   );
-  if (phase === "notready") return <div style={{ fontFamily: serif, maxWidth: 1000, margin: "0 auto" }}>{back}<Center>This database is not loaded yet.</Center></div>;
+  if (phase === "notready") return <div style={wrap}>{back}<div className="cyr-card"><KitEmpty icon="🗺️">This database is not loaded yet.</KitEmpty></div></div>;
 
   const { summary, counties, places, totalPlaces, dataYear } = data;
+  const maxCounty = Math.max(...counties.map(x => Number(x.benefit_percent) || 0), 1);
+  const maxPlace = Math.max(...places.map(x => Number(x.benefit_percent) || 0), 1);
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
+    <div style={wrap}>
       {back}
 
-      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
-                    border: `3px solid ${C.gold}`, marginBottom: 18 }}>
-        <div style={{ fontSize: 20, fontWeight: 900 }}>{summary.name}</div>
-        <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6, lineHeight: 1.6 }}>
-          {fmtInt(summary.benefit_count)} of {fmtInt(summary.universe_total)} {config.summaryUnits} ({fmtPct(summary.benefit_percent)}).
-          Census ACS 5-year estimates, {dataYear}.
+      <div className="cyr-card cyr-rise" style={{ padding: 0, overflow: "hidden", marginBottom: 16 }}>
+        <div style={{ height: 6, background: "linear-gradient(90deg,#2563EB,#0E2A6B)" }} />
+        <div style={{ padding: "18px 22px", background: "linear-gradient(120deg,#FFFFFF 40%,#EEF4FF)" }}>
+          <div className="cyr-eyebrow" style={{ fontSize: 11 }}>{config.title}</div>
+          <h2 className="cyr-h2" style={{ fontSize: "clamp(24px, 3.4vw, 32px)", marginTop: 4 }}>{summary.name}</h2>
+          <div style={{ fontSize: 14, color: "#475569", marginTop: 6, lineHeight: 1.6 }}>
+            {fmtInt(summary.benefit_count)} of {fmtInt(summary.universe_total)} {config.summaryUnits} ({fmtPct(summary.benefit_percent)}).
+            Census ACS 5-year estimates, {dataYear}.
+          </div>
         </div>
       </div>
 
-      <Section title="By county">
-        <RowHeader cols={["County", config.countLabel, config.universeLabel, "Share"]} />
-        {counties.length === 0
-          ? <Empty>No county data on record for this state.</Empty>
-          : counties.map(c => <DataRow key={c.geoid} row={c} />)}
-      </Section>
+      <StatGrid min={150} items={[
+        { value: fmtPct(summary.benefit_percent), label: "Share", tone: "blue" },
+        { value: fmtInt(summary.benefit_count), label: config.countLabel, tone: "navy" },
+        { value: fmtInt(summary.universe_total), label: config.universeLabel, tone: "navy" },
+      ]} />
 
-      <Section title={`By city and town (${fmtInt(totalPlaces)} places on record)`}>
-        <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderBottom: "1px solid #EEF3FB" }}>
-          <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && setSearch(searchInput.trim())}
-            placeholder="Search cities and towns"
-            style={{ flex: 1, fontFamily: serif, fontSize: 13.5, padding: "8px 11px",
-                     border: `1px solid ${C.line}`, borderRadius: 10 }} />
-          <button onClick={() => setSearch(searchInput.trim())}
-            style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "8px 16px",
-                     background: C.crimson, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>
+      <Panel eyebrow="Counties" title="By county" pad={12}>
+        <ColumnNote countLabel={config.countLabel} universeLabel={config.universeLabel} />
+        {counties.length === 0
+          ? <SmallEmpty>No county data on record for this state.</SmallEmpty>
+          : <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 6 }}>
+              {counties.map(c => <DataRow key={c.geoid} row={c} maxPct={maxCounty} />)}
+            </div>}
+      </Panel>
+
+      <Panel eyebrow="Cities and towns" title={`By city and town (${fmtInt(totalPlaces)} places on record)`} pad={12}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+            <span aria-hidden style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, opacity: .55 }}>🔎</span>
+            <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && setSearch(searchInput.trim())}
+              placeholder="Search cities and towns" aria-label="Search cities and towns"
+              style={{ width: "100%", fontSize: 14.5, padding: "11px 14px 11px 38px", border: `1px solid ${C.line}`, borderRadius: 999 }} />
+          </div>
+          <button onClick={() => setSearch(searchInput.trim())} className="cyr-btn cyr-btn-primary" style={{ minHeight: 42 }}>
             Search
           </button>
         </div>
-        <RowHeader cols={["City / town", config.countLabel, config.universeLabel, "Share"]} />
         {places.length === 0
-          ? <Empty>No places match that search.</Empty>
-          : places.map(p => <DataRow key={p.geoid} row={p} />)}
+          ? <SmallEmpty>No places match that search.</SmallEmpty>
+          : <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 6 }}>
+              {places.map(p => <DataRow key={p.geoid} row={p} maxPct={maxPlace} />)}
+            </div>}
         {!search && totalPlaces > places.length && (
-          <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted }}>
+          <div style={{ padding: "12px 4px 2px", fontSize: 12.5, color: C.muted }}>
             Showing the {places.length} places with the highest counts. Use the search to find any other city or town.
           </div>
         )}
-      </Section>
+      </Panel>
     </div>
   );
 }
 
-function DataRow({ row }) {
+function DataRow({ row, maxPct }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px",
-                  borderBottom: "1px solid #EEF3FB", fontFamily: serif }}>
-      <span style={{ flex: 2, fontSize: 13, color: C.ink }}>{row.name.replace(/, [A-Za-z ]+$/, "")}</span>
-      <span style={{ flex: 1.4, fontSize: 13, color: C.ink, textAlign: "right" }}>{fmtInt(row.benefit_count)}</span>
-      <span style={{ flex: 1.4, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(row.universe_total)}</span>
-      <span style={{ flex: 0.8, fontSize: 13, fontWeight: 700, color: C.crimson, textAlign: "right" }}>{fmtPct(row.benefit_percent)}</span>
+    <div className="cyr-row" style={{ padding: "10px 12px" }}>
+      <DataBody name={row.name.replace(/, [A-Za-z ]+$/, "")} row={row} maxPct={maxPct} />
     </div>
   );
 }
 
-function RowHeader({ cols }) {
+// One ranked line: name and share on top, a proportional bar, then the two
+// counts that make the share, so color is never the only way to read it.
+function DataBody({ name, row, maxPct, bold }) {
+  const pct = Number(row.benefit_percent) || 0;
   return (
-    <div style={{ display: "flex", gap: 12, padding: "9px 14px", borderBottom: `1px solid ${C.line}`,
-                  background: C.parchment, fontFamily: serif }}>
-      <span style={{ flex: 2, fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>{cols[0]}</span>
-      <span style={{ flex: 1.4, fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", textAlign: "right" }}>{cols[1]}</span>
-      <span style={{ flex: 1.4, fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", textAlign: "right" }}>{cols[2]}</span>
-      <span style={{ flex: 0.8, fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", textAlign: "right" }}>{cols[3]}</span>
+    <span style={{ flex: 1, minWidth: 0, display: "block" }}>
+      <span style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
+        <span style={{ fontSize: 14.5, fontWeight: bold ? 700 : 600, color: C.ink, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+        <span className="cyr-num" style={{ fontSize: 16, color: C.navy, whiteSpace: "nowrap" }}>{fmtPct(row.benefit_percent)}</span>
+      </span>
+      <span aria-hidden style={{ display: "block", height: 6, borderRadius: 99, background: "#EEF2F8", overflow: "hidden", margin: "6px 0 5px" }}>
+        <span style={{ display: "block", height: "100%", width: `${Math.max(1.5, pct / maxPct * 100)}%`, borderRadius: 99, background: "linear-gradient(90deg,#6C98EE,#0E2A6B)" }} />
+      </span>
+      <span style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", fontSize: 12.5, color: C.muted, fontVariantNumeric: "tabular-nums" }}>
+        <span><strong style={{ color: C.ink }}>{fmtInt(row.benefit_count)}</strong> of {fmtInt(row.universe_total)}</span>
+      </span>
+    </span>
+  );
+}
+
+function ColumnNote({ countLabel, universeLabel }) {
+  return (
+    <div style={{ fontSize: 12.5, color: C.muted, margin: "0 2px 10px" }}>
+      Each row: share, then {lowerFirst(countLabel)} of {lowerFirst(universeLabel)}.
     </div>
   );
 }
 
-function Section({ title, children }) {
-  return (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
-    </div>
-  );
+// "Households on SNAP" -> "households on SNAP" (keeps acronyms intact).
+function lowerFirst(s) {
+  return s ? s.charAt(0).toLowerCase() + s.slice(1) : s;
 }
-function Empty({ children }) {
-  return <div style={{ padding: "14px", fontSize: 13, color: C.muted }}>{children}</div>;
-}
-function Center({ children, color }) {
-  return <div style={{ textAlign: "center", padding: 40, color: color || C.muted, fontSize: 14.5, fontFamily: serif }}>{children}</div>;
-}
-function Link({ onClick, children }) {
-  return <button onClick={onClick} style={{ background: "none", border: "none", color: C.crimson, fontFamily: serif, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>{children}</button>;
+
+function SmallEmpty({ children }) {
+  return <div style={{ padding: "8px 4px", fontSize: 14, color: C.muted }}>{children}</div>;
 }

@@ -1,7 +1,11 @@
 // =============================================================================
-// Landing.jsx - CheckYourRepresentative.com homepage (launches July 1, 2026)
-// Dual-tone civic design: appeals across the full political spectrum.
-// "Your voice vs their vote" - the accountability platform for ALL Americans.
+// Landing.jsx - the /welcome campaign page for ads and social links.
+// "Your voice vs their vote": the accountability platform for ALL Americans.
+//
+// October 2026 revamp: matches the new site. Light glass nav, gradient hero
+// with a glass "voice vs vote" card, live stat cards from /api/stats (real
+// numbers only, a shimmer until they arrive), white step cards, and the
+// shared dark navy footer with the contact form. House style: no em dashes.
 // =============================================================================
 
 import React, { useState, useEffect, useRef } from "react";
@@ -10,20 +14,27 @@ import LandingNav from "./marketing/LandingNav.jsx";
 import ContactUsForm from "./ContactUsForm.jsx";
 
 const C = {
-  black:    "#0B1B44",
-  white:    "#FAFAFA",
-  crimson:  "#E0313F",
-  cobalt:   "#1D4ED8",
-  gold:     "#F5B82E",
-  goldDim:  "#B7791F",
-  gray:     "#6B6B6B",
-  grayLight:"#E8E8E8",
-  parchment:"#F6F8FC",
+  navy: "#0E2A6B", blue: "#2563EB", red: "#E0313F", gold: "#F5B82E", green: "#16A34A",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", bg: "#F6F8FC",
 };
+const sans = "var(--cyr-sans)";
 
-const bebas = "'Bebas Neue', 'Arial Black', Impact, sans-serif";
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";
+const SPECTRUM = ["Progressive", "Conservative", "Independent", "Libertarian", "Green", "Socialist"];
+
+const STEPS = [
+  {
+    n: "01", tone: C.gold, icon: "📍", title: "Register",
+    body: "Enter your address and email. We confirm your congressional district and connect you to your House rep and both Senators. One vote per person, no spam, no duplicates.",
+  },
+  {
+    n: "02", tone: C.red, icon: "🗳️", title: "Vote on Bills",
+    body: "Read plain-language bill summaries. Cast your position, Support, Oppose, or Undecided.",
+  },
+  {
+    n: "03", tone: C.blue, icon: "⚖️", title: "Hold Them Accountable",
+    body: "See how your rep voted vs. how your district and the nation voted. Contact them directly with one click.",
+  },
+];
 
 // No mock data - all data is real
 
@@ -109,296 +120,169 @@ export default function Landing({ onEnter, onNavigate }) {
     return () => clearInterval(interval);
   }, []);
 
-
+  const STATS = [
+    { n: counters.bills, label: "Bills analyzed", sub: "119th Congress", tone: C.navy, icon: "📄" },
+    { n: counters.votes, label: "Constituent votes cast", sub: "and counting", tone: C.red, icon: "🗳️" },
+    { n: counters.reps, label: "Representatives", sub: "House + Senate", tone: C.blue, icon: "🏛️" },
+  ];
 
   return (
-    <div style={{ fontFamily: serif, background: C.white, color: C.black, overflowX: "hidden" }}>
+    <div style={{ fontFamily: sans, color: C.ink, overflowX: "hidden", minHeight: "100vh" }}>
 
-      {/* ── NAV (shared with the landing-adjacent content pages) ── */}
+      {/* Nav (light glass, shared look with the app shell) */}
       <LandingNav active="landing" onNavigate={onNavigate} onEnter={onEnter} />
 
-      {/* ── EXPLAINER BANNER (dismissible, directly above the hero) ── */}
+      {/* Explainer banner (dismissible, directly above the hero) */}
       <ExplainerBanner onLearnMore={() => onNavigate?.("tutorial")} />
 
-      {/* ── SPLIT HERO ── */}
-      <div ref={heroRef} style={{ minHeight: isMobile ? "auto" : "100vh", display: "flex", flexDirection: isMobile ? "column" : "row", position: "relative", overflow: "hidden" }}>
-
-        {/* LEFT - THE PEOPLE */}
-        <div style={{
-          flex: 1, background: C.black, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center",
-          padding: isMobile ? "48px 24px 48px" : "60px 40px 60px 60px",
-          position: "relative",
-        }}>
-          <div style={{
-            fontSize: 11, letterSpacing: 4, color: C.gold, fontFamily: mono,
-            marginBottom: 16, textTransform: "uppercase"
-          }}>
-            WE THE PEOPLE
-          </div>
-          <div style={{
-            fontFamily: bebas, fontSize: "clamp(72px, 10vw, 120px)",
-            color: C.white, lineHeight: 0.9, textAlign: "center",
-            letterSpacing: 2,
-          }}>
-            YOUR<br />
-            <span style={{ color: C.gold }}>VOICE</span>
-          </div>
-          <div style={{
-            marginTop: 28, fontSize: 15, color: "#cccccc", lineHeight: 1.7, fontWeight: 700,
-            textAlign: "center", maxWidth: 320,
-          }}>
-            Cast your position on every bill before Congress.
-            Your ZIP code. Your district. Your opinion - counted.
-          </div>
-
-          {/* Left side pills - hidden on mobile */}
-          {!isMobile && (
-          <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-            {["Progressive", "Conservative", "Independent", "Libertarian", "Green", "Socialist"].map(label => (
-              <span key={label} style={{
-                fontFamily: mono, fontSize: 11, padding: "4px 12px",
-                border: "1px solid #333", borderRadius: 20, color: "#666",
-              }}>{label}</span>
-            ))}
-          </div>
-          )}
-        </div>
-
-        {/* DIVIDER - diagonal on desktop, horizontal bar on mobile */}
-        {isMobile ? (
-          <div style={{ background: C.black, display: "flex", alignItems: "center",
-                        justifyContent: "center", padding: "16px 0", position: "relative", zIndex: 10 }}>
-            <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: C.gold, opacity: 0.4 }} />
-            <div style={{
-              background: C.gold, color: C.black, fontFamily: bebas, fontSize: 22, letterSpacing: 3,
-              padding: "10px 16px", borderRadius: "50%", width: 56, height: 56,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 30px rgba(212,168,67,0.5)", position: "relative", zIndex: 2,
-            }}>VS</div>
-          </div>
-        ) : (
-        <div style={{
-          position: "absolute", left: "50%", top: 0, bottom: 0, width: 0,
-          zIndex: 10, pointerEvents: "none",
-        }}>
-          <svg style={{ position: "absolute", left: -60, top: 0, height: "100%", width: 120 }}
-               viewBox="0 0 120 800" preserveAspectRatio="none">
-            <polygon points="60,0 120,0 60,800 0,800" fill={C.gold} opacity="0.15" />
-            <line x1="60" y1="0" x2="60" y2="800" stroke={C.gold} strokeWidth="2" />
-          </svg>
-          <div style={{
-            position: "absolute", top: "50%", left: "50%",
-            transform: "translate(-50%, -50%)",
-            background: C.gold, color: C.black,
-            fontFamily: bebas, fontSize: 22, letterSpacing: 3,
-            padding: "12px 16px", borderRadius: "50%", width: 56, height: 56,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 40px rgba(212,168,67,0.4)",
-            zIndex: 20,
-          }}>VS</div>
-        </div>
-        )}
-
-        {/* RIGHT - THEIR VOTE */}
-        <div style={{
-          flex: 1, background: C.parchment, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center",
-          padding: isMobile ? "40px 24px 60px" : "60px 60px 60px 40px",
-          position: "relative",
-        }}>
-          <div style={{
-            fontSize: 11, letterSpacing: 4, color: C.gray, fontFamily: mono,
-            marginBottom: 16, textTransform: "uppercase"
-          }}>
-            ELECTED OFFICIALS
-          </div>
-          <div style={{
-            fontFamily: bebas, fontSize: "clamp(72px, 10vw, 120px)",
-            color: C.black, lineHeight: 0.9, textAlign: "center",
-            letterSpacing: 2,
-          }}>
-            THEIR<br />
-            <span style={{ color: C.crimson }}>VOTE</span>
-          </div>
-          <div style={{
-            marginTop: 28, fontSize: 15, color: "#444", lineHeight: 1.7, fontWeight: 700,
-            textAlign: "center", maxWidth: 340,
-          }}>
-            You voted. Your district voted. The nation voted. See if your representative's
-            votes actually line up with the people they represent. No spin. Just the record.
-          </div>
-
-          {/* Real CTA */}
-          <div style={{
-            marginTop: 32, background: C.white, border: `2px solid ${C.crimson}`,
-            borderRadius: 8, padding: "20px", width: "100%", maxWidth: 320,
-            textAlign: "center",
-          }}>
-            <div style={{ fontFamily: bebas, fontSize: 18, color: C.crimson, letterSpacing: 2, marginBottom: 8 }}>
-              ENTER YOUR ADDRESS
+      {/* Hero */}
+      <section ref={heroRef} className="cyr-page-hero" style={{ padding: isMobile ? "40px 16px 92px" : "64px 20px 120px" }}>
+        <div className="cyr-grid" style={{ maxWidth: 1140, margin: "0 auto", position: "relative", gap: isMobile ? 26 : 40,
+                                           gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "minmax(0, 1.1fr) minmax(0, 1fr)", alignItems: "center" }}>
+          <div className="cyr-rise">
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.14)",
+                          border: "1px solid rgba(255,255,255,.28)", borderRadius: 999, padding: "6px 12px",
+                          fontSize: 12.5, fontWeight: 700 }}>
+              <span className="cyr-live-dot" /> Non-partisan · Citizen-powered · Free
             </div>
-            <div style={{ fontFamily: mono, fontSize: 11, color: C.gray, lineHeight: 1.6 }}>
-              Find your district. See real bills. Cast your real position.
+            <h1 className="cyr-h1" style={{ fontSize: "clamp(40px, 7vw, 78px)", margin: "18px 0 16px" }}>
+              Your voice.<br />
+              <span style={{ background: "linear-gradient(90deg,#FFE29A,#F5B82E 40%,#FFD1D6)", WebkitBackgroundClip: "text",
+                             backgroundClip: "text", color: "transparent" }}>Their vote.</span>
+            </h1>
+            <p style={{ fontSize: "clamp(16px, 1.8vw, 19px)", lineHeight: 1.6, color: "rgba(255,255,255,.9)", maxWidth: 540, margin: "0 0 24px" }}>
+              Cast your position on every bill before Congress.
+              Your ZIP code. Your district. Your opinion, counted.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <button className="cyr-btn cyr-btn-gold" onClick={onEnter} style={{ minHeight: 46, padding: "12px 22px", fontSize: 15 }}>
+                Check your representative now <span aria-hidden>→</span>
+              </button>
+              <button className="cyr-btn cyr-btn-light" onClick={() => onNavigate?.("tutorial")} style={{ minHeight: 46 }}>
+                How it works
+              </button>
             </div>
-            <button onClick={onEnter} style={{
-              marginTop: 14, fontFamily: bebas, fontSize: 14, letterSpacing: 2,
-              background: C.crimson, color: C.white, border: "none",
-              padding: "10px 24px", borderRadius: 2, cursor: "pointer", width: "100%",
-            }}>
-              FIND OUT HERE
-            </button>
+            <div style={{ marginTop: 22, display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {SPECTRUM.map(label => (
+                <span key={label} style={{ fontSize: 12, fontWeight: 600, padding: "5px 11px", borderRadius: 999,
+                                           background: "rgba(255,255,255,.10)", border: "1px solid rgba(255,255,255,.22)",
+                                           color: "rgba(255,255,255,.85)" }}>{label}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Voice vs vote card */}
+          <div className="cyr-rise" style={{ animationDelay: "120ms", background: "rgba(255,255,255,.10)", border: "1px solid rgba(255,255,255,.24)",
+                                              borderRadius: 24, padding: isMobile ? 16 : 20, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+            <div style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 18, padding: "16px 18px" }}>
+              <div className="cyr-eyebrow" style={{ color: "#FFE29A", fontSize: 11 }}>We the people</div>
+              <div className="cyr-h2" style={{ color: "#fff", fontSize: 26, marginTop: 4 }}>Your voice</div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: "rgba(255,255,255,.85)", marginTop: 6 }}>
+                Cast your position on every bill before Congress, counted by district.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "10px 0" }}>
+              <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,.25)" }} />
+              <span className="cyr-num" style={{ width: 46, height: 46, borderRadius: 99, display: "grid", placeItems: "center", fontSize: 16,
+                                                 background: C.gold, color: C.ink, boxShadow: "0 8px 22px rgba(245,184,46,.45)" }}>VS</span>
+              <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,.25)" }} />
+            </div>
+
+            <div style={{ background: "#fff", borderRadius: 18, padding: "16px 18px", color: C.ink, boxShadow: "0 18px 40px rgba(11,34,90,.25)" }}>
+              <div className="cyr-eyebrow" style={{ color: C.red, fontSize: 11 }}>Elected officials</div>
+              <div className="cyr-h2" style={{ fontSize: 26, marginTop: 4 }}>Their vote</div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: "#475569", marginTop: 6 }}>
+                You voted. Your district voted. The nation voted. See if your representative's
+                votes actually line up with the people they represent. No spin. Just the record.
+              </div>
+              <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 14, background: "#F1F5FB", border: "1px solid #E2E8F0" }}>
+                <div style={{ fontWeight: 800, fontSize: 14.5, color: C.navy }}>Enter your address</div>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.5, marginTop: 2 }}>
+                  Find your district. See real bills. Cast your real position.
+                </div>
+                <button onClick={onEnter} className="cyr-btn cyr-btn-primary"
+                  style={{ marginTop: 10, width: "100%", justifyContent: "center", minHeight: 44 }}>
+                  Find out here <span aria-hidden>→</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Scroll indicator - desktop only */}
-        {!isMobile && <div style={{
-          position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-          animation: "bounce 2s infinite",
-        }}>
-          <span style={{ fontFamily: mono, fontSize: 10, color: C.gold, letterSpacing: 2 }}>
-            SCROLL
-          </span>
-          <span style={{ color: C.gold, fontSize: 18 }}>↓</span>
-        </div>}
-      </div>
+      <div style={{ maxWidth: 1140, margin: "0 auto", padding: "0 16px" }}>
 
+        {/* Live stats */}
+        <section ref={statsRef} className="cyr-grid" style={{ marginTop: isMobile ? -64 : -76, position: "relative", gap: isMobile ? 8 : 16,
+                                                               gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+          {STATS.map((s, i) => (
+            <div key={s.label} className="cyr-card cyr-card-hover cyr-rise"
+              style={{ padding: isMobile ? "14px 10px" : "18px 20px", animationDelay: `${i * 70}ms`, minWidth: 0,
+                       display: "flex", gap: isMobile ? 6 : 14, alignItems: isMobile ? "flex-start" : "center",
+                       flexDirection: isMobile ? "column" : "row" }}>
+              <span aria-hidden style={{ width: isMobile ? 34 : 48, height: isMobile ? 34 : 48, borderRadius: isMobile ? 10 : 14, flexShrink: 0,
+                                         display: "grid", placeItems: "center", fontSize: isMobile ? 16 : 22,
+                                         background: `linear-gradient(135deg, ${s.tone}1A, ${s.tone}38)`, border: `1px solid ${s.tone}2E` }}>{s.icon}</span>
+              <div style={{ minWidth: 0, width: "100%" }}>
+                {s.n > 0
+                  ? <div className="cyr-num" style={{ fontSize: isMobile ? 22 : "clamp(28px, 3.4vw, 38px)", color: s.tone, lineHeight: 1.05 }}>{s.n.toLocaleString()}</div>
+                  : <div className="cyr-skeleton" style={{ height: isMobile ? 24 : 34, width: isMobile ? "80%" : 120 }} aria-label="Loading" />}
+                <div style={{ fontSize: isMobile ? 12.5 : 14.5, fontWeight: 700, marginTop: 4, lineHeight: 1.3 }}>{s.label}</div>
+                <div style={{ fontSize: isMobile ? 11.5 : 12.5, color: C.muted }}>{s.sub}</div>
+              </div>
+            </div>
+          ))}
+        </section>
 
-
-      {/* ── STATS BAR ── */}
-      <div ref={statsRef} style={{
-        background: C.cobalt,
-        display: "flex", justifyContent: "center", gap: "clamp(20px, 4vw, 80px)",
-        flexWrap: "wrap", padding: "40px 24px",
-      }}>
-        {[
-          { n: counters.bills > 0 ? counters.bills.toLocaleString() : " - ", label: "Bills Analyzed", sub: "119th Congress" },
-          { n: counters.votes > 0 ? counters.votes.toLocaleString() : " - ", label: "Constituent Votes Cast", sub: "and counting" },
-          { n: counters.reps.toLocaleString(), label: "Representatives", sub: "House + Senate" },
-        ].map((s, i) => (
-          <div key={i} style={{ textAlign: "center" }}>
-            <div style={{
-              fontFamily: bebas, fontSize: "clamp(48px, 6vw, 72px)",
-              color: C.gold, lineHeight: 1, letterSpacing: 2,
-            }}>{s.n}</div>
-            <div style={{ fontSize: 14, color: C.white, fontWeight: 700, marginTop: 4 }}>{s.label}</div>
-            <div style={{ fontFamily: mono, fontSize: 11, color: "#8899cc", marginTop: 2 }}>{s.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── ACCOUNTABILITY CTA - real data lives in the tool ── */}
-      <div style={{ background: C.white, padding: "60px 20px" }}>
-        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 12 }}>
-            THE ACCOUNTABILITY MATRIX
-          </div>
-          <div style={{
-            fontFamily: bebas, fontSize: "clamp(32px, 5vw, 56px)",
-            letterSpacing: 2, lineHeight: 1.1, marginBottom: 20,
-          }}>
-            YOUR DISTRICT SPOKE.<br />
-            <span style={{ color: C.crimson }}>DID THEY LISTEN?</span>
-          </div>
-          <p style={{ fontSize: 17, color: "#444", fontWeight: 700, lineHeight: 1.7,
-                      maxWidth: 560, margin: "0 auto 32px" }}>
-            Enter your address to see how your representative actually voted on real bills  - 
+        {/* Accountability CTA, real data lives in the tool */}
+        <section className="cyr-card" style={{ marginTop: 40, padding: "clamp(26px, 5vw, 48px) clamp(20px, 4vw, 40px)", textAlign: "center",
+                                                background: "linear-gradient(120deg,#FFFFFF,#EEF4FF)" }}>
+          <div className="cyr-eyebrow">The accountability matrix</div>
+          <h2 className="cyr-h2" style={{ fontSize: "clamp(28px, 4.4vw, 46px)", margin: "10px 0 14px" }}>
+            Your district spoke.<br />
+            <span style={{ color: C.red }}>Did they listen?</span>
+          </h2>
+          <p style={{ fontSize: 17, color: "#475569", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 24px" }}>
+            Enter your address to see how your representative actually voted on real bills,
             and how your district feels about each one. No spin. Just the record.
           </p>
-          <button onClick={onEnter} style={{
-            fontFamily: bebas, fontSize: 20, letterSpacing: 3,
-            background: C.black, color: C.gold,
-            border: `2px solid ${C.gold}`,
-            padding: "16px 48px", borderRadius: 2, cursor: "pointer",
-          }}>
-            SEE YOUR DISTRICT'S REAL RECORD →
+          <button onClick={onEnter} className="cyr-btn cyr-btn-primary" style={{ minHeight: 48, padding: "13px 26px", fontSize: 15, whiteSpace: "normal" }}>
+            See your district's real record <span aria-hidden>→</span>
           </button>
-        </div>
-      </div>
+        </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <div style={{ background: C.black, padding: "80px 32px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 12 }}>
-              FOR EVERYONE. LEFT. RIGHT. CENTER.
-            </div>
-            <div style={{
-              fontFamily: bebas, fontSize: "clamp(36px, 5vw, 60px)",
-              color: C.white, letterSpacing: 2,
-            }}>
-              THREE STEPS.<br />
-              <span style={{ color: C.gold }}>ONE TRUTH.</span>
-            </div>
+        {/* How it works */}
+        <section style={{ marginTop: 48 }}>
+          <div style={{ textAlign: "center", marginBottom: 22 }}>
+            <div className="cyr-eyebrow">For everyone. Left. Right. Center.</div>
+            <h2 className="cyr-h2" style={{ fontSize: "clamp(28px, 4vw, 42px)", marginTop: 8 }}>
+              Three steps. <span style={{ color: C.blue }}>One truth.</span>
+            </h2>
           </div>
-
-          <div style={{ display: "flex", gap: 32, flexWrap: "wrap", justifyContent: "center" }}>
-            {[
-              {
-                n: "01",
-                color: C.gold,
-                title: "Register",
-                body: "Enter your address and email. We confirm your congressional district and connect you to your House rep and both Senators. One vote per person, no spam, no duplicates.",
-                icon: "📍",
-              },
-              {
-                n: "02",
-                color: C.crimson,
-                title: "Vote on Bills",
-                body: "Read plain-language bill summaries. Cast your position, Support, Oppose, or Undecided.",
-                icon: "🗳️",
-              },
-              {
-                n: "03",
-                color: C.cobalt,
-                title: "Hold Them Accountable",
-                body: "See how your rep voted vs. how your district and the nation voted. Contact them directly with one click.",
-                icon: "⚖️",
-              },
-            ].map((step, i) => (
-              <div key={i} style={{
-                flex: "1 1 240px", maxWidth: 280,
-                padding: "32px 28px",
-                border: `1px solid #222`,
-                borderTop: `3px solid ${step.color}`,
-                borderRadius: 2,
-              }}>
-                <div style={{
-                  fontFamily: bebas, fontSize: 48, color: step.color,
-                  letterSpacing: 2, lineHeight: 1, marginBottom: 8,
-                }}>{step.n}</div>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>{step.icon}</div>
-                <div style={{
-                  fontFamily: bebas, fontSize: 22, color: C.white,
-                  letterSpacing: 1, marginBottom: 12,
-                }}>{step.title}</div>
-                <div style={{ fontSize: 14, color: "#888", lineHeight: 1.7 }}>
-                  {step.body}
+          <div className="cyr-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))" }}>
+            {STEPS.map((step, i) => (
+              <div key={step.n} className="cyr-card cyr-card-hover cyr-rise" style={{ padding: "24px 22px", animationDelay: `${i * 80}ms`,
+                                                                                    borderTop: `4px solid ${step.tone}` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                  <span aria-hidden style={{ width: 48, height: 48, borderRadius: 14, display: "grid", placeItems: "center", fontSize: 23,
+                                             background: `linear-gradient(135deg, ${step.tone}1F, ${step.tone}3D)`, border: `1px solid ${step.tone}33` }}>{step.icon}</span>
+                  <span className="cyr-num" style={{ fontSize: 34, color: step.tone, opacity: .9 }}>{step.n}</span>
                 </div>
+                <div style={{ fontFamily: "var(--cyr-display)", fontWeight: 750, fontSize: 21, color: C.navy, margin: "14px 0 8px" }}>{step.title}</div>
+                <div style={{ fontSize: 14.5, color: "#475569", lineHeight: 1.65 }}>{step.body}</div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* ── FOR ALL AMERICANS ── */}
-      <div style={{
-        background: C.parchment, padding: "60px 20px",
-        borderTop: `4px solid ${C.gold}`,
-      }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 3, color: C.gray, marginBottom: 16 }}>
-            NON-PARTISAN · CITIZEN-POWERED · FREE
-          </div>
-          <div style={{
-            fontFamily: bebas, fontSize: "clamp(32px, 5vw, 56px)",
-            letterSpacing: 2, lineHeight: 1.1, marginBottom: 24,
-          }}>
-            WHETHER YOU'RE LEFT, RIGHT,<br />OR SICK OF BOTH:<br />
-            <span style={{ color: C.crimson }}>YOUR VOTE STILL COUNTS.</span>
-          </div>
-          <p style={{ fontSize: 16, lineHeight: 1.8, color: C.gray, maxWidth: 600, margin: "0 auto 40px" }}>
+        {/* For all Americans */}
+        <section className="cyr-card" style={{ marginTop: 48, marginBottom: 56, padding: "clamp(26px, 5vw, 48px) clamp(18px, 4vw, 40px)", textAlign: "center" }}>
+          <div className="cyr-eyebrow" style={{ color: C.red }}>Non-partisan · Citizen-powered · Free</div>
+          <h2 className="cyr-h2" style={{ fontSize: "clamp(26px, 4vw, 42px)", margin: "10px auto 16px", maxWidth: 720 }}>
+            Whether you're left, right, or sick of both: <span style={{ color: C.red }}>your vote still counts.</span>
+          </h2>
+          <p style={{ fontSize: 16, lineHeight: 1.75, color: "#475569", maxWidth: 600, margin: "0 auto 28px" }}>
             CheckYourRepresentative.com doesn't tell you what to think.
             It tells you what your representative is doing and gives you the tools
             to respond. Democrat, Republican, Independent, or anything else: your voice
@@ -406,78 +290,55 @@ export default function Landing({ onEnter, onNavigate }) {
           </p>
 
           {/* Political spectrum bar */}
-          <div style={{ margin: "0 auto 40px", maxWidth: 500 }}>
-            <div style={{
-              height: 8, borderRadius: 8,
-              background: `linear-gradient(to right, #1565C0, #7B1FA2, #9E9E9E, #E65100, ${C.crimson})`,
-              marginBottom: 8,
-            }} />
-            <div style={{
-              display: "flex", justifyContent: "space-between",
-              fontFamily: mono, fontSize: 10, color: C.gray,
-            }}>
-              <span>PROGRESSIVE</span>
-              <span>LIBERAL</span>
-              <span>MODERATE</span>
-              <span>CONSERVATIVE</span>
+          <div style={{ margin: "0 auto 24px", maxWidth: 520 }}>
+            <div style={{ height: 10, borderRadius: 99, marginBottom: 8,
+                          background: `linear-gradient(to right, #1565C0, #7B1FA2, #9E9E9E, #E65100, ${C.red})` }} />
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 4, fontSize: 11.5, fontWeight: 600, color: C.muted }}>
+              <span>Progressive</span>
+              <span>Liberal</span>
+              <span>Moderate</span>
+              <span>Conservative</span>
               <span>MAGA</span>
             </div>
           </div>
-          <div style={{
-            fontFamily: bebas, fontSize: 18, letterSpacing: 3,
-            color: C.gold, marginBottom: 32,
-          }}>
-            ALL WELCOME. ALL COUNTED. ALL MATTER.
+          <div className="cyr-chip" style={{ background: "#FFF6DD", color: "#8A5A00", fontSize: 13, padding: "7px 14px", marginBottom: 24 }}>
+            All welcome. All counted. All matter.
           </div>
 
-          <button onClick={onEnter} style={{
-            fontFamily: bebas, fontSize: 22, letterSpacing: 3,
-            background: C.crimson, color: C.white, border: "none",
-            padding: "18px 56px", borderRadius: 2, cursor: "pointer",
-            display: "block", margin: "0 auto",
-          }}>
-            CHECK YOUR REPRESENTATIVE NOW →
-          </button>
-        </div>
+          <div>
+            <button onClick={onEnter} className="cyr-btn cyr-btn-primary" style={{ minHeight: 50, padding: "14px 28px", fontSize: 15.5, whiteSpace: "normal" }}>
+              Check your representative now <span aria-hidden>→</span>
+            </button>
+          </div>
+        </section>
       </div>
 
-      {/* ── FOOTER ── */}
-      <div style={{
-        background: C.black, borderTop: `3px solid ${C.gold}`,
-        padding: "32px 20px",
-      }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", flexWrap: "wrap",
-                      gap: 28, justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div style={{ flex: "1 1 300px", textAlign: "left" }}>
-            <div style={{
-              fontFamily: bebas, fontSize: 18, letterSpacing: 3,
-              color: C.gold, marginBottom: 10,
-            }}>
-              CHECKYOURREPRESENTATIVE.COM
+      {/* Footer */}
+      <footer className="cyr-footer" style={{ marginTop: 0 }}>
+        <div className="cyr-flagline" />
+        <div className="cyr-footer-inner">
+          <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <img src="/icons/mark-96.png" alt="" style={{ width: 40, height: 40, borderRadius: 12 }} />
+              <div style={{ fontFamily: "var(--cyr-display)", fontWeight: 800, fontSize: 20, color: "#fff" }}>Check Your Representative</div>
             </div>
-            <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: "#cfcfcf", lineHeight: 1.8 }}>
-              Non-partisan voter education · Bill data from Congress.gov · 119th Congress<br />
+            <div style={{ fontSize: 13, lineHeight: 1.8, color: "#AFC0E2" }}>
+              Non-partisan voter education · Bill data from Congress.gov · 119th Congress
+            </div>
+            <div style={{ fontFamily: "var(--cyr-display)", fontStyle: "italic", fontSize: 16, color: "#FFE29A", margin: "12px 0 16px", lineHeight: 1.5 }}>
               "We the People of the United States, in Order to form a more perfect Union..."
             </div>
-            <div style={{ marginTop: 14, fontFamily: mono, fontSize: 10, fontWeight: 700, color: "#cfcfcf" }}>
+            <div style={{ display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff",
+                          border: "1px solid rgba(255,255,255,.3)", borderRadius: 12, padding: "6px 10px" }}>
               Paid for by We The People Inc. · Not affiliated with any political party
             </div>
           </div>
-          <div style={{ flex: "1 1 340px" }}>
+          <div style={{ flex: "1 1 360px", minWidth: 0, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.14)",
+                        borderRadius: 18, padding: 20 }}>
             <ContactUsForm />
           </div>
         </div>
-      </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        @keyframes bounce {
-          0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(8px); }
-        }
-        * { box-sizing: border-box; }
-        button:hover { opacity: 0.88; transition: opacity 0.15s; }
-      `}</style>
+      </footer>
     </div>
   );
 }

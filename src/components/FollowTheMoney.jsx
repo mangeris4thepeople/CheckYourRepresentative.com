@@ -8,18 +8,13 @@
 // ?ftm= query param via history.replaceState for shareable links.
 // =============================================================================
 import React, { useState, useEffect, useCallback } from "react";
+import { PageHero, Seg } from "./ui/Kit.jsx";
 import KnowYourRepTabs from "./KnowYourRepTabs.jsx";
 import NgoFundingTabs from "./NgoFundingTabs.jsx";
 import SocialSecurityPanel from "./SocialSecurityPanel.jsx";
 import SnapMap from "./SnapMap.jsx";
 import MedicaidMap from "./MedicaidMap.jsx";
 import MoneyMap from "./MoneyMap.jsx";
-
-const C = {
-  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
-  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
-};
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const SECTIONS = [
   { key: "know-your-rep", label: "Know Your Rep" },
@@ -59,19 +54,15 @@ export default function FollowTheMoney({ district }) {
 
   const selectSection = useCallback((key) => setSection(key), []);
 
+  // October 2026 redesign: gradient PageHero up top, Seg pills for the six
+  // sub-sections (scrolls sideways on phones instead of wrapping into rows).
   return (
-    <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, maxWidth: 1000, margin: "0 auto 16px",
-                    flexWrap: "wrap" }}>
-        {SECTIONS.map(s => (
-          <button key={s.key} onClick={() => selectSection(s.key)}
-            style={{ flex: "1 1 200px", fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "10px 14px",
-                     borderRadius: 12, cursor: "pointer", border: `2px solid ${C.navy}`,
-                     background: section === s.key ? C.navy : "#fff",
-                     color: section === s.key ? "#fff" : C.navy }}>
-            {s.label}
-          </button>
-        ))}
+    <div style={{ minWidth: 0 }}>
+      <PageHero compact eyebrow="Follow the money" title="Who pays, and who gets paid"
+        lede="FEC filings and top donor buckets for every member of Congress, NGO funding, Medicaid, SNAP, Social Security, and the six layer Money Map. Every figure traces to a named public record." />
+
+      <div style={{ display: "flex", margin: "-4px 0 14px" }}>
+        <Seg options={SECTIONS.map(s => ({ value: s.key, label: s.label }))} value={section} onChange={selectSection} />
       </div>
 
       {section === "know-your-rep" && <KnowYourRepTabs />}

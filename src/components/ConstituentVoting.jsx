@@ -17,13 +17,12 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import ContactRep from "./ContactRep.jsx";
 import BillVotingQueue from "./BillVotingQueue.jsx";
 import { getStoredSession } from "../lib/session.js";
+import { PageHero, ErrorBox } from "./ui/Kit.jsx";
 
 const C = {
-  yes: "#15803D", no: "#DC2626",
-  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839",
-  parchment: "#FFFFFF", ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
+  navy: "#0E2A6B", red: "#E0313F", ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
 };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const sans = "var(--cyr-sans)";
 const VOTED_MODES = new Set(["voted", "previous_history"]);
 
 async function fetchCounts(token) {
@@ -211,15 +210,41 @@ export default function ConstituentVoting({ district, location, session, onNeedS
   const bannerBillTitle = (lastAction && activeBillView && lastAction.billId === activeBillView.id)
     ? activeBillView.title : "this bill";
 
+  const posWord = p => p === "support" ? "Support" : p === "oppose" ? "Oppose" : "Undecided";
+  const posColor = p => p === "support" ? "#16A34A" : p === "oppose" ? "#DC2626" : "#64748B";
+  const posIcon = p => p === "support" ? "✓" : p === "oppose" ? "✕" : "?";
+
   return (
-    <div style={{ fontFamily: serif, maxWidth: 760, margin: "0 auto" }}>
-      {district && (
-        <div style={{ margin: "0 0 12px", padding: "10px 14px", background: "#fff",
-                      border: "1px solid " + C.line, borderRadius: 8, fontSize: 13 }}>
-          Voting as <strong style={{ color: C.crimson }}>District {district}</strong>
-          {location?.city && <span style={{ color: C.muted }}> · {location.city}, {location.state}</span>}
-        </div>
-      )}
+    <div style={{ fontFamily: sans, maxWidth: 820, margin: "0 auto" }}>
+      <PageHero
+        compact
+        eyebrow="Vote on bills"
+        title="Put your position on the record"
+        lede="Every active bill, explained in plain language with the money trail behind it. Read it, then cast your position."
+        chips={[
+          counts ? { value: counts.totalActive, label: "active bills" } : null,
+          counts && activeSession ? { value: counts.votedCount, label: "voted on by you" } : null,
+        ]}>
+        {(district || !activeSession) && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 16 }}>
+            {district && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", color: C.navy,
+                             borderRadius: 18, padding: "8px 14px", fontSize: 13.5, fontWeight: 600, maxWidth: "100%" }}>
+                <span aria-hidden>📍</span>
+                <span style={{ minWidth: 0 }}>
+                  Voting as <strong style={{ color: C.red }}>District {district}</strong>
+                  {location?.city && <span style={{ color: C.muted }}> · {location.city}, {location.state}</span>}
+                </span>
+              </span>
+            )}
+            {!activeSession && (
+              <button type="button" className="cyr-btn cyr-btn-gold" onClick={() => onNeedSignIn?.()} style={{ minHeight: 42 }}>
+                <span aria-hidden>🔒</span> Sign in to vote
+              </button>
+            )}
+          </div>
+        )}
+      </PageHero>
 
       <BillVotingQueue
         activeBill={activeBillView}
@@ -236,59 +261,70 @@ export default function ConstituentVoting({ district, location, session, onNeedS
         style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
       {lastAction?.phase === "signin" && (
-        <div style={{ margin: "16px 0", padding: 24, background: "#fff",
-                      border: "2px solid " + C.crimson, borderRadius: 16, textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>🔒</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: C.navy, marginBottom: 8 }}>
-            Sign in to vote
-          </div>
-          <div style={{ fontSize: 13, color: C.muted, marginBottom: 18, lineHeight: 1.6 }}>
+        <div className="cyr-card cyr-rise" style={{ margin: "16px 0", padding: "28px 22px", textAlign: "center", borderRadius: 24,
+                                                    background: "linear-gradient(180deg,#FFFFFF 0%,#F3F7FF 100%)", borderColor: "#C9D7F2" }}>
+          <div aria-hidden style={{ width: 64, height: 64, borderRadius: 99, margin: "0 auto 12px", background: "#E8F0FF",
+                                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🔒</div>
+          <div className="cyr-h2" style={{ fontSize: 24, marginBottom: 8 }}>Sign in to vote</div>
+          <div style={{ fontSize: 15, color: C.muted, margin: "0 auto 20px", lineHeight: 1.65, maxWidth: 460 }}>
             Every position is tied to one account, so votes stay honest, no anonymous
             ballots, no repeat voting. Sign-in takes 10 seconds. No password, ever.
           </div>
-          <button onClick={() => onNeedSignIn?.()}
-            style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, padding: "12px 28px",
-                     background: C.crimson, color: "#fff", border: "none", borderRadius: 12,
-                     cursor: "pointer" }}>
-            Sign In to Vote →
+          <button onClick={() => onNeedSignIn?.()} className="cyr-btn cyr-btn-primary"
+            style={{ fontSize: 16, padding: "14px 28px", minHeight: 50 }}>
+            Sign in to vote <span aria-hidden>→</span>
           </button>
         </div>
       )}
 
       {lastAction?.phase === "submitting" && (
-        <div style={{ textAlign: "center", color: C.muted, fontSize: 13, margin: "16px 0" }}>
-          Recording your vote on {bannerBillTitle}...
+        <div className="cyr-card" style={{ margin: "16px 0", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+                                           color: C.muted, fontSize: 14 }}>
+          <span aria-hidden className="cyr-skeleton" style={{ width: 22, height: 22, borderRadius: 99, flexShrink: 0 }} />
+          <span style={{ minWidth: 0 }}>Recording your vote on {bannerBillTitle}...</span>
         </div>
       )}
 
       {lastAction?.phase === "error" && (
-        <div style={{ margin: "16px 0", padding: "10px 12px", borderRadius: 8,
-                      background: "#FBE9E7", color: C.crimson, fontSize: 13,
-                      border: "1px solid " + C.crimson }}>
-          {lastAction.error}
+        <div style={{ margin: "16px 0" }}>
+          <ErrorBox>{lastAction.error}</ErrorBox>
         </div>
       )}
 
       {lastAction?.phase === "done" && (
-        <div style={{ margin: "16px 0", padding: "14px 16px", background: C.yes, color: "#fff",
-                      borderRadius: 12, textAlign: "center" }}>
-          <div style={{ fontSize: 20, fontWeight: 900 }}>
-            {lastAction.position === "support" ? "✓ YES recorded" : lastAction.position === "oppose" ? "✗ NO recorded" : "Undecided recorded"}
-          </div>
-          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
-            {lastAction.tier === "verified" ? "Network location matches your district" : "Vote counted"}
+        <div className="cyr-card cyr-rise" style={{ margin: "16px 0", padding: "18px 18px", borderRadius: 20, background: "#ECFDF3",
+                                                    borderColor: "#BBF7D0", display: "flex", alignItems: "center", gap: 14 }}>
+          <span aria-hidden style={{ width: 48, height: 48, borderRadius: 99, background: posColor(lastAction.position), color: "#fff",
+                                     flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                     fontSize: 22, fontWeight: 900 }}>
+            {posIcon(lastAction.position)}
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#14532D" }}>
+              {lastAction.position === "support" ? "Yes recorded" : lastAction.position === "oppose" ? "No recorded" : "Undecided recorded"}
+            </div>
+            <div style={{ fontSize: 13.5, marginTop: 2, color: "#166534" }}>
+              {lastAction.tier === "verified" ? "Network location matches your district" : "Vote counted"}
+            </div>
           </div>
         </div>
       )}
 
       {lastAction?.phase === "already" && (
-        <div style={{ margin: "16px 0", padding: "14px 16px", background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff",
-                      borderRadius: 12, textAlign: "center" }}>
-          <div style={{ fontSize: 18, fontWeight: 900 }}>
-            You already voted {lastAction.position === "support" ? "YES" : lastAction.position === "oppose" ? "NO" : "Undecided"} on {bannerBillTitle}
-          </div>
-          <div style={{ fontSize: 12, marginTop: 4, color: C.gold }}>
-            One position per bill, per account. Votes can't be changed or resubmitted.
+        <div className="cyr-card cyr-rise" style={{ margin: "16px 0", padding: "18px 18px", borderRadius: 20, background: "#EEF4FF",
+                                                    borderColor: "#C9D7F2", display: "flex", alignItems: "center", gap: 14 }}>
+          <span aria-hidden style={{ width: 48, height: 48, borderRadius: 99, background: posColor(lastAction.position), color: "#fff",
+                                     flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                     fontSize: 22, fontWeight: 900 }}>
+            {posIcon(lastAction.position)}
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 16.5, fontWeight: 800, color: C.navy, overflowWrap: "anywhere" }}>
+              You already voted {posWord(lastAction.position)} on {bannerBillTitle}
+            </div>
+            <div style={{ fontSize: 13.5, marginTop: 2, color: C.muted }}>
+              One position per bill, per account. Votes can't be changed or resubmitted.
+            </div>
           </div>
         </div>
       )}
@@ -296,11 +332,9 @@ export default function ConstituentVoting({ district, location, session, onNeedS
       {lastAction && (lastAction.phase === "done" || lastAction.phase === "already") && (
         <div style={{ margin: "0 0 24px" }}>
           {contactOpenFor !== lastAction.billId && (
-            <button onClick={() => setContactOpenFor(lastAction.billId)}
-              style={{ width: "100%", padding: "10px", fontFamily: serif, fontSize: 14,
-                       fontWeight: 700, borderRadius: 8, border: "1px solid " + C.line,
-                       background: "#fff", color: C.navy, cursor: "pointer" }}>
-              Contact Your Representative About This Bill
+            <button onClick={() => setContactOpenFor(lastAction.billId)} className="cyr-btn cyr-btn-ghost"
+              style={{ width: "100%", justifyContent: "center", minHeight: 50, fontSize: 15, whiteSpace: "normal", textAlign: "center" }}>
+              <span aria-hidden>✉️</span> Contact Your Representative About This Bill
             </button>
           )}
           {contactOpenFor === lastAction.billId && (

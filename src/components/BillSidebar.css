@@ -1,206 +1,194 @@
-.bs-wrapper {
-  width: 100%;
-  max-width: 200px;
+/* =============================================================================
+   BillSidebar.css - bill picker and Accountability page layout
+   (October 2026 redesign). Pills come from the shared cyr-seg classes in
+   theme.css; this file only adds layout, rows, and phone sizing.
+   ============================================================================= */
+
+/* ---------- Accountability page layout: picker + detail ---------- */
+.acc-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.acc-layout > * { min-width: 0; }
+
+@media (max-width: 900px) {
+  .acc-layout { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }
 
-.bs-heading {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #4a4636;
-  margin-bottom: 8px;
-}
-
-/* Collapsible glossary of bill-type prefixes, above the tabs. */
-.bs-legend {
-  margin-bottom: 10px;
-}
+/* ---------- picker panel ---------- */
+.bs-wrapper { width: 100%; }
 
 .bs-legend-toggle {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 11px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  background: var(--cyr-sky, #E8F0FF);
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12.5px;
   font-weight: 700;
-  color: #7a1815;
+  color: #1D4ED8;
   cursor: pointer;
-  text-decoration: underline;
+  white-space: nowrap;
 }
+.bs-legend-toggle:hover { background: #D9E6FF; }
 
 .bs-legend-body {
-  margin-top: 6px;
-  padding: 8px 10px;
-  background: #fbf7ec;
-  border: 1px solid #d8d0b4;
-  border-radius: 6px;
-}
-
-.bs-legend-row {
-  font-size: 11px;
-  line-height: 1.5;
-  color: #4a4636;
-  margin-bottom: 6px;
-}
-
-.bs-legend-row:last-child {
-  margin-bottom: 0;
-}
-
-.bs-legend-code {
-  display: inline-block;
-  min-width: 46px;
-  font-weight: 800;
-  color: #0A1A3F;
-}
-
-.bs-legend-name {
-  font-weight: 700;
-  color: #0A1A3F;
-}
-
-.bs-legend-desc {
-  color: #4a4636;
-}
-
-/* Bill-type tabs (HR, S, HRES, ...), one per prefix that has any votes. */
-.bs-prefix-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.bs-prefix-tab {
-  flex: 1 1 calc(33% - 6px);
-  background: #fff;
-  border: 1px solid #0A1A3F;
+  margin: 14px 16px 0;
+  padding: 12px 14px;
+  background: #F8FAFE;
+  border: 1px solid #E2E8F0;
   border-radius: 14px;
-  padding: 5px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #0A1A3F;
-  cursor: pointer;
-  white-space: nowrap;
+  display: grid;
+  gap: 8px;
 }
-
-.bs-prefix-tab:hover {
-  background: #eef1f7;
-}
-
-.bs-prefix-tab-active {
-  background: #0A1A3F;
-  border-color: #0A1A3F;
-  color: #fff;
-}
-
-.bs-load-more {
-  width: 100%;
-  margin-top: 8px;
-  padding: 9px;
-  font-weight: 700;
+.bs-legend-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 8px;
   font-size: 12.5px;
-  background: #0A1A3F;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  line-height: 1.5;
+  color: #475569;
 }
-
-.bs-load-more:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.bs-filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.bs-filter-tab {
-  flex: 1 1 calc(50% - 6px);
-  background: #efe9d6;
-  border: 1px solid #d8d0b4;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 11px;
-  color: #4a4636;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.bs-filter-tab:hover {
-  background: #e4dcc2;
-}
-
-.bs-filter-tab-active {
-  background: #7a1815;
-  border-color: #7a1815;
-  color: #f5f0dc;
-  font-weight: 600;
-}
-
-/* Fixed-height scroll box: the list scrolls inside its own container instead
-   of extending the whole page as more bills are added. */
-.bs-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  max-height: 460px;
-  overflow-y: auto;
-  border: 1px solid #d8d0b4;
+.bs-legend-code {
+  font-family: var(--cyr-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: #0E2A6B;
+  background: #E8F0FF;
   border-radius: 8px;
-  background: #ffffff;
+  padding: 1px 6px;
+  align-self: start;
+  text-align: center;
+}
+.bs-legend-name { font-weight: 700; color: #0E2A6B; }
+.bs-legend-desc { color: #475569; }
+
+/* Bill type and filter pills. */
+.bs-controls {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #EEF2F8;
+}
+.bs-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cyr-muted, #5B6578);
+  margin: 0 0 6px 2px;
+}
+.bs-seg .cyr-seg {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  width: 100%;
+  border-radius: 18px;
+}
+.bs-seg-filters .cyr-seg { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bs-seg .cyr-seg button { min-height: 38px; justify-content: center; }
+
+/* Bill rows: full width, number badge, mini tally bar, position count. */
+.bs-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 12px;
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .bs-empty {
-  font-size: 12px;
-  color: #8a8470;
-  padding: 14px 12px;
+  font-size: 13.5px;
+  color: var(--cyr-muted, #5B6578);
+  padding: 14px 6px;
+}
+.bs-empty-error {
+  color: #991B1B;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 600;
 }
 
-/* Clean list rows with a divider between them, count badge on the right. */
 .bs-bill-btn {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   width: 100%;
+  min-height: 48px;
   text-align: left;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid #ece7d5;
-  border-radius: 0;
+  background: #fff;
+  border: 1px solid var(--cyr-line, #E2E8F0);
+  border-radius: 14px;
   padding: 9px 12px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #2a2a2a;
+  font-family: inherit;
+  color: var(--cyr-ink, #0F172A);
   cursor: pointer;
 }
-
-.bs-bill-btn:last-child {
-  border-bottom: none;
-}
-
 .bs-bill-btn:hover {
-  background: #f4efdd;
+  border-color: #BFD0F2;
+  box-shadow: 0 6px 16px rgba(14, 42, 107, 0.08);
+}
+.bs-bill-btn-active,
+.bs-bill-btn-active:hover {
+  background: linear-gradient(120deg, #EEF4FF, #F8FAFF);
+  border-color: var(--cyr-blue, #2563EB);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
-.bs-bill-btn-active {
-  background: #7a1815;
-  color: #f5f0dc;
+.bs-bill-num {
+  flex-shrink: 0;
+  min-width: 88px;
+  text-align: center;
+  font-family: var(--cyr-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 5px 8px;
+  background: #E8F0FF;
+  color: #1D4ED8;
+  white-space: nowrap;
 }
+.bs-bill-num-senate { background: #FDECEE; color: #B91C1C; }
+.bs-bill-btn-active .bs-bill-num { background: var(--cyr-navy, #0E2A6B); color: #fff; }
+
+.bs-bill-bar { flex: 1; min-width: 30px; }
 
 .bs-bill-count {
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 10px;
-  padding: 1px 8px;
-  font-size: 12px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 15px;
+  color: var(--cyr-navy, #0E2A6B);
+}
+.bs-bill-count-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--cyr-muted, #5B6578);
 }
 
-.bs-bill-btn-active .bs-bill-count {
-  background: rgba(255, 255, 255, 0.2);
+.bs-more { padding: 0 12px 14px; }
+.bs-load-more { width: 100%; justify-content: center; min-height: 44px; }
+
+/* ---------- phones ---------- */
+@media (max-width: 900px) {
+  .bs-list { max-height: 340px; }
+}
+@media (max-width: 640px) {
+  .bs-controls { padding: 12px 14px 10px; }
+  .bs-seg .cyr-seg button { min-height: 40px; }
+  .bs-list { padding: 10px; }
+  .bs-bill-num { min-width: 80px; }
+  .bs-legend-body { margin: 12px 14px 0; }
+}
+@media (max-width: 380px) {
+  .bs-bill-count-label { display: none; }
 }

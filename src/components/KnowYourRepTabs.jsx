@@ -10,9 +10,7 @@ import React, { useState } from "react";
 import KnowYourRep from "./KnowYourRep.jsx";
 import SenateDirectory from "./SenateDirectory.jsx";
 import RepSpaceTab from "./RepSpaceTab.jsx";
-
-const C = { navy: "#0E2A6B", gold: "#F5B82E", muted: "#5B6578", line: "#E2E8F0" };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+import { Seg } from "./ui/Kit.jsx";
 
 function initialChamber() {
   try {
@@ -24,22 +22,16 @@ function initialChamber() {
 export default function KnowYourRepTabs() {
   const [chamber, setChamber] = useState(initialChamber);
 
-  const btn = (key, label) => (
-    <button onClick={() => setChamber(key)}
-      style={{ flex: 1, fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "10px 16px",
-               borderRadius: 12, cursor: "pointer", border: `2px solid ${C.navy}`,
-               background: chamber === key ? C.navy : "#fff",
-               color: chamber === key ? "#fff" : C.navy }}>
-      {label}
-    </button>
-  );
-
+  // Chamber switch as small Seg pills; RepSpace keeps its own retro look
+  // inside, only this surrounding control is part of the redesign.
   return (
-    <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, maxWidth: 1000, margin: "0 auto 16px" }}>
-        {btn("house", "🏛️ House")}
-        {btn("senate", "⚖️ Senate")}
-        {btn("repspace", "🪩 RepSpace")}
+    <div style={{ minWidth: 0 }}>
+      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 16 }}>
+        <Seg size="sm" value={chamber} onChange={setChamber} options={[
+          { value: "house", label: "🏛️ House" },
+          { value: "senate", label: "⚖️ Senate" },
+          { value: "repspace", label: "🪩 RepSpace" },
+        ]} />
       </div>
 
       {chamber === "house" && <KnowYourRep />}

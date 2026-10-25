@@ -4,8 +4,9 @@
 // projection with Alaska and Hawaii inset), pre-rendered to SVG path data
 // in src/data/us-state-paths.json so no mapping library ships to the client.
 //
-// Color is a single-hue sequential ramp, light for low values through deep
-// red for high, per the site's data visualization rules: value tooltips on
+// Color is a single-hue sequential ramp, pale blue for low values through
+// deep navy for high (October 2026 palette), per the site's data
+// visualization rules: value tooltips on
 // hover, a labeled legend, and the caller is expected to render a table of
 // the same numbers beside it so color is never the only way to read them.
 // =============================================================================
@@ -13,11 +14,11 @@ import React, { useMemo, useState } from "react";
 import STATE_PATHS from "../data/us-state-paths.json";
 
 const C = { navy: "#0E2A6B", gold: "#F5B82E", ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0" };
-const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
-// Light to dark single-hue ramp (monotonic lightness, no rainbow).
-const RAMP = ["#F6E3CE", "#EFC3A4", "#E29B7B", "#D06F55", "#B84734", "#992117", "#750000"];
-const NO_DATA = "#E6ECF5";
+// Light to dark single-hue blue ramp (monotonic lightness, no rainbow).
+// The legend bar below is drawn from this same array, so it always matches.
+const RAMP = ["#EAF1FF", "#C8DAFE", "#98B9F7", "#6493EC", "#3A6FD8", "#1F4BB0", "#0E2A6B"];
+const NO_DATA = "#EEF0F4";
 
 function rampColor(t) {
   const x = Math.max(0, Math.min(1, t)) * (RAMP.length - 1);
@@ -59,8 +60,8 @@ export default function USAHeatMap({ values, onSelect, format, legendLow, legend
           return (
             <path key={abbr} d={s.d}
               fill={has ? rampColor(scale(v)) : NO_DATA}
-              stroke={isHover ? C.navy : "#FFFFFF"}
-              strokeWidth={isHover ? 2 : 1}
+              stroke={isHover ? C.gold : "#FFFFFF"}
+              strokeWidth={isHover ? 2.5 : 1}
               style={{ cursor: has && onSelect ? "pointer" : "default" }}
               onClick={() => has && onSelect && onSelect(abbr)}
               onMouseMove={(e) => {
@@ -78,28 +79,33 @@ export default function USAHeatMap({ values, onSelect, format, legendLow, legend
       {hover && (
         <div style={{
           position: "absolute", left: Math.min(hover.x + 14, 780), top: hover.y + 10,
-          background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", fontFamily: serif, fontSize: 12.5,
-          padding: "7px 11px", borderRadius: 12, pointerEvents: "none",
-          border: `1px solid ${C.gold}`, whiteSpace: "nowrap", zIndex: 5,
+          background: "#fff", color: C.ink, fontSize: 13,
+          padding: "8px 12px", borderRadius: 12, pointerEvents: "none",
+          border: `1px solid ${C.line}`, boxShadow: "0 10px 24px rgba(14,42,107,.16)", whiteSpace: "nowrap", zIndex: 5,
         }}>
-          <span style={{ fontWeight: 700 }}>{shapes[hover.abbr].name}</span>
+          <span style={{ fontWeight: 700, color: C.navy }}>{shapes[hover.abbr].name}</span>
           {"  "}
-          {Number.isFinite(values?.[hover.abbr])
-            ? (format ? format(values[hover.abbr]) : values[hover.abbr])
-            : "no data"}
+          <span style={{ fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+            {Number.isFinite(values?.[hover.abbr])
+              ? (format ? format(values[hover.abbr]) : values[hover.abbr])
+              : "no data"}
+          </span>
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontFamily: serif }}>
-        <span style={{ fontSize: 11.5, color: C.muted }}>{legendLow}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: C.muted }}>{legendLow}</span>
         <div style={{
-          flex: "0 1 260px", height: 12, borderRadius: 12, border: `1px solid ${C.line}`,
+          flex: "1 1 120px", maxWidth: 260, height: 10, borderRadius: 99,
           background: `linear-gradient(to right, ${RAMP.join(",")})`,
         }} />
-        <span style={{ fontSize: 11.5, color: C.muted }}>{legendHigh}</span>
+        <span style={{ fontSize: 12, color: C.muted }}>{legendHigh}</span>
         {legendLabel && (
-          <span style={{ fontSize: 11.5, color: C.muted, marginLeft: 6 }}>{legendLabel}</span>
+          <span style={{ fontSize: 12, color: C.muted }}>{legendLabel}</span>
         )}
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: C.muted }}>
+          <span aria-hidden style={{ width: 12, height: 10, borderRadius: 3, background: NO_DATA, border: `1px solid ${C.line}` }} />no data
+        </span>
       </div>
     </div>
   );
