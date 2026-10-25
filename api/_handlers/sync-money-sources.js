@@ -27,9 +27,12 @@ import { sql, hasDb } from "../_db.js";
 // of N+1, so the newest safe vintage is (current year - 2). Was hardcoded
 // 2023, which silently goes stale every release cycle.
 const YEAR = new Date().getFullYear() - 2;
-// Federal fiscal year rolls over October 1 - compute it, don't hardcode it.
+// Federal fiscal year rolls over October 1. Load the most recent COMPLETED
+// fiscal year (FY N ends Sep 30 of year N): loading the in-progress year
+// right after Oct 1 gave the Money Map a few weeks of awards for a few
+// hundred counties instead of a full year.
 const NOW = new Date();
-const NGO_FY = NOW.getMonth() >= 9 ? NOW.getFullYear() + 1 : NOW.getFullYear();
+const NGO_FY = NOW.getMonth() >= 9 ? NOW.getFullYear() : NOW.getFullYear() - 1;
 const ACS_SUBJECT = `https://api.census.gov/data/${YEAR}/acs/acs5/subject`;
 const ACS_DETAIL = `https://api.census.gov/data/${YEAR}/acs/acs5`;
 const USA_SPENDING = "https://api.usaspending.gov/api/v2/search/spending_by_geography/";

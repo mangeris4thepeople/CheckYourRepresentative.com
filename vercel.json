@@ -136,6 +136,10 @@
       "schedule": "0 13 * * 1"
     },
     {
+      "path": "/api/cron?op=sync-money-map",
+      "schedule": "30 13 * * 1"
+    },
+    {
       "path": "/api/cron?op=sync-repspace",
       "schedule": "30 5 * * 1"
     },

@@ -15,7 +15,10 @@ async function buildYears() {
   const label = (y) => (y ? `${y} ACS 5-year (Census estimate)` : "ACS 5-year (Census estimate)");
   let acsYear = null, ngoFy = null;
   try { acsYear = (await sql`SELECT max(data_year) AS y FROM medicare_acs`)[0]?.y; } catch {}
-  try { ngoFy = (await sql`SELECT max(fiscal_year) AS y FROM ngo_geo`)[0]?.y; } catch {}
+  try {
+    const n = new Date(); const done = n.getMonth() >= 9 ? n.getFullYear() : n.getFullYear() - 1;
+    ngoFy = (await sql`SELECT max(fiscal_year) AS y FROM ngo_geo WHERE fiscal_year <= ${done}`)[0]?.y;
+  } catch {}
   return {
     medicare: label(acsYear),
     medicaid: label(acsYear),

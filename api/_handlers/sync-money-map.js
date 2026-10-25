@@ -16,6 +16,10 @@
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
 
+// Newest completed federal fiscal year; ignores any partial in-progress year.
+const _now = new Date();
+const COMPLETED_FY = _now.getMonth() >= 9 ? _now.getFullYear() : _now.getFullYear() - 1;
+
 // Program keys and where their county values come from.
 const PROGRAMS = ["medicare", "medicaid", "snap", "ss_income", "ngo"];
 const MIN_N = 5;
@@ -47,7 +51,7 @@ export default async function handler(req, res) {
       const c = counties.get(geoid);
       if (c && value != null) c[key] = Number(value);
     };
-    for (const r of await sql`SELECT geoid, medicare_covered FROM medicare_acs WHERE geo_level = 'county'`) {
+    for (const r of await sql`SELECT geoid, medicare_covered FROM medicare_acs WHERE data_year = (SELECT max(data_year) FROM medicare_acs) AND geo_level = 'county'`) {
       put(r.geoid, "medicare", r.medicare_covered);
     }
     for (const r of await sql`SELECT geoid, medicaid_covered FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'county'`) {
@@ -56,10 +60,10 @@ export default async function handler(req, res) {
     for (const r of await sql`SELECT geoid, snap_households FROM snap_acs WHERE data_year = (SELECT max(data_year) FROM snap_acs) AND geo_level = 'county'`) {
       put(r.geoid, "snap", r.snap_households);
     }
-    for (const r of await sql`SELECT geoid, ss_aggregate_dollars FROM ss_income_acs WHERE geo_level = 'county'`) {
+    for (const r of await sql`SELECT geoid, ss_aggregate_dollars FROM ss_income_acs WHERE data_year = (SELECT max(data_year) FROM ss_income_acs) AND geo_level = 'county'`) {
       put(r.geoid, "ss_income", r.ss_aggregate_dollars);
     }
-    for (const r of await sql`SELECT geoid, dollars FROM ngo_geo WHERE geo_level = 'county'`) {
+    for (const r of await sql`SELECT geoid, dollars FROM ngo_geo WHERE fiscal_year = (SELECT max(fiscal_year) FROM ngo_geo WHERE fiscal_year <= ${COMPLETED_FY}) AND geo_level = 'county'`) {
       put(r.geoid, "ngo", r.dollars);
     }
 
