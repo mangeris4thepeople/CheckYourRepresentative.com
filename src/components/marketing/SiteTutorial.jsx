@@ -26,7 +26,6 @@ const SECTIONS = [
   { key: "profile", icon: "👤", page: PAGES.profile },
   { key: "vote", icon: "🗳️", page: PAGES.vote },
   { key: "followthemoney", icon: "💰", page: PAGES.followthemoney },
-  { key: "judges", icon: "⚖️", page: PAGES.judges },
 ];
 
 function ControlList({ items }) {
