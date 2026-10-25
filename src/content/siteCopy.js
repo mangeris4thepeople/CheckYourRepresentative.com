@@ -36,7 +36,7 @@ export const ABOUT = {
     { icon: "🧭", title: "Non-partisan", body: "The bills are the same for everyone, and so is the record. Start wherever you start." },
     { icon: "🔒", title: "Never sold", body: "Your votes and your information are never sold to a campaign, PAC, data broker, or anyone." },
     { icon: "🧾", title: "Every number sourced", body: "Every figure traces to a named public record, with a link to the original wherever one exists." },
-    { icon: "⚡", title: "Live, every day", body: "Bills, campaign finance, roll calls, and RepSpace activity refresh automatically on a daily schedule." },
+    { icon: "⚡", title: "Live, every day", body: "Bills, campaign finance, and public spending data refresh automatically on a schedule." },
   ],
   missionLine:
     "This site exists to capture what We the People actually think, before our " +
@@ -388,8 +388,8 @@ export const TUTORIAL_HOME = {
     "The front door. Everything on it is counted live from the database the moment you " +
     "open it, so it doubles as a health check on the whole site.",
   items: [
-    { label: "Right now panel", desc: "Active bills before Congress, positions cast by constituents, and how many districts have been heard from, counted live." },
-    { label: "The record, counted live", desc: "Tiles for every major dataset: bills, campaign finance filings, nonprofits, members profiled, public voter cards, floor alerts sent, and how many districts have been heard from. A number only appears when the database has it." },
+    { label: "Right now panel", desc: "Active bills before Congress, positions cast by constituents, and campaign finance filings on record, counted live." },
+    { label: "The record, counted live", desc: "Tiles for every major dataset: bills, campaign finance filings, members of Congress, nonprofits, and how many districts have been heard from. A number only appears when the database has it." },
     { label: "Moving in Congress", desc: "The bills with the most recent official action, newest first, straight from the daily Congress.gov sync. Tap one to read and vote." },
     { label: "Data freshness", desc: "Every public source and exactly when it last refreshed. Green means it pulled on schedule, amber means it is due for its next pull." },
     { label: "Pick a thread and pull it", desc: "Shortcuts into every section of the site." },
