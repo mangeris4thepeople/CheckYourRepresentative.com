@@ -23,20 +23,13 @@ import syncReps from "./_handlers/sync-reps.js";
 import syncRepFinances from "./_handlers/sync-rep-finances.js";
 import syncSenators from "./_handlers/sync-senators.js";
 import syncSenatorFinances from "./_handlers/sync-senator-finances.js";
-import syncJudges from "./_handlers/sync-judges.js";
-import syncNationalJudges from "./_handlers/sync-national-judges.js";
-import syncCourtLocations from "./_handlers/sync-court-locations.js";
-import syncOpinions from "./_handlers/sync-opinions.js";
-import syncRulingStats from "./_handlers/sync-ruling-stats.js";
 import syncSsa from "./_handlers/sync-ssa.js";
 import syncSnap from "./_handlers/sync-snap.js";
 import syncMedicaid from "./_handlers/sync-medicaid.js";
 import syncMoneySources from "./_handlers/sync-money-sources.js";
 import syncMoneyMap from "./_handlers/sync-money-map.js";
-import syncOjpe from "./_handlers/sync-ojpe.js";
 import syncRepspace from "./_handlers/sync-repspace.js";
 import syncRepspaceActivity from "./_handlers/sync-repspace-activity.js";
-import importRetention from "./_handlers/import-retention.js";
 import testEmail from "./_handlers/test-email.js";
 
 const OPS = {
@@ -48,20 +41,13 @@ const OPS = {
   "sync-rep-finances": syncRepFinances,
   "sync-senators": syncSenators,
   "sync-senator-finances": syncSenatorFinances,
-  "sync-judges": syncJudges,
-  "sync-national-judges": syncNationalJudges,
-  "sync-court-locations": syncCourtLocations,
-  "sync-opinions": syncOpinions,
-  "sync-ruling-stats": syncRulingStats,
   "sync-ssa": syncSsa,
   "sync-snap": syncSnap,
   "sync-medicaid": syncMedicaid,
   "sync-money-sources": syncMoneySources,
   "sync-money-map": syncMoneyMap,
-  "sync-ojpe": syncOjpe,
   "sync-repspace": syncRepspace,
   "sync-repspace-activity": syncRepspaceActivity,
-  "import-retention": importRetention,
   "test-email": testEmail,
 };
 

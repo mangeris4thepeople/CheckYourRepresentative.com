@@ -62,17 +62,7 @@
 
     { "source": "/api/contact", "destination": "/api/messages?op=contact" },
     { "source": "/api/contact-us", "destination": "/api/messages?op=contact-us" },
-    { "source": "/api/contact-track", "destination": "/api/messages?op=contact-track" },
-
-    { "source": "/api/judges-list", "destination": "/api/judges?op=judges-list" },
-    { "source": "/api/judge-detail", "destination": "/api/judges?op=judge-detail" },
-    { "source": "/api/judge-courts", "destination": "/api/judges?op=judge-courts" },
-    { "source": "/api/national-judges-list", "destination": "/api/judges?op=national-judges-list" },
-    { "source": "/api/national-courts", "destination": "/api/judges?op=national-courts" },
-    { "source": "/api/judges-map", "destination": "/api/judges?op=judges-map" },
-    { "source": "/api/state-judges", "destination": "/api/judges?op=state-judges" },
-    { "source": "/api/county-courts", "destination": "/api/judges?op=county-courts" },
-    { "source": "/api/national-judge-detail", "destination": "/api/judges?op=national-judge-detail" }
+    { "source": "/api/contact-track", "destination": "/api/messages?op=contact-track" }
   ],
   "crons": [
     {
@@ -108,28 +98,12 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron?op=sync-national-judges",
-      "schedule": "0 10 * * *"
-    },
-    {
       "path": "/api/cron?op=sync-snap",
       "schedule": "0 11 * * 1"
     },
     {
       "path": "/api/cron?op=sync-medicaid",
       "schedule": "0 12 * * 1"
-    },
-    {
-      "path": "/api/cron?op=sync-court-locations",
-      "schedule": "30 10 * * *"
-    },
-    {
-      "path": "/api/cron?op=sync-opinions",
-      "schedule": "0 13 * * *"
-    },
-    {
-      "path": "/api/cron?op=sync-ruling-stats",
-      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron?op=sync-money-sources",
@@ -150,10 +124,6 @@
     {
       "path": "/api/cron?op=sync-ssa",
       "schedule": "0 12 * * 2"
-    },
-    {
-      "path": "/api/cron?op=sync-judges",
-      "schedule": "30 9 * * *"
     }
   ]
 }
