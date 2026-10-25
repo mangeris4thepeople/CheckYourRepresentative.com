@@ -29,7 +29,7 @@ async function national(res) {
   const states = await sql`
     SELECT geoid, name, state_abbr, total_population AS universe_total,
            medicaid_covered AS benefit_count, medicaid_percent AS benefit_percent, data_year
-    FROM medicaid_acs WHERE geo_level = 'state' ORDER BY state_abbr ASC`;
+    FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'state' ORDER BY state_abbr ASC`;
   if (!states.length) return res.status(200).json({ ready: false, reason: "not_synced_yet" });
   return res.status(200).json({ ready: true, dataYear: states[0].data_year, states });
 }
@@ -44,30 +44,30 @@ async function stateDetail(req, res) {
   const summary = (await sql`
     SELECT name, state_abbr, total_population AS universe_total,
            medicaid_covered AS benefit_count, medicaid_percent AS benefit_percent, data_year
-    FROM medicaid_acs WHERE geo_level = 'state' AND state_abbr = ${state}`)[0];
+    FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'state' AND state_abbr = ${state}`)[0];
   if (!summary) return res.status(200).json({ ready: false, reason: "not_synced_yet" });
 
   const counties = await sql`
     SELECT geoid, name, total_population AS universe_total,
            medicaid_covered AS benefit_count, medicaid_percent AS benefit_percent
-    FROM medicaid_acs WHERE geo_level = 'county' AND state_abbr = ${state}
+    FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'county' AND state_abbr = ${state}
     ORDER BY medicaid_covered DESC NULLS LAST`;
 
   const places = q
     ? await sql`
         SELECT geoid, name, total_population AS universe_total,
                medicaid_covered AS benefit_count, medicaid_percent AS benefit_percent
-        FROM medicaid_acs WHERE geo_level = 'place' AND state_abbr = ${state} AND name ILIKE ${like}
+        FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'place' AND state_abbr = ${state} AND name ILIKE ${like}
         ORDER BY medicaid_covered DESC NULLS LAST LIMIT ${limit}`
     : await sql`
         SELECT geoid, name, total_population AS universe_total,
                medicaid_covered AS benefit_count, medicaid_percent AS benefit_percent
-        FROM medicaid_acs WHERE geo_level = 'place' AND state_abbr = ${state}
+        FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'place' AND state_abbr = ${state}
         ORDER BY medicaid_covered DESC NULLS LAST LIMIT ${limit}`;
 
   const placeCount = (await sql`
     SELECT count(*)::int AS n FROM medicaid_acs
-    WHERE geo_level = 'place' AND state_abbr = ${state}`)[0];
+    WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'place' AND state_abbr = ${state}`)[0];
 
   return res.status(200).json({
     ready: true, dataYear: summary.data_year, summary, counties, places,

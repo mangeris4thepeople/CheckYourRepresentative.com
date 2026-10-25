@@ -7,14 +7,14 @@
 import React, { useState, useEffect } from "react";
 
 const C = {
-  navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
-  yea:"#1B5E20", yeaLight:"#E8F5E9",
-  nay:"#B71C1C", nayLight:"#FFEBEE",
-  parchment:"#FBF7EC", muted:"#5C5347", line:"#D8C9A0",
+  navy:"#0E2A6B", gold:"#F5B82E", crimson:"#D62839",
+  yea:"#15803D", yeaLight:"#E8F5E9",
+  nay:"#DC2626", nayLight:"#FFEBEE",
+  parchment:"#FFFFFF", muted:"#5B6578", line:"#E2E8F0",
 };
-const serif = "Georgia,'Times New Roman',serif";
-const mono = "'Courier New',monospace";
-const PARTY_COLOR = { R: "#B71C1C", D: "#0D47A1", I: "#4A148C", ID: "#4A148C" };
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";
+const PARTY_COLOR = { R: "#DC2626", D: "#0D47A1", I: "#4A148C", ID: "#4A148C" };
 
 export default function RollCallExplorer({ district }) {
   const [chamber, setChamber] = useState("house");
@@ -49,8 +49,8 @@ export default function RollCallExplorer({ district }) {
 
   return (
     <div style={{ fontFamily: serif, maxWidth: 860, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px",
-                    borderRadius: "8px 8px 0 0", borderBottom: `3px solid ${C.gold}` }}>
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px",
+                    borderRadius: "18px 18px 0 0", borderBottom: `3px solid ${C.gold}` }}>
         <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1 }}>
           THE PERMANENT RECORD
         </div>
@@ -61,10 +61,10 @@ export default function RollCallExplorer({ district }) {
       </div>
 
       <div style={{ background: C.parchment, border: `1px solid ${C.line}`, borderTop: "none",
-                    borderRadius: "0 0 8px 8px", padding: "18px 24px" }}>
+                    borderRadius: "0 0 18px 18px", padding: "18px 24px" }}>
 
         {/* Chamber toggle */}
-        <div style={{ display: "flex", border: `1px solid ${C.navy}`, borderRadius: 6,
+        <div style={{ display: "flex", border: `1px solid ${C.navy}`, borderRadius: 12,
                       overflow: "hidden", width: "fit-content", marginBottom: 16 }}>
           {["house", "senate"].map(ch => (
             <button key={ch} onClick={() => setChamber(ch)}
@@ -82,7 +82,7 @@ export default function RollCallExplorer({ district }) {
           <div>
             <button onClick={() => setSelected(null)}
               style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy,
-                       background: "none", border: `1px solid ${C.line}`, borderRadius: 4,
+                       background: "none", border: `1px solid ${C.line}`, borderRadius: 8,
                        padding: "7px 14px", cursor: "pointer", marginBottom: 14 }}>
               ← All {chamber === "house" ? "House" : "Senate"} votes
             </button>
@@ -92,7 +92,7 @@ export default function RollCallExplorer({ district }) {
 
             {detailState === "ready" && detail && (
               <div>
-                <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 6,
+                <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 12,
                               padding: "16px 18px", marginBottom: 14 }}>
                   <div style={{ fontFamily: mono, fontSize: 11, color: C.muted, marginBottom: 4 }}>
                     ROLL CALL #{detail.vote}{detail.bill ? ` · ${detail.bill}` : ""}
@@ -114,7 +114,7 @@ export default function RollCallExplorer({ district }) {
                         </div>
                       )}
                       {detail.summary.plain && (
-                        <div style={{ fontSize: 13.5, color: "#1A1A1A", lineHeight: 1.6 }}>
+                        <div style={{ fontSize: 13.5, color: "#0F172A", lineHeight: 1.6 }}>
                           {detail.summary.plain}
                         </div>
                       )}
@@ -129,7 +129,7 @@ export default function RollCallExplorer({ district }) {
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "12px 0 16px" }}>
                   {Object.entries(detail.tally.byParty).map(([party, t]) => (
                     <div key={party} style={{ background: "#fff", border: `1px solid ${C.line}`,
-                                              borderRadius: 6, padding: "8px 14px", fontSize: 12.5 }}>
+                                              borderRadius: 12, padding: "8px 14px", fontSize: 12.5 }}>
                       <span style={{ fontWeight: 900, color: PARTY_COLOR[party] || C.muted }}>{party}</span>
                       {"  "}
                       <span style={{ color: C.yea, fontWeight: 700 }}>{t.yea} yea</span>
@@ -144,7 +144,7 @@ export default function RollCallExplorer({ district }) {
                 <input value={search} onChange={e => setSearch(e.target.value)}
                   placeholder={`Search by name or state (e.g. ${myState || "CO"})`}
                   style={{ width: "100%", boxSizing: "border-box", fontFamily: serif, fontSize: 14,
-                           padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: 5,
+                           padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: 10,
                            marginBottom: 12 }} />
 
                 {/* Member list, my state first */}
@@ -163,7 +163,7 @@ export default function RollCallExplorer({ district }) {
               <button key={v.vote} onClick={() => setSelected(v.vote)}
                 style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
                          textAlign: "left", background: "#fff", border: `1px solid ${C.line}`,
-                         borderRadius: 6, padding: "12px 16px", marginBottom: 8,
+                         borderRadius: 12, padding: "12px 16px", marginBottom: 8,
                          cursor: "pointer", fontFamily: serif }}>
                 <div style={{ fontFamily: mono, fontSize: 11, color: C.muted, minWidth: 56, flexShrink: 0 }}>
                   #{v.vote}
@@ -191,7 +191,7 @@ function TallyBar({ tally }) {
   const yPct = Math.round((tally.yea / total) * 100);
   return (
     <div>
-      <div style={{ display: "flex", gap: 6, height: 30, borderRadius: 4, overflow: "hidden" }}>
+      <div style={{ display: "flex", gap: 6, height: 30, borderRadius: 8, overflow: "hidden" }}>
         <div style={{ flex: tally.yea || 1, background: C.yea, display: "flex",
                       alignItems: "center", justifyContent: "center" }}>
           <span style={{ color: "#fff", fontSize: 13, fontWeight: 900 }}>{tally.yea} YEA</span>
@@ -223,14 +223,14 @@ function MemberList({ members, search, myState }) {
       style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
                background: highlight ? "#FFF8E1" : "#fff",
                border: `1px solid ${highlight ? C.gold : C.line}`,
-               borderRadius: 4, marginBottom: 5 }}>
+               borderRadius: 8, marginBottom: 5 }}>
       <div style={{ minWidth: 46, textAlign: "center", fontSize: 11, fontWeight: 900,
                     padding: "4px 0", borderRadius: 3,
                     background: m.position === "yea" ? C.yeaLight : m.position === "nay" ? C.nayLight : "#f2f2f2",
                     color: m.position === "yea" ? C.yea : m.position === "nay" ? C.nay : C.muted }}>
         {m.position === "yea" ? "YEA" : m.position === "nay" ? "NAY" : m.position === "present" ? "PRES" : "NV"}
       </div>
-      <div style={{ flex: 1, fontSize: 13.5, color: "#1A1A1A" }}>{m.name}</div>
+      <div style={{ flex: 1, fontSize: 13.5, color: "#0F172A" }}>{m.name}</div>
       <div style={{ fontFamily: mono, fontSize: 11.5, fontWeight: 700,
                     color: PARTY_COLOR[m.party] || C.muted, flexShrink: 0 }}>
         {m.party}-{m.state}

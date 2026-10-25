@@ -20,11 +20,11 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import STATE_PATHS from "../data/us-state-paths.json";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
 };
-const serif = "Georgia, 'Times New Roman', serif";
-const NO_DATA = "#E8E2D2";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const NO_DATA = "#E6ECF5";
 
 const ABBR_TO_FIPS = {
   AL: "01", AK: "02", AZ: "04", AR: "05", CA: "06", CO: "08", CT: "09", DE: "10", DC: "11",
@@ -231,7 +231,7 @@ export default function MoneyMap({ onGoSection }) {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
           Money Map
@@ -265,14 +265,14 @@ export default function MoneyMap({ onGoSection }) {
         <Pill on={metric === "raw"} onClick={() => setMetric("raw")}>Total figures</Pill>
         <select value={scope} onChange={e => { setScope(e.target.value); setPicked(null); }}
           style={{ fontFamily: serif, fontSize: 13, padding: "7px 10px", border: `1px solid ${C.line}`,
-                   borderRadius: 6, background: "#fff", marginLeft: "auto" }}>
+                   borderRadius: 12, background: "#fff", marginLeft: "auto" }}>
           <option value="US">National</option>
           {Object.keys(ABBR_TO_FIPS).sort().map(a => <option key={a} value={a}>{a}</option>)}
         </select>
       </div>
 
       {active.includes("contributions") && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: "12px 16px",
+        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: "12px 16px",
                       marginBottom: 12, fontSize: 12.5, color: C.muted, lineHeight: 1.6 }}>
           Campaign contributions appear at the state level only: the Federal Election Commission
           publishes itemized contributions by contributor city and state, not by county, a
@@ -284,7 +284,7 @@ export default function MoneyMap({ onGoSection }) {
       {contribOnly ? (
         <ContributionsStateMap data={data} />
       ) : countyLayers.length <= 2 ? (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: 18, marginBottom: 14 }}>
+        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 14 }}>
           <CountyCanvas shapes={shapes} fips={visibleFips} viewBox={viewBox}
             fillFor={fillFor} onPick={setPicked} hover={hover} setHover={setHover}
             tooltip={(f) => {
@@ -305,7 +305,7 @@ export default function MoneyMap({ onGoSection }) {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12, marginBottom: 14 }}>
           {countyLayers.map(layer => (
-            <div key={layer.key} style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: 12 }}>
+            <div key={layer.key} style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 12 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 6 }}>
                 {layer.label} {layer.estimate && <EstimateBadge />}
               </div>
@@ -374,8 +374,8 @@ function CountyCanvas({ shapes, fips, viewBox, fillFor, onPick, hover, setHover,
       </svg>
       {hover && !mini && (
         <div style={{ position: "absolute", left: Math.min(hover.x + 12, 640), top: hover.y + 10,
-                      background: C.navy, color: "#fff", fontFamily: serif, fontSize: 12,
-                      padding: "6px 10px", borderRadius: 6, pointerEvents: "none",
+                      background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", fontFamily: serif, fontSize: 12,
+                      padding: "6px 10px", borderRadius: 12, pointerEvents: "none",
                       border: `1px solid ${C.gold}`, maxWidth: 340, lineHeight: 1.5, zIndex: 5 }}>
           {tooltip(hover.f)}
         </div>
@@ -390,7 +390,7 @@ function SingleLegend({ layer, metric }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontFamily: serif, flexWrap: "wrap" }}>
       <span style={{ fontSize: 11.5, color: C.muted }}>Lowest</span>
-      <div style={{ flex: "0 1 240px", height: 12, borderRadius: 6, border: `1px solid ${C.line}`,
+      <div style={{ flex: "0 1 240px", height: 12, borderRadius: 12, border: `1px solid ${C.line}`,
                     background: `linear-gradient(to right, ${stops.join(",")})` }} />
       <span style={{ fontSize: 11.5, color: C.muted }}>Highest</span>
       <span style={{ fontSize: 11.5, color: C.muted }}>
@@ -431,7 +431,7 @@ function ContributionsStateMap({ data }) {
     </Empty></Section>;
   }
   return (
-    <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: 18, marginBottom: 14, position: "relative" }}>
+    <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 14, position: "relative" }}>
       <svg viewBox="0 0 975 610" style={{ width: "100%", height: "auto", display: "block" }}>
         {Object.entries(STATE_PATHS).map(([abbr, s]) => {
           const v = byState.get(abbr);
@@ -449,8 +449,8 @@ function ContributionsStateMap({ data }) {
       </svg>
       {hover && (
         <div style={{ position: "absolute", left: Math.min(hover.x + 12, 700), top: hover.y + 10,
-                      background: C.navy, color: "#fff", fontFamily: serif, fontSize: 12,
-                      padding: "6px 10px", borderRadius: 6, pointerEvents: "none",
+                      background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", fontFamily: serif, fontSize: 12,
+                      padding: "6px 10px", borderRadius: 12, pointerEvents: "none",
                       border: `1px solid ${C.gold}` }}>
           {STATE_PATHS[hover.abbr].name}: {byState.has(hover.abbr) ? fmtMoney(byState.get(hover.abbr)) : "no itemized receipts on file"}
         </div>
@@ -467,7 +467,7 @@ function CorrelationMatrix({ data, scope, corrFor, onPickPair }) {
   const keys = LAYERS.map(l => l.key);
   const label = (k) => LAYERS.find(l => l.key === k).label;
   const cellColor = (r) => {
-    if (r == null) return "#f4efe2";
+    if (r == null) return "#F1F5FB";
     const x = Math.max(-1, Math.min(1, r));
     return x >= 0 ? mixToWhite("#C23B4B", 0.15 + Math.abs(x) * 0.7) : mixToWhite("#2E5EAA", 0.15 + Math.abs(x) * 0.7);
   };
@@ -498,7 +498,7 @@ function CorrelationMatrix({ data, scope, corrFor, onPickPair }) {
                   if (ka === kb) return <td key={kb} style={{ padding: "4px 6px", textAlign: "center", color: C.muted }}>1</td>;
                   if (ka === "contributions" || kb === "contributions") {
                     return <td key={kb} title="The FEC publishes no county level contribution data"
-                      style={{ padding: "4px 6px", textAlign: "center", color: C.muted, background: "#f4efe2" }}>n/a</td>;
+                      style={{ padding: "4px 6px", textAlign: "center", color: C.muted, background: "#F1F5FB" }}>n/a</td>;
                   }
                   const row = corrFor(ka, kb);
                   const r = row ? Number(row.r) : null;
@@ -547,7 +547,7 @@ function CorrelationMatrix({ data, scope, corrFor, onPickPair }) {
 function CountyCard({ county, years, onGoSection, onClose }) {
   return (
     <Section title={`${county.n}`}>
-      <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, borderBottom: "1px solid #f0ead8", display: "flex" }}>
+      <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, borderBottom: "1px solid #EEF3FB", display: "flex" }}>
         <span>Population {fmtInt(county.p)} (ACS civilian noninstitutionalized)</span>
         <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none",
           color: C.crimson, fontFamily: serif, fontWeight: 700, cursor: "pointer" }}>Close</button>
@@ -573,7 +573,7 @@ function CountyCard({ county, years, onGoSection, onClose }) {
 
 function CardRow({ layer, years, value, onGoSection }) {
   return (
-    <div style={{ display: "flex", gap: 10, padding: "9px 14px", borderBottom: "1px solid #f0ead8",
+    <div style={{ display: "flex", gap: 10, padding: "9px 14px", borderBottom: "1px solid #EEF3FB",
                   fontFamily: serif, alignItems: "baseline", flexWrap: "wrap" }}>
       <span style={{ flex: "0 0 170px", fontSize: 12.5, fontWeight: 700, color: layer.hue }}>
         {layer.label} {layer.estimate && <EstimateBadge />}
@@ -585,7 +585,7 @@ function CardRow({ layer, years, value, onGoSection }) {
       {onGoSection && (
         <button onClick={() => onGoSection(layer.section)}
           style={{ fontSize: 11.5, color: C.navy, background: "none", border: `1px solid ${C.line}`,
-                   borderRadius: 5, padding: "3px 9px", fontFamily: serif, fontWeight: 700, cursor: "pointer" }}>
+                   borderRadius: 10, padding: "3px 9px", fontFamily: serif, fontWeight: 700, cursor: "pointer" }}>
           Open section →
         </button>
       )}
@@ -596,7 +596,7 @@ function CardRow({ layer, years, value, onGoSection }) {
 function EstimateBadge() {
   return (
     <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color: "#fff",
-                   background: C.muted, borderRadius: 4, padding: "1px 6px", verticalAlign: "middle" }}>
+                   background: C.muted, borderRadius: 8, padding: "1px 6px", verticalAlign: "middle" }}>
       CENSUS ESTIMATE
     </span>
   );
@@ -617,7 +617,7 @@ function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
     </div>
   );
 }

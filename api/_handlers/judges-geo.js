@@ -45,7 +45,7 @@ async function judgesMap(res) {
   let pop = [];
   try {
     pop = await sql`
-      SELECT state_abbr, total_population FROM medicaid_acs WHERE geo_level = 'state'`;
+      SELECT state_abbr, total_population FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'state'`;
   } catch { pop = []; }
   const popBy = Object.fromEntries(pop.map(p => [p.state_abbr, p.total_population]));
 

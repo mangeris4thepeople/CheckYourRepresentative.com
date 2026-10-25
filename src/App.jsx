@@ -19,6 +19,8 @@ import ConstituentsDirectory from "./components/ConstituentsDirectory.jsx";
 import RollCallExplorer from "./components/RollCallExplorer.jsx";
 import ContextualHelp from "./components/ContextualHelp.jsx";
 import ContactUsForm from "./components/ContactUsForm.jsx";
+import Home from "./components/Home.jsx";
+import "./styles/theme.css";
 import SiteTutorialPage, { FirstRunTutorial } from "./components/marketing/SiteTutorial.jsx";
 import { getStoredSession } from "./lib/session.js";
 import { applySeo } from "./lib/seo.js";
@@ -42,53 +44,31 @@ const ReportCard = lazy(() => import("./components/ReportCard.jsx"));
 
 // Shared fallback while a lazy view's chunk loads.
 const LazyFallback = (
-  <div style={{ padding: 60, textAlign: "center", fontFamily: "Georgia, serif", color: "#5C5347" }}>
-    Loading…
+  <div style={{ padding: "40px 0", display: "grid", gap: 14 }}>
+    <div className="cyr-skeleton" style={{ height: 34, width: "40%" }} />
+    <div className="cyr-skeleton" style={{ height: 220 }} />
+    <div className="cyr-skeleton" style={{ height: 120 }} />
   </div>
 );
 
-const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#EFE7D2",
-  panel:"#FBF7EC", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
-const serif = "Georgia, 'Times New Roman', serif";
+const C = { crimson:"#D62839", navy:"#0E2A6B", gold:"#F5B82E", parchment:"#F6F8FC",
+  panel:"#FFFFFF", ink:"#0F172A", muted:"#5B6578", line:"#E2E8F0" };
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const TABS = [
-  { key: "profile",      label: "👤 My Profile" },
-  { key: "vote",         label: "🗳️ Vote on Bills" },
-  { key: "allbills",     label: "📄 All Active Bills" },
-  { key: "matrix",       label: "📊 Accountability" },
-  { key: "rollcalls",    label: "📋 Roll Calls" },
-  { key: "followthemoney", label: "💰 Follow the Money" },
-  { key: "judges",       label: "⚖️ Know Your Judge" },
-  { key: "constituents", label: "🌐 Constituents" },
-  { key: "merch",        label: "👕 Merch" },
+  { key: "home",         icon: "✨", label: "Home" },
+  { key: "profile",      icon: "👤", label: "My Profile" },
+  { key: "vote",         icon: "🗳️", label: "Vote on Bills" },
+  { key: "allbills",     icon: "📄", label: "All Active Bills" },
+  { key: "matrix",       icon: "📊", label: "Accountability" },
+  { key: "rollcalls",    icon: "📋", label: "Roll Calls" },
+  { key: "followthemoney", icon: "💰", label: "Follow the Money" },
+  { key: "judges",       icon: "⚖️", label: "Know Your Judge" },
+  { key: "constituents", icon: "🌐", label: "Constituents" },
+  { key: "merch",        icon: "👕", label: "Merch" },
 ];
 
 // Tabs that get a left-hand contextual help sidebar.
 const HELP_TABS = { profile: "profile", vote: "vote", followthemoney: "followthemoney", judges: "judges" };
-
-// Inject mobile CSS once
-const MOBILE_CSS = `
-  @media (max-width: 900px) {
-    .cyr-tagline { font-size: 10.5px !important; }
-  }
-  @media (max-width: 600px) {
-    .cyr-header-inner { padding: 12px 14px !important; gap: 10px !important; }
-    .cyr-site-title { font-size: 17px !important; }
-    .cyr-tagline { display: none !important; }
-    .cyr-seal { width: 36px !important; height: 36px !important; }
-    .cyr-home-btn { padding: 6px 10px !important; font-size: 12px !important; }
-    .cyr-nav-inner { padding: 6px 8px !important; flex-wrap: wrap !important; min-width: 0 !important; justify-content: center !important; }
-    .cyr-tab { font-size: 13px !important; padding: 9px 10px !important; }
-    .cyr-main { padding: 16px 12px 48px !important; }
-    .cyr-footer-inner { padding: 16px 14px !important; font-size: 12px !important; }
-  }
-`;
-
-if (typeof document !== "undefined" && !document.getElementById("cyr-mobile-css")) {
-  const style = document.createElement("style");
-  style.id = "cyr-mobile-css";
-  style.textContent = MOBILE_CSS;
-  document.head.appendChild(style);
-}
 
 export default function App() {
   // Shared public-card links look like /?voter=123 - if present, skip the
@@ -111,6 +91,7 @@ export default function App() {
       // The old landing page lives on at /welcome as the campaign page for
       // ads and social links; the site entry itself is gate free.
       if (window.location.pathname === "/welcome") return { view: "landing", tab: null };
+      if (window.location.pathname === "/home") return { view: "tool", tab: "home" };
       // The other content pages get stable paths too (Vercel rewrites of
       // this same page), so search engines and shared links can reach them
       // directly. Listed in public/sitemap.xml.
@@ -131,7 +112,7 @@ export default function App() {
       const rc = window.location.pathname.match(/^\/report-card\/([A-Z]\d{6})$/);
       if (rc) return { view: "report-card", tab: null, bioguide: rc[1] };
       const t = new URLSearchParams(window.location.search).get("tab");
-      const VALID = new Set(["vote", "allbills", "rollcalls", "constituents", "matrix",
+      const VALID = new Set(["home", "vote", "allbills", "rollcalls", "constituents", "matrix",
         "followthemoney", "judges", "profile", "merch"]);
       if (t && VALID.has(t)) return { view: "tool", tab: t };
     } catch {}
@@ -161,7 +142,7 @@ export default function App() {
   const [view, setView] = useState(initialVoterId ? "tool" : (hasSessionHash ? "tool" : (initialDeepLink?.view || "tool")));
   const [tab, setTab] = useState(initialVoterId ? "constituents"
     : hasSessionHash ? "profile"
-    : (initialDeepLink?.tab || (hasStoredSession ? "profile" : "judges")));
+    : (initialDeepLink?.tab || (hasStoredSession ? "profile" : "home")));
   const [resolved, setResolved] = useState(null);
   const [session, setSession] = useState(() => getStoredSession());
   const [showTutorial, setShowTutorial] = useState(false);
@@ -173,7 +154,7 @@ export default function App() {
   const [navigated, setNavigated] = useState(!!initialDeepLink?.tab || !!initialVoterId);
   function goTab(k) { setNavigated(true); setTab(k); }
   useEffect(() => {
-    const routeKey = view !== "tool" ? view : (navigated ? tab : "home");
+    const routeKey = view !== "tool" ? view : (navigated && tab !== "home" ? tab : "home");
     applySeo(routeKey);
     // Cookieless page view for the same route key; see src/lib/analytics.js.
     trackPageview(routeKey);
@@ -206,6 +187,16 @@ export default function App() {
   useEffect(() => {
     try { window.scrollTo(0, 0); } catch {}
   }, [view]);
+  // Tabs are full sections too: jumping to one starts at its top.
+  useEffect(() => {
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+    // Keep the active pill visible in the horizontally scrolling tab bar.
+    try {
+      const el = document.querySelector('.cyr-tab[aria-current="page"]');
+      const bar = el?.parentElement;
+      if (el && bar) bar.scrollTo({ left: el.offsetLeft - bar.clientWidth / 2 + el.clientWidth / 2, behavior: "smooth" });
+    } catch {}
+  }, [tab, view]);
 
   // With no landing gate, the first visit opens the walkthrough on top of
   // the tool itself. Dismissing it (or jumping to one of its intro pages)
@@ -278,55 +269,52 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh" }}>
-      <header style={{ background: C.navy, color: "#fff", borderBottom: `4px solid ${C.gold}` }}>
-        <div className="cyr-header-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-          <img className="cyr-seal" src="/icons/mark-96.png" alt=""
-            style={{ width: 46, height: 46, borderRadius: 10, flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="cyr-site-title" style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Check Your Representative</div>
-            <div className="cyr-tagline" style={{ fontSize: 12, color: C.gold, letterSpacing: 1 }}>KNOW YOUR BILLS · KNOW YOUR VOTE · KNOW YOUR MONEY · HOLD THE LINE</div>
-          </div>
+    <div style={{ fontFamily: serif, color: C.ink, minHeight: "100vh" }}>
+      <header className="cyr-topbar">
+        <div className="cyr-flagline" />
+        <div className="cyr-header-inner">
+          <button className="cyr-brand" onClick={() => { setView("tool"); goTab("home"); }} aria-label="Check Your Representative home">
+            <img className="cyr-seal" src="/icons/mark-96.png" alt="" />
+            <span style={{ minWidth: 0 }}>
+              <span className="cyr-site-title" style={{ display: "block" }}>Check Your Representative</span>
+              <span className="cyr-tagline"><span className="cyr-live-dot" />Know your bills · Know your vote · Know your money</span>
+            </span>
+          </button>
+          <button className="cyr-btn cyr-btn-ghost cyr-hide-sm" onClick={openTutorial}>How it works</button>
           {!session && tab !== "profile" && (
-            <button className="cyr-home-btn" onClick={() => { setView("tool"); goTab("profile"); }}
-              style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: C.gold,
-                       border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
-              Sign In to Vote →
+            <button className="cyr-btn cyr-btn-primary" onClick={() => { setView("tool"); goTab("profile"); }}>
+              Sign in to vote <span aria-hidden>→</span>
             </button>
           )}
-          <button className="cyr-home-btn" onClick={openTutorial}
-            style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff", background: "transparent",
-                     border: `1px solid ${C.gold}`, borderRadius: 5, padding: "8px 14px", cursor: "pointer", flexShrink: 0 }}>
-            How It Works
-          </button>
+          {session && (
+            <button className="cyr-btn cyr-btn-ghost" onClick={() => goTab("profile")}>
+              👤 <span className="cyr-hide-sm">{resolved?.district || "My Profile"}</span>
+            </button>
+          )}
         </div>
-        <StarStrip />
-      </header>
-
-      <nav style={{ background: C.panel, borderBottom: `1px solid ${C.line}`, overflowX: "auto" }}>
-        <div className="cyr-nav-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "0 20px", display: "flex", gap: 0, minWidth: "min-content" }}>
+        <nav className="cyr-nav" aria-label="Sections">
           {TABS.map(t => (
-            <button key={t.key} onClick={() => goTab(t.key)}
-              className="cyr-tab"
-              style={{ fontFamily: serif, fontSize: 15, padding: "13px 18px", cursor: "pointer", border: "none",
-                       background: "transparent", fontWeight: 700, whiteSpace: "nowrap",
-                       color: tab === t.key ? C.crimson : C.muted,
-                       borderBottom: `3px solid ${tab === t.key ? C.crimson : "transparent"}` }}>
+            <button key={t.key} onClick={() => goTab(t.key)} className="cyr-tab"
+              aria-current={tab === t.key ? "page" : undefined}>
+              <span className="cyr-tab-ico" aria-hidden>{t.icon}</span>
               {t.label}
-              {t.key === "vote" && !session && (
-                <span style={{ marginLeft: 6, fontSize: 10, color: C.gold }}>🔒</span>
-              )}
+              {t.key === "vote" && !session && <span className="cyr-lock" aria-label="sign in required">🔒</span>}
             </button>
           ))}
-        </div>
-      </nav>
+        </nav>
+      </header>
 
       {showTutorial && (
         <FirstRunTutorial onDismiss={dismissTutorial}
           onNavigate={(v) => { dismissTutorial(); setView(v); }} />
       )}
 
-      <main className="cyr-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px 60px" }}>
+      <main className="cyr-main" key={tab}>
+        {tab === "home" && (
+          <Home session={session} district={resolved?.district} onGoTab={goTab}
+            onNavigate={(v) => setView(v)} />
+        )}
+
         {tab === "vote" && (
           <HelpLayout page="vote">
             <ConstituentVoting
@@ -386,23 +374,33 @@ export default function App() {
         )}
       </main>
 
-      <footer style={{ background: C.navy, color: "#fff", borderTop: `4px solid ${C.gold}` }}>
-        <div className="cyr-footer-inner" style={{ maxWidth: 1080, margin: "0 auto", padding: "24px 20px", fontSize: 12.5,
-                      display: "flex", flexWrap: "wrap", gap: 28, justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div style={{ flex: "1 1 300px" }}>
-            <div style={{ fontStyle: "italic", fontWeight: 700, color: C.gold, marginBottom: 8 }}>"We the People..." - a tool for an informed electorate.</div>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
-              <button onClick={() => setView("about")} style={footerLink}>What We Stand For</button>
-              <button onClick={openTutorial} style={footerLink}>Site Tutorial</button>
-              <button onClick={() => setView("howitworks")} style={footerLink}>How It Works</button>
-              <button onClick={() => setView("privacy")} style={footerLink}>Privacy</button>
+      <footer className="cyr-footer">
+        <div className="cyr-flagline" />
+        <div className="cyr-footer-inner">
+          <div style={{ flex: "1 1 320px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <img src="/icons/mark-96.png" alt="" style={{ width: 40, height: 40, borderRadius: 12 }} />
+              <div style={{ fontFamily: "var(--cyr-display)", fontWeight: 800, fontSize: 20, color: "#fff" }}>Check Your Representative</div>
             </div>
-            <div style={{ fontWeight: 700, color: "#fff" }}>
-              Check Your Representative · Non-partisan voter education · Bill data from Congress.gov.
-              <span style={{ marginLeft: 16, color: C.gold }}>Paid for by We The People Inc.</span>
+            <div style={{ fontFamily: "var(--cyr-display)", fontStyle: "italic", fontSize: 17, color: "#FFE29A", marginBottom: 16 }}>
+              "We the People..." A tool for an informed electorate.
+            </div>
+            <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 18 }}>
+              <button onClick={() => setView("about")} className="cyr-footer-link">What We Stand For</button>
+              <button onClick={() => setView("tutorial")} className="cyr-footer-link">Site Tutorial</button>
+              <button onClick={() => setView("howitworks")} className="cyr-footer-link">How It Works</button>
+              <button onClick={() => setView("benefits")} className="cyr-footer-link">How This Benefits You</button>
+              <button onClick={() => setView("privacy")} className="cyr-footer-link">Privacy</button>
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.7, color: "#AFC0E2" }}>
+              Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, courts from CourtListener.
+            </div>
+            <div style={{ marginTop: 14, display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff",
+                          border: "1px solid rgba(255,255,255,.3)", borderRadius: 8, padding: "6px 10px" }}>
+              Paid for by We The People Inc.
             </div>
           </div>
-          <div style={{ flex: "1 1 340px" }}>
+          <div style={{ flex: "1 1 360px", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 18, padding: 20 }}>
             <ContactUsForm />
           </div>
         </div>
@@ -419,20 +417,6 @@ function HelpLayout({ page, children }) {
     <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
       <ContextualHelp page={page} />
       <div style={{ flex: "1 1 320px", minWidth: 0 }}>{children}</div>
-    </div>
-  );
-}
-
-const footerLink = {
-  fontFamily: serif, fontSize: 12.5, fontWeight: 700, color: "#fff", background: "none",
-  border: "none", borderBottom: `1px solid ${"#C9A227"}`, padding: 0,
-  cursor: "pointer",
-};
-
-function StarStrip() {
-  return (
-    <div style={{ background: C.crimson, padding: "5px 0", display: "flex", justifyContent: "center", gap: 10 }}>
-      {Array.from({ length: 13 }).map((_, i) => <span key={i} style={{ color: C.gold, fontSize: 11 }}>★</span>)}
     </div>
   );
 }

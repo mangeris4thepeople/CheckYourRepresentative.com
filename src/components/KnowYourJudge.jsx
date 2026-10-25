@@ -13,10 +13,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import RetentionBar from "./RetentionBar.jsx";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0", green: "#1B5E20", red: "#B71C1C",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", green: "#15803D", red: "#DC2626",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const PAGE_SIZE = 20;
 
 export default function KnowYourJudge() {
@@ -76,7 +76,7 @@ export default function KnowYourJudge() {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
           Know Your Judge
@@ -94,10 +94,10 @@ export default function KnowYourJudge() {
           onKeyDown={e => e.key === "Enter" && runSearch()}
           placeholder="Search by judge or court name"
           style={{ flex: "2 1 220px", fontFamily: serif, fontSize: 14, padding: "10px 12px",
-                   border: `1px solid ${C.line}`, borderRadius: 5 }} />
+                   border: `1px solid ${C.line}`, borderRadius: 10 }} />
         <select value={courtId} onChange={e => setCourtId(e.target.value)}
           style={{ flex: "1 1 180px", fontFamily: serif, fontSize: 13, padding: "10px 8px",
-                   border: `1px solid ${C.line}`, borderRadius: 5, background: "#fff" }}>
+                   border: `1px solid ${C.line}`, borderRadius: 10, background: "#fff" }}>
           <option value="">All courts</option>
           {courts.map(c => (
             <option key={c.id} value={c.id}>{c.name}{Number(c.judge_count) > 0 ? ` (${c.judge_count})` : ""}</option>
@@ -105,7 +105,7 @@ export default function KnowYourJudge() {
         </select>
         <button onClick={runSearch}
           style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "10px 18px",
-                   background: C.crimson, color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}>
+                   background: C.crimson, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>
           Search
         </button>
       </div>
@@ -123,12 +123,12 @@ export default function KnowYourJudge() {
       {phase === "ready" && judges.length === 0 && <Center>No judges match that search.</Center>}
 
       {judges.length > 0 && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>
           {judges.map(j => (
             <button key={j.id} onClick={() => setSelected(j.id)}
               style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
                        padding: "12px 16px", background: "transparent", border: "none",
-                       borderBottom: "1px solid #f0ead8", cursor: "pointer", fontFamily: serif }}>
+                       borderBottom: "1px solid #EEF3FB", cursor: "pointer", fontFamily: serif }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>{j.full_name}</div>
                 <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
@@ -144,7 +144,7 @@ export default function KnowYourJudge() {
       {hasMore && phase === "ready" && (
         <button onClick={() => loadList(offset + PAGE_SIZE, true)}
           style={{ display: "block", margin: "16px auto 0", fontFamily: serif, fontSize: 13, fontWeight: 700,
-                   color: C.navy, background: "#fff", border: `1px solid ${C.line}`, borderRadius: 6,
+                   color: C.navy, background: "#fff", border: `1px solid ${C.line}`, borderRadius: 12,
                    padding: "10px 22px", cursor: "pointer" }}>
           Load More Judges
         </button>
@@ -192,7 +192,7 @@ function JudgeDetail({ judgeId, onBack }) {
   const back = (
     <button onClick={onBack}
       style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
-               border: `1px solid ${C.line}`, borderRadius: 6, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
+               border: `1px solid ${C.line}`, borderRadius: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
       ← All judges
     </button>
   );
@@ -217,7 +217,7 @@ function JudgeDetail({ judgeId, onBack }) {
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 900, margin: "0 auto" }}>
       {back}
 
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px", borderRadius: 8, border: `3px solid ${C.gold}`, marginBottom: 18 }}>
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16, border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 20, fontWeight: 900 }}>{judge.full_name}</div>
         <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
           {judge.court_name || "Court not on record"}
@@ -233,7 +233,7 @@ function JudgeDetail({ judgeId, onBack }) {
         {evaluations.length === 0
           ? <Empty>No OJPE evaluation on record for this judge yet.</Empty>
           : evaluations.map((e, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: "1px solid #f0ead8" }}>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: "1px solid #EEF3FB" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{e.eval_year} evaluation</div>
                 <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
@@ -267,7 +267,7 @@ function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
     </div>
   );
 }

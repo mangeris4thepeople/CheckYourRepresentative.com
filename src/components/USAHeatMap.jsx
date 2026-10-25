@@ -12,12 +12,12 @@
 import React, { useMemo, useState } from "react";
 import STATE_PATHS from "../data/us-state-paths.json";
 
-const C = { navy: "#0A1A3F", gold: "#C9A227", ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0" };
-const serif = "Georgia, 'Times New Roman', serif";
+const C = { navy: "#0E2A6B", gold: "#F5B82E", ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0" };
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 // Light to dark single-hue ramp (monotonic lightness, no rainbow).
 const RAMP = ["#F6E3CE", "#EFC3A4", "#E29B7B", "#D06F55", "#B84734", "#992117", "#750000"];
-const NO_DATA = "#E8E2D2";
+const NO_DATA = "#E6ECF5";
 
 function rampColor(t) {
   const x = Math.max(0, Math.min(1, t)) * (RAMP.length - 1);
@@ -78,8 +78,8 @@ export default function USAHeatMap({ values, onSelect, format, legendLow, legend
       {hover && (
         <div style={{
           position: "absolute", left: Math.min(hover.x + 14, 780), top: hover.y + 10,
-          background: C.navy, color: "#fff", fontFamily: serif, fontSize: 12.5,
-          padding: "7px 11px", borderRadius: 6, pointerEvents: "none",
+          background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", fontFamily: serif, fontSize: 12.5,
+          padding: "7px 11px", borderRadius: 12, pointerEvents: "none",
           border: `1px solid ${C.gold}`, whiteSpace: "nowrap", zIndex: 5,
         }}>
           <span style={{ fontWeight: 700 }}>{shapes[hover.abbr].name}</span>
@@ -93,7 +93,7 @@ export default function USAHeatMap({ values, onSelect, format, legendLow, legend
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontFamily: serif }}>
         <span style={{ fontSize: 11.5, color: C.muted }}>{legendLow}</span>
         <div style={{
-          flex: "0 1 260px", height: 12, borderRadius: 6, border: `1px solid ${C.line}`,
+          flex: "0 1 260px", height: 12, borderRadius: 12, border: `1px solid ${C.line}`,
           background: `linear-gradient(to right, ${RAMP.join(",")})`,
         }} />
         <span style={{ fontSize: 11.5, color: C.muted }}>{legendHigh}</span>

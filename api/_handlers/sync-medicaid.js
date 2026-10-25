@@ -14,7 +14,10 @@
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
 
-const YEAR = 2023;
+// ACS 5-year vintage: year N publishes each December of N+1, so the newest
+// vintage that is always available is (current year - 2). Was hardcoded 2023,
+// which silently froze the data. Readers select the newest data_year.
+const YEAR = new Date().getFullYear() - 2;
 const BASE = `https://api.census.gov/data/${YEAR}/acs/acs5/subject`;
 const FIELDS = "NAME,S2704_C01_001E,S2704_C02_006E";
 const TIME_BUDGET_MS = 40000;

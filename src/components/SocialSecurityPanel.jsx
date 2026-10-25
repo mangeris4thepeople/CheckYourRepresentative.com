@@ -8,10 +8,10 @@
 import React, { useState, useEffect } from "react";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const num = (n) => n == null ? "0" : new Intl.NumberFormat("en-US").format(Number(n));
 const usd = (n) => n == null ? "$0" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(n));
@@ -20,7 +20,7 @@ function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
     </div>
   );
 }
@@ -31,7 +31,7 @@ function StateRow({ row, highlighted }) {
   const disability = (row.disability_workers || 0) + (row.disability_spouses || 0) + (row.disability_children || 0);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-                  borderBottom: "1px solid #f0ead8", background: highlighted ? C.parchment : "transparent" }}>
+                  borderBottom: "1px solid #EEF3FB", background: highlighted ? C.parchment : "transparent" }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>
           {row.state} {row.state_abbr ? `(${row.state_abbr})` : ""}
@@ -139,7 +139,7 @@ export default function SocialSecurityPanel({ district }) {
             onChange={e => setQuery(e.target.value)}
             placeholder="Search by state..."
             style={{ width: "100%", fontFamily: serif, fontSize: 13, padding: "8px 10px",
-                     border: `1px solid ${C.line}`, borderRadius: 6, boxSizing: "border-box" }}
+                     border: `1px solid ${C.line}`, borderRadius: 12, boxSizing: "border-box" }}
           />
         </div>
         {others.length === 0

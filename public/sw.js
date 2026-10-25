@@ -12,7 +12,7 @@
 //     which is safe because their filenames change when their content does.
 // Bump VERSION to invalidate everything on deploy of a new worker.
 // =============================================================================
-const VERSION = "cyr-v2";
+const VERSION = "cyr-v3";
 const SHELL = [
   "/offline.html",
   "/manifest.webmanifest",

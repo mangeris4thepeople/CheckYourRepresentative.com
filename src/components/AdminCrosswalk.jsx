@@ -14,10 +14,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getStoredSession } from "../lib/session.js";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0", green: "#1B5E20", red: "#B71C1C",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", green: "#15803D", red: "#DC2626",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const usd = (n) => n == null ? "" :
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -65,7 +65,7 @@ export default function AdminCrosswalk() {
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment, minHeight: "100vh", padding: "24px 16px" }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+        <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
                       border: `3px solid ${C.gold}`, marginBottom: 18 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
             Admin · Crosswalk Review
@@ -106,7 +106,7 @@ export default function AdminCrosswalk() {
               const decided = done[r.id];
               return (
                 <div key={r.id}
-                  style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: "14px 16px",
+                  style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: "14px 16px",
                            marginBottom: 10, opacity: decided ? 0.55 : 1 }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
                     {/* TRACER side */}
@@ -126,7 +126,7 @@ export default function AdminCrosswalk() {
                           : r.legal_name}
                         {r.exemption_revoked && (
                           <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#fff", background: C.red,
-                                         borderRadius: 4, padding: "2px 6px", verticalAlign: "middle" }}>
+                                         borderRadius: 8, padding: "2px 6px", verticalAlign: "middle" }}>
                             EXEMPTION REVOKED
                           </span>
                         )}
@@ -173,11 +173,11 @@ export default function AdminCrosswalk() {
 
 const sideLabel = {
   fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase",
-  color: "#5C5347", marginBottom: 3,
+  color: "#5B6578", marginBottom: 3,
 };
 const actBtn = {
   fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#fff", border: "none",
-  borderRadius: 6, padding: "9px 14px", cursor: "pointer",
+  borderRadius: 12, padding: "9px 14px", cursor: "pointer",
 };
 function Center({ children, color }) {
   return <div style={{ textAlign: "center", padding: 40, color: color || C.muted, fontSize: 14.5, fontFamily: serif }}>{children}</div>;

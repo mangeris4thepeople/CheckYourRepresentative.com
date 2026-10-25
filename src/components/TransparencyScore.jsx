@@ -15,11 +15,11 @@ import React from "react";
  *   fiscalYear: number
  */
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", muted: "#5C5347", line: "#D8C9A0",
-  ink: "#1A1A1A", parchment: "#FBF7EC",
-  green: "#1B5E20", amber: "#B8860B", red: "#B71C1C", track: "#EDE6D0",
+  navy: "#0E2A6B", gold: "#F5B82E", muted: "#5B6578", line: "#E2E8F0",
+  ink: "#0F172A", parchment: "#FFFFFF",
+  green: "#15803D", amber: "#B8860B", red: "#DC2626", track: "#F1F5FB",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export default function TransparencyScore({
   pctTransparent,
@@ -36,7 +36,7 @@ export default function TransparencyScore({
 
   if (pctTransparent === null || pctTransparent === undefined) {
     return (
-      <div style={{ fontFamily: serif, border: `1px solid ${C.line}`, borderRadius: 8,
+      <div style={{ fontFamily: serif, border: `1px solid ${C.line}`, borderRadius: 16,
                     padding: 16, fontSize: 13.5, color: C.muted, background: "#fff" }}>
         No revenue filing on record for FY{fiscalYear}.
       </div>
@@ -51,7 +51,7 @@ export default function TransparencyScore({
   }[tier];
 
   return (
-    <div style={{ fontFamily: serif, border: `1px solid ${C.line}`, borderRadius: 8,
+    <div style={{ fontFamily: serif, border: `1px solid ${C.line}`, borderRadius: 16,
                   padding: 16, background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
         <span style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>

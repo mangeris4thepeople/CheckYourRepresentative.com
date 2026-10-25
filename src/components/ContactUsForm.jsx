@@ -9,9 +9,9 @@
 // =============================================================================
 import React, { useState } from "react";
 
-const GOLD = "#C9A227";
-const CRIMSON = "#8B0000";
-const serif = "Georgia, 'Times New Roman', serif";
+const GOLD = "#F5B82E";
+const CRIMSON = "#D62839";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export default function ContactUsForm() {
   const [name, setName] = useState("");
@@ -52,8 +52,8 @@ export default function ContactUsForm() {
 
   const inputStyle = {
     width: "100%", boxSizing: "border-box", fontFamily: serif, fontSize: 14,
-    padding: "9px 11px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.25)",
-    background: "#fff", color: "#1A1A1A", marginBottom: 8,
+    padding: "9px 11px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.25)",
+    background: "#fff", color: "#0F172A", marginBottom: 8,
   };
 
   return (
@@ -68,7 +68,7 @@ export default function ContactUsForm() {
           <div>
             <button type="button" onClick={() => setStatus("idle")}
               style={{ marginTop: 10, fontFamily: serif, fontSize: 13, fontWeight: 700, color: GOLD,
-                       background: "none", border: `1px solid ${GOLD}`, borderRadius: 5,
+                       background: "none", border: `1px solid ${GOLD}`, borderRadius: 10,
                        padding: "6px 12px", cursor: "pointer" }}>
               Send another
             </button>
@@ -97,7 +97,7 @@ export default function ContactUsForm() {
 
           <button type="submit" disabled={status === "sending"}
             style={{ fontFamily: serif, fontSize: 14, fontWeight: 700, color: "#fff",
-                     background: CRIMSON, border: "none", borderRadius: 5,
+                     background: CRIMSON, border: "none", borderRadius: 10,
                      padding: "9px 20px", cursor: status === "sending" ? "default" : "pointer" }}>
             {status === "sending" ? "Sending..." : "Send Message"}
           </button>

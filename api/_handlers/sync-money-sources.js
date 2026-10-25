@@ -68,8 +68,14 @@ export default async function handler(req, res) {
 
     while (idx < STAGES.length && !outOfTime()) {
       const stage = STAGES[idx];
-      if (stage.startsWith("medicare") || stage.startsWith("ss")) {
-        if (!censusKey) return res.status(500).json({ error: "CENSUS_API_KEY not set", detail: "Pass ?censusKey= or set the env var." });
+      // Without a Census key, skip the Census stages instead of aborting the
+      // whole pass. Aborting here froze the NGO award stages (which need no
+      // key) and the Money Map rollup from July 22 onward.
+      if ((stage.startsWith("medicare") || stage.startsWith("ss")) && !censusKey) {
+        errors.push(`${stage}: skipped, CENSUS_API_KEY not set`);
+        idx += 1;
+        await setCursor(idx);
+        continue;
       }
       if (stage === "medicare_state") synced += await loadMedicare("state", censusKey, errors);
       if (stage === "medicare_county") synced += await loadMedicare("county", censusKey, errors);

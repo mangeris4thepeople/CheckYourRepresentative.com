@@ -40,8 +40,16 @@ export default async function handler(req, res) {
       if (!hasDb) return res.status(500).json({ error: "no database configured" });
       ({ bills, totalCount } = await searchBills(q, offset));
     } else {
-      if (!CONGRESS_API_KEY) return res.status(500).json({ error: "CONGRESS_API_KEY not set" });
-      ({ bills, totalCount } = await browseBills(offset));
+      // Live from Congress.gov when it answers; if the key is missing or the
+      // API is down, fall back to the daily mirror in Postgres (same shape,
+      // same ordering) instead of showing an empty page.
+      try {
+        if (!CONGRESS_API_KEY) throw new Error("CONGRESS_API_KEY not set");
+        ({ bills, totalCount } = await browseBills(offset));
+      } catch (err) {
+        if (!hasDb) throw err;
+        ({ bills, totalCount } = await searchBills("", offset));
+      }
     }
 
     // If signed in, batch-check which of THIS PAGE's bills already have a

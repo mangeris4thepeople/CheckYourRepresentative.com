@@ -11,8 +11,8 @@
 import React, { useState, useEffect } from "react";
 import { TUTORIAL_PAGES } from "../content/siteCopy.js";
 
-const C = { navy: "#0A1A3F", gold: "#C9A227", parchment: "#FBF7EC", muted: "#5C5347", line: "#D8C9A0" };
-const serif = "Georgia, 'Times New Roman', serif";
+const C = { navy: "#0E2A6B", gold: "#F5B82E", parchment: "#FFFFFF", muted: "#5B6578", line: "#E2E8F0" };
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export default function ContextualHelp({ page }) {
   const data = TUTORIAL_PAGES[page];
@@ -33,12 +33,12 @@ export default function ContextualHelp({ page }) {
   return (
     <aside style={{ flex: isNarrow ? "1 1 100%" : "0 0 236px", width: isNarrow ? "100%" : 236,
                     alignSelf: "flex-start" }}>
-      <div style={{ background: C.parchment, border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 24px rgba(15,23,42,.06)" }}>
         <button onClick={() => isNarrow && setOpen(o => !o)}
-          style={{ width: "100%", textAlign: "left", background: C.navy, color: "#fff", border: "none",
+          style={{ width: "100%", textAlign: "left", background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", border: "none",
                    padding: "12px 14px", cursor: isNarrow ? "pointer" : "default",
                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                   borderBottom: `2px solid ${C.gold}` }}>
+                   borderBottom: `3px solid ${C.gold}`, backgroundImage: "linear-gradient(120deg,#0E2A6B,#2563EB)" }}>
           <span style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.gold, textTransform: "uppercase" }}>
             About this page
           </span>

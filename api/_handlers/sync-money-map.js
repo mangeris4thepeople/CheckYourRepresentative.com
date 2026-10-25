@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     // County frame: population and names from the Medicaid ACS mirror.
     const base = await sql`
       SELECT geoid, name, state_abbr, total_population
-      FROM medicaid_acs WHERE geo_level = 'county'`;
+      FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'county'`;
     if (!base.length) {
       return res.status(200).json({ ok: false, reason: "medicaid_acs county rows missing, run sync-medicaid first" });
     }
@@ -50,10 +50,10 @@ export default async function handler(req, res) {
     for (const r of await sql`SELECT geoid, medicare_covered FROM medicare_acs WHERE geo_level = 'county'`) {
       put(r.geoid, "medicare", r.medicare_covered);
     }
-    for (const r of await sql`SELECT geoid, medicaid_covered FROM medicaid_acs WHERE geo_level = 'county'`) {
+    for (const r of await sql`SELECT geoid, medicaid_covered FROM medicaid_acs WHERE data_year = (SELECT max(data_year) FROM medicaid_acs) AND geo_level = 'county'`) {
       put(r.geoid, "medicaid", r.medicaid_covered);
     }
-    for (const r of await sql`SELECT geoid, snap_households FROM snap_acs WHERE geo_level = 'county'`) {
+    for (const r of await sql`SELECT geoid, snap_households FROM snap_acs WHERE data_year = (SELECT max(data_year) FROM snap_acs) AND geo_level = 'county'`) {
       put(r.geoid, "snap", r.snap_households);
     }
     for (const r of await sql`SELECT geoid, ss_aggregate_dollars FROM ss_income_acs WHERE geo_level = 'county'`) {

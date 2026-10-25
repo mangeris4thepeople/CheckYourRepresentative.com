@@ -22,9 +22,9 @@ if (typeof document !== "undefined" && !document.getElementById("cyr-onboard-css
 const LAUNCH_DATE = new Date("2026-07-01T08:00:00").getTime();
 const PRE_LAUNCH  = Date.now() < LAUNCH_DATE;
 
-const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#FBF7EC",
-  parchmentEdge:"#F0E6CE", ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
-const serif = "Georgia, 'Times New Roman', serif";
+const C = { crimson:"#D62839", navy:"#0E2A6B", gold:"#F5B82E", parchment:"#FFFFFF",
+  parchmentEdge:"#F1F5FB", ink:"#0F172A", muted:"#5B6578", line:"#E2E8F0" };
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const TOPICS = [
   "Agriculture and Food","Armed Forces and National Security","Civil Rights and Liberties",
@@ -89,7 +89,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, background: C.parchment,
-                  border: `1px solid ${C.line}`, borderRadius: 6, overflow: "hidden",
+                  border: `1px solid ${C.line}`, borderRadius: 12, overflow: "hidden",
                   maxWidth: 680, margin: "0 auto" }}>
       <StarStrip />
       <div className="cyr-onboard-pad" style={{ padding: "20px 24px 26px" }}>
@@ -136,7 +136,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
           </div>
         )}
         {digestPhase === "error" && (
-          <div style={{ padding: "12px 14px", background: "#FBE9E7", borderRadius: 4,
+          <div style={{ padding: "12px 14px", background: "#FBE9E7", borderRadius: 8,
                         color: C.crimson, fontSize: 13 }}>
             Couldn't load bills right now. Try again in a moment.
           </div>
@@ -146,7 +146,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
         )}
         {topics.size === 0 && digestPhase === "idle" && (
           <div style={{ padding: "16px 14px", background: "#fff", border: `1px solid ${C.line}`,
-                        borderRadius: 4, fontSize: 13.5, color: C.muted, fontStyle: "italic" }}>
+                        borderRadius: 8, fontSize: 13.5, color: C.muted, fontStyle: "italic" }}>
             Select topics above to see bills from your representative.
           </div>
         )}
@@ -169,10 +169,10 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
                   placeholder="you@example.com" type="email"
                   style={{ padding: "8px 11px", width: 280, maxWidth: "100%", fontFamily: serif,
                            fontSize: 14, border: `1px solid ${emailValid ? C.line : C.crimson}`,
-                           borderRadius: 4, background: "#fff", marginBottom: 10 }} />
+                           borderRadius: 8, background: "#fff", marginBottom: 10 }} />
               )}
               <label style={{ display: "flex", alignItems: "flex-start", gap: 9, fontSize: 13.5,
-                              background: "#fff", border: `1px solid ${C.line}`, borderRadius: 4,
+                              background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8,
                               padding: "12px 14px", cursor: "pointer", marginBottom: 12 }}>
                 <input type="checkbox" checked={consent}
                   onChange={e => setConsent(e.target.checked)} style={{ marginTop: 3 }} />
@@ -184,9 +184,9 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
               {error && <div style={{ marginBottom: 10, color: C.crimson, fontSize: 13 }}>{error}</div>}
               <button onClick={submit} disabled={!canSubmit}
                 style={{ width: "100%", padding: "13px", fontFamily: serif, fontSize: 16,
-                         fontWeight: 700, borderRadius: 4, border: "none",
+                         fontWeight: 700, borderRadius: 8, border: "none",
                          cursor: canSubmit ? "pointer" : "not-allowed",
-                         background: canSubmit ? C.crimson : "#C9BFAB",
+                         background: canSubmit ? C.crimson : "#D5DDEA",
                          color: "#fff", letterSpacing: 0.5 }}>
                 {phase === "submitting" ? "Saving…" : "Create My Profile"}
               </button>
@@ -196,7 +196,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
 
         {!PRE_LAUNCH && phase === "done" && (
           <div style={{ marginTop: 18, padding: "14px 16px", background: "#fff",
-                        border: `1px solid ${C.line}`, borderRadius: 4, fontSize: 14, color: C.navy }}>
+                        border: `1px solid ${C.line}`, borderRadius: 8, fontSize: 14, color: C.navy }}>
             <strong>You're all set.</strong>{" "}
             {wantsEmail
               ? "Check your inbox and click the confirmation link to start receiving email digests."
@@ -207,7 +207,7 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
         {/* Pre-launch notice instead of signup */}
         {PRE_LAUNCH && (
           <div style={{ marginTop: 18, padding: "12px 16px", background: "#fff",
-                        border: `1px solid ${C.gold}`, borderRadius: 4, fontSize: 13, color: C.muted }}>
+                        border: `1px solid ${C.gold}`, borderRadius: 8, fontSize: 13, color: C.muted }}>
             <strong style={{ color: C.navy }}>Full profiles launch July 1, 2026.</strong>{" "}
             Browse your district's bills above and vote on them now - your votes are recorded immediately.
             Email digests and saved profiles go live on launch day.
@@ -220,25 +220,25 @@ export default function ConstituentOnboarding({ location, district, reps = [], o
 
 function DigestPreview({ digest, onGoVote }) {
   return (
-    <div style={{ borderTop: "2px solid #C9A227", paddingTop: 16, textAlign: "center" }}>
+    <div style={{ borderTop: "2px solid #F5B82E", paddingTop: 16, textAlign: "center" }}>
       {digest?.rep && (
-        <div style={{ fontSize: 13, color: "#5C5347", marginBottom: 12 }}>
-          Your representative: <strong style={{ color: "#0A1A3F" }}>{digest.rep.name}</strong> · District found ✓
+        <div style={{ fontSize: 13, color: "#5B6578", marginBottom: 12 }}>
+          Your representative: <strong style={{ color: "#0E2A6B" }}>{digest.rep.name}</strong> · District found ✓
         </div>
       )}
-      <div style={{ fontSize: 15, fontWeight: 700, color: "#0A1A3F", marginBottom: 8 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: "#0E2A6B", marginBottom: 8 }}>
         Ready to vote on active legislation?
       </div>
-      <p style={{ fontSize: 13.5, color: "#5C5347", marginBottom: 16, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 13.5, color: "#5B6578", marginBottom: 16, lineHeight: 1.6 }}>
         Every active bill in Congress - explained in plain English with the full money trail.
         Your vote is recorded and sent to your representative daily.
       </p>
       <button
         onClick={onGoVote}
         style={{
-          width: "100%", padding: "18px", fontFamily: "Georgia, serif",
-          fontSize: 20, fontWeight: 900, borderRadius: 8, border: "none",
-          background: "#1B5E20", color: "#fff", cursor: "pointer", letterSpacing: 1
+          width: "100%", padding: "18px", fontFamily: "'Inter', system-ui, sans-serif",
+          fontSize: 20, fontWeight: 900, borderRadius: 16, border: "none",
+          background: "#15803D", color: "#fff", cursor: "pointer", letterSpacing: 1
         }}>
         🗳️ VOTE ON BILLS NOW →
       </button>

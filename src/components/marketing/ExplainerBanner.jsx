@@ -35,7 +35,7 @@ export default function ExplainerBanner({ onLearnMore }) {
   }
 
   return (
-    <div style={{ background: C.navy, color: "#fff", borderBottom: `2px solid ${C.gold}`,
+    <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", borderBottom: `2px solid ${C.gold}`,
                   padding: "10px 44px 10px 20px", position: "relative" }}>
       <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", alignItems: "baseline",
                     gap: 10, flexWrap: "wrap", justifyContent: "center", textAlign: "center" }}>

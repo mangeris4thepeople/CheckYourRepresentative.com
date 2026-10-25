@@ -15,6 +15,7 @@ import rollcall from "./_handlers/rollcall.js";
 import matrix from "./_handlers/matrix.js";
 import tally from "./_handlers/tally.js";
 import stats from "./_handlers/stats.js";
+import pulse from "./_handlers/pulse.js";
 
 const OPS = {
   "bill-detail": billDetail,
@@ -24,6 +25,7 @@ const OPS = {
   "matrix": matrix,
   "tally": tally,
   "stats": stats,
+  "pulse": pulse,
 };
 
 export default async function handler(req, res) {

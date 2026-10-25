@@ -1,0 +1,211 @@
+/* =============================================================================
+   theme.css - the CYR "Bright Republic" design layer (October 2026 revamp).
+
+   Most components style themselves inline; this file supplies what inline
+   styles cannot: design tokens, web fonts, page background, motion, hover and
+   focus states, scrollbars, and the shared classes used by the new app shell,
+   Home tab, and content pages. House style: no em dashes anywhere.
+   ============================================================================= */
+
+:root {
+  --cyr-navy: #0E2A6B;
+  --cyr-navy-2: #16388A;
+  --cyr-blue: #2563EB;
+  --cyr-sky: #E8F0FF;
+  --cyr-red: #E0313F;
+  --cyr-red-soft: #FDECEE;
+  --cyr-gold: #F5B82E;
+  --cyr-gold-soft: #FFF6DD;
+  --cyr-green: #16A34A;
+  --cyr-ink: #0F172A;
+  --cyr-muted: #5B6578;
+  --cyr-line: #E2E8F0;
+  --cyr-bg: #F6F8FC;
+  --cyr-panel: #FFFFFF;
+  --cyr-radius: 16px;
+  --cyr-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --cyr-shadow-lg: 0 2px 6px rgba(15, 23, 42, 0.06), 0 22px 48px rgba(14, 42, 107, 0.14);
+  --cyr-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --cyr-display: "Fraunces", "Inter", Georgia, serif;
+  --cyr-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --cyr-grad: linear-gradient(120deg, #0E2A6B 0%, #2563EB 55%, #E0313F 115%);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--cyr-sans);
+  color: var(--cyr-ink);
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgba(37, 99, 235, 0.10), transparent 60%),
+    radial-gradient(900px 420px at -10% 10%, rgba(224, 49, 63, 0.07), transparent 60%),
+    var(--cyr-bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgba(37, 99, 235, 0.18); }
+
+a { color: var(--cyr-blue); }
+
+/* Interactive polish for every button and field, inline styled or not. */
+button { transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease; }
+button:not(:disabled):active { transform: translateY(1px) scale(0.99); }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 3px solid rgba(37, 99, 235, 0.45); outline-offset: 2px; border-radius: 8px; }
+input, select, textarea { font-family: inherit; transition: border-color .2s ease, box-shadow .2s ease; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cyr-blue) !important; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14); }
+
+/* Slim, friendly scrollbars on desktop. */
+* { scrollbar-width: thin; scrollbar-color: #C7D2E3 transparent; }
+*::-webkit-scrollbar { height: 8px; width: 8px; }
+*::-webkit-scrollbar-thumb { background: #C7D2E3; border-radius: 99px; }
+
+/* ---------- motion ---------- */
+@keyframes cyr-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes cyr-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cyr-pulse { 0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, .55); } 70% { box-shadow: 0 0 0 10px rgba(22, 163, 74, 0); } 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); } }
+@keyframes cyr-shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes cyr-drift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes cyr-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.cyr-rise { animation: cyr-rise .55s cubic-bezier(.2, .7, .2, 1) both; }
+.cyr-main > * { animation: cyr-rise .45s cubic-bezier(.2, .7, .2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- app shell ---------- */
+.cyr-topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+.cyr-flagline { height: 4px; background: linear-gradient(90deg, var(--cyr-red) 0 33%, #fff 33% 66%, var(--cyr-blue) 66% 100%); }
+.cyr-header-inner { max-width: 1180px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+.cyr-brand { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; color: inherit; }
+.cyr-seal { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; box-shadow: 0 6px 16px rgba(14, 42, 107, .25); }
+.cyr-site-title { font-family: var(--cyr-display); font-weight: 800; font-size: 21px; letter-spacing: -0.01em; color: var(--cyr-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
+.cyr-tagline { font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cyr-muted); display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.cyr-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyr-green); animation: cyr-pulse 2s infinite; flex-shrink: 0; }
+
+.cyr-btn {
+  font-family: var(--cyr-sans); font-size: 14px; font-weight: 700; cursor: pointer; border-radius: 999px;
+  padding: 10px 18px; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 8px;
+  white-space: nowrap; text-decoration: none; line-height: 1.1;
+}
+.cyr-btn-primary { background: var(--cyr-grad); background-size: 160% 160%; color: #fff; box-shadow: 0 8px 20px rgba(37, 99, 235, .28); }
+.cyr-btn-primary:hover { box-shadow: 0 12px 28px rgba(37, 99, 235, .36); transform: translateY(-1px); background-position: 100% 50%; }
+.cyr-btn-ghost { background: #fff; color: var(--cyr-navy); border-color: var(--cyr-line); }
+.cyr-btn-ghost:hover { border-color: #BFD0F2; background: var(--cyr-sky); }
+.cyr-btn-light { background: rgba(255, 255, 255, .14); color: #fff; border-color: rgba(255, 255, 255, .35); }
+.cyr-btn-light:hover { background: rgba(255, 255, 255, .24); }
+.cyr-btn-gold { background: var(--cyr-gold); color: var(--cyr-ink); box-shadow: 0 8px 20px rgba(245, 184, 46, .35); }
+.cyr-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(245, 184, 46, .45); }
+
+.cyr-nav { max-width: 1180px; margin: 0 auto; padding: 0 14px 10px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.cyr-nav::-webkit-scrollbar { display: none; }
+.cyr-tab {
+  font-family: var(--cyr-sans); font-size: 14px; font-weight: 600; color: var(--cyr-muted);
+  background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 8px 14px;
+  cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+}
+.cyr-tab:hover { background: #fff; color: var(--cyr-navy); border-color: var(--cyr-line); }
+.cyr-tab[aria-current="page"] { background: var(--cyr-navy); color: #fff; box-shadow: 0 6px 16px rgba(14, 42, 107, .25); }
+.cyr-tab .cyr-tab-ico { font-size: 15px; line-height: 1; }
+.cyr-tab .cyr-lock { font-size: 10px; opacity: .8; }
+
+.cyr-main { max-width: 1180px; margin: 0 auto; padding: 26px 20px 72px; }
+
+/* ---------- cards and type ---------- */
+.cyr-card { background: var(--cyr-panel); border: 1px solid var(--cyr-line); border-radius: var(--cyr-radius); box-shadow: var(--cyr-shadow); }
+.cyr-card-hover { transition: transform .2s ease, box-shadow .25s ease, border-color .2s ease; }
+.cyr-card-hover:hover { transform: translateY(-3px); box-shadow: var(--cyr-shadow-lg); border-color: #C9D7F2; }
+.cyr-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--cyr-blue); }
+.cyr-h1 { font-family: var(--cyr-display); font-weight: 800; letter-spacing: -0.02em; line-height: 1.04; margin: 0; }
+.cyr-h2 { font-family: var(--cyr-display); font-weight: 750; letter-spacing: -0.015em; line-height: 1.15; margin: 0; color: var(--cyr-navy); }
+.cyr-num { font-family: var(--cyr-display); font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: -0.02em; }
+.cyr-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 4px 10px; background: var(--cyr-sky); color: var(--cyr-navy); }
+.cyr-skeleton { background: linear-gradient(90deg, #EEF2F8 0, #F8FAFD 40%, #EEF2F8 80%); background-size: 800px 100%; animation: cyr-shimmer 1.4s infinite linear; border-radius: 10px; }
+
+/* ---------- Home hero ---------- */
+.cyr-hero {
+  position: relative; overflow: hidden; color: #fff; border-radius: 28px; padding: 54px 44px;
+  background: linear-gradient(125deg, #0B225A 0%, #1E40AF 45%, #2563EB 70%, #E0313F 130%);
+  background-size: 200% 200%; animation: cyr-drift 18s ease infinite;
+  box-shadow: 0 30px 60px rgba(14, 42, 107, .28);
+}
+.cyr-hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .18;
+  background-image: radial-gradient(circle at 1px 1px, #fff 1.2px, transparent 1.3px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(110deg, transparent 30%, #000 75%);
+  -webkit-mask-image: linear-gradient(110deg, transparent 30%, #000 75%);
+}
+.cyr-hero::after {
+  content: ""; position: absolute; right: -120px; top: -120px; width: 420px; height: 420px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 184, 46, .35), transparent 65%); pointer-events: none;
+}
+.cyr-hero > * { position: relative; z-index: 1; }
+
+.cyr-grid { display: grid; gap: 16px; }
+.cyr-grid > * { min-width: 0; }
+.cyr-grid-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cyr-grid-features { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cyr-grid-split { grid-template-columns: 1.35fr 1fr; align-items: start; }
+
+/* ---------- footer ---------- */
+.cyr-footer { background: #0B1B44; color: #DCE4F5; margin-top: 30px; }
+.cyr-footer-inner { max-width: 1180px; margin: 0 auto; padding: 40px 20px 30px; display: flex; flex-wrap: wrap; gap: 32px; justify-content: space-between; align-items: flex-start; }
+.cyr-footer-link { font-family: var(--cyr-sans); font-size: 13.5px; font-weight: 600; color: #fff; background: none; border: 0; padding: 0; cursor: pointer; opacity: .85; }
+.cyr-footer-link:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- content pages ---------- */
+.cyr-page-hero { background: var(--cyr-grad); color: #fff; padding: 64px 20px 72px; position: relative; overflow: hidden; }
+.cyr-page-hero::before { content: ""; position: absolute; inset: 0; opacity: .14; background-image: radial-gradient(circle at 1px 1px, #fff 1.2px, transparent 1.3px); background-size: 24px 24px; }
+.cyr-page-body { max-width: 860px; margin: -40px auto 0; padding: 0 20px 64px; position: relative; }
+.cyr-prose p { font-size: 17px; line-height: 1.78; color: #1F2937; margin: 0 0 20px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px) {
+  .cyr-grid-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cyr-grid-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cyr-grid-split { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .cyr-header-inner { padding: 10px 14px; gap: 10px; }
+  .cyr-site-title { font-size: 17px; }
+  .cyr-tagline { display: none; }
+  .cyr-seal { width: 36px; height: 36px; }
+  .cyr-hide-sm { display: none !important; }
+  .cyr-btn { padding: 8px 13px; font-size: 13px; }
+  .cyr-nav { padding: 0 10px 8px; }
+  .cyr-tab { font-size: 13px; padding: 7px 12px; }
+  .cyr-main { padding: 18px 14px 56px; }
+  .cyr-hero { padding: 34px 22px; border-radius: 22px; }
+  .cyr-grid-features { grid-template-columns: 1fr; }
+  .cyr-footer-inner { padding: 28px 16px 22px; }
+  .cyr-page-hero { padding: 44px 16px 60px; }
+}
+@media (max-width: 400px) {
+  .cyr-site-title { font-size: 15px; }
+}
+
+/* ---------- inner tab lift (applies to every legacy inline styled tab) ---------- */
+/* List rows and cards rendered as left aligned buttons get a hover lift. */
+.cyr-main button[style*="text-align: left"] { transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease; }
+.cyr-main button[style*="text-align: left"]:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(14, 42, 107, .10); border-color: #BFD0F2 !important; }
+/* Gradient section headers get depth. */
+.cyr-main [style*="linear-gradient(125deg"] { box-shadow: 0 14px 30px rgba(14, 42, 107, .18); }
+/* Every text field: roomy, rounded, consistent. */
+.cyr-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), .cyr-main select, .cyr-main textarea { border-radius: 12px !important; border-color: #D5DDEA !important; background-color: #fff; }
+.cyr-main table { border-collapse: separate; border-spacing: 0; }
+.cyr-main th { background: #F1F5FB; }

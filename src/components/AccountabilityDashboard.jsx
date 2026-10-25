@@ -9,11 +9,11 @@ import React, { useState, useEffect, useRef } from "react";
 import BillSidebar from "./BillSidebar.jsx";
 import "./BillSidebar.css";
 
-const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#FBF7EC",
-  ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0", green:"#1B5E20", red:"#B71C1C",
+const C = { crimson:"#D62839", navy:"#0E2A6B", gold:"#F5B82E", parchment:"#FFFFFF",
+  ink:"#0F172A", muted:"#5B6578", line:"#E2E8F0", green:"#15803D", red:"#DC2626",
   greenLight:"#E8F5E9", redLight:"#FFEBEE" };
-const serif = "Georgia, 'Times New Roman', serif";
-const mono = "'Courier New', monospace";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";
 const POLL_MS = 20000;
 
 export default function AccountabilityDashboard({ district }) {
@@ -364,7 +364,7 @@ function StatBox({ num, label, color }) {
 
 function Center({ children, color }) {
   return (
-    <div style={{ textAlign:"center", padding:48, color: color || "#5C5347", fontSize:15 }}>
+    <div style={{ textAlign:"center", padding:48, color: color || "#5B6578", fontSize:15 }}>
       {children}
     </div>
   );

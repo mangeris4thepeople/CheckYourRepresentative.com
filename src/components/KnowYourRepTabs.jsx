@@ -11,8 +11,8 @@ import KnowYourRep from "./KnowYourRep.jsx";
 import SenateDirectory from "./SenateDirectory.jsx";
 import RepSpaceTab from "./RepSpaceTab.jsx";
 
-const C = { navy: "#0A1A3F", gold: "#C9A227", muted: "#5C5347", line: "#D8C9A0" };
-const serif = "Georgia, 'Times New Roman', serif";
+const C = { navy: "#0E2A6B", gold: "#F5B82E", muted: "#5B6578", line: "#E2E8F0" };
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 function initialChamber() {
   try {
@@ -27,7 +27,7 @@ export default function KnowYourRepTabs() {
   const btn = (key, label) => (
     <button onClick={() => setChamber(key)}
       style={{ flex: 1, fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "10px 16px",
-               borderRadius: 6, cursor: "pointer", border: `2px solid ${C.navy}`,
+               borderRadius: 12, cursor: "pointer", border: `2px solid ${C.navy}`,
                background: chamber === key ? C.navy : "#fff",
                color: chamber === key ? "#fff" : C.navy }}>
       {label}

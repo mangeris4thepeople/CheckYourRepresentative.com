@@ -12,10 +12,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import USAHeatMap from "./USAHeatMap.jsx";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const fmtInt = (n) => (n == null ? "n/a" : Number(n).toLocaleString());
 const fmtPct = (n) => (n == null ? "n/a" : `${Number(n).toFixed(1)}%`);
@@ -59,7 +59,7 @@ export default function BenefitMap({ config }) {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
           {config.title}
@@ -84,7 +84,7 @@ export default function BenefitMap({ config }) {
 
       {phase === "ready" && (
         <>
-          <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: 18, marginBottom: 18 }}>
+          <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 18 }}>
             <USAHeatMap
               values={values}
               onSelect={setSelected}
@@ -101,7 +101,7 @@ export default function BenefitMap({ config }) {
               <button key={s.state_abbr} onClick={() => setSelected(s.state_abbr)}
                 style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
                          padding: "9px 14px", background: "transparent", border: "none",
-                         borderBottom: "1px solid #f0ead8", cursor: "pointer", fontFamily: serif }}>
+                         borderBottom: "1px solid #EEF3FB", cursor: "pointer", fontFamily: serif }}>
                 <span style={{ flex: 2, fontSize: 13.5, fontWeight: 700, color: C.navy }}>{s.name}</span>
                 <span style={{ flex: 1.4, fontSize: 13, color: C.ink, textAlign: "right" }}>{fmtInt(s.benefit_count)}</span>
                 <span style={{ flex: 1.4, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(s.universe_total)}</span>
@@ -156,7 +156,7 @@ function StateDetail({ config, state, onBack }) {
   const back = (
     <button onClick={onBack}
       style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
-               border: `1px solid ${C.line}`, borderRadius: 6, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
+               border: `1px solid ${C.line}`, borderRadius: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
       ← National map
     </button>
   );
@@ -181,7 +181,7 @@ function StateDetail({ config, state, onBack }) {
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
       {back}
 
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 20, fontWeight: 900 }}>{summary.name}</div>
         <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6, lineHeight: 1.6 }}>
@@ -198,15 +198,15 @@ function StateDetail({ config, state, onBack }) {
       </Section>
 
       <Section title={`By city and town (${fmtInt(totalPlaces)} places on record)`}>
-        <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderBottom: "1px solid #f0ead8" }}>
+        <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderBottom: "1px solid #EEF3FB" }}>
           <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && setSearch(searchInput.trim())}
             placeholder="Search cities and towns"
             style={{ flex: 1, fontFamily: serif, fontSize: 13.5, padding: "8px 11px",
-                     border: `1px solid ${C.line}`, borderRadius: 5 }} />
+                     border: `1px solid ${C.line}`, borderRadius: 10 }} />
           <button onClick={() => setSearch(searchInput.trim())}
             style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "8px 16px",
-                     background: C.crimson, color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}>
+                     background: C.crimson, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer" }}>
             Search
           </button>
         </div>
@@ -227,7 +227,7 @@ function StateDetail({ config, state, onBack }) {
 function DataRow({ row }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px",
-                  borderBottom: "1px solid #f0ead8", fontFamily: serif }}>
+                  borderBottom: "1px solid #EEF3FB", fontFamily: serif }}>
       <span style={{ flex: 2, fontSize: 13, color: C.ink }}>{row.name.replace(/, [A-Za-z ]+$/, "")}</span>
       <span style={{ flex: 1.4, fontSize: 13, color: C.ink, textAlign: "right" }}>{fmtInt(row.benefit_count)}</span>
       <span style={{ flex: 1.4, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(row.universe_total)}</span>
@@ -252,7 +252,7 @@ function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
     </div>
   );
 }

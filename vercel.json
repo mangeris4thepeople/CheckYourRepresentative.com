@@ -10,6 +10,7 @@
     { "source": "/api/matrix", "destination": "/api/bills?op=matrix" },
     { "source": "/api/tally", "destination": "/api/bills?op=tally" },
     { "source": "/api/stats", "destination": "/api/bills?op=stats" },
+    { "source": "/api/pulse", "destination": "/api/bills?op=pulse" },
 
     { "source": "/api/representative-detail", "destination": "/api/reps?op=representative-detail" },
     { "source": "/api/representatives-list", "destination": "/api/reps?op=representatives-list" },
@@ -40,6 +41,7 @@
     { "source": "/know-your-rep", "destination": "/index.html" },
 
     { "source": "/about", "destination": "/index.html" },
+    { "source": "/home", "destination": "/index.html" },
     { "source": "/tutorial", "destination": "/index.html" },
     { "source": "/how-it-works", "destination": "/index.html" },
     { "source": "/benefits", "destination": "/index.html" },

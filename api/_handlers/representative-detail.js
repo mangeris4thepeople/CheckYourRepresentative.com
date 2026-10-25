@@ -13,7 +13,10 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (!hasDb) return res.status(200).json({ ready: false, reason: "no_database" });
 
-  const district = String(req.query.district || "").trim().toUpperCase();
+  // Accept CO-4, CO-04, co4 or CO-AL; the table stores CO-04 / AK-AL.
+  const raw = String(req.query.district || "").trim().toUpperCase().replace(/\s+/g, "");
+  const m = raw.match(/^([A-Z]{2})-?(\d{1,2}|AL)$/);
+  const district = m ? `${m[1]}-${m[2] === "AL" ? "AL" : m[2].padStart(2, "0")}` : raw;
   if (!district) return res.status(400).json({ error: "district required" });
 
   try {

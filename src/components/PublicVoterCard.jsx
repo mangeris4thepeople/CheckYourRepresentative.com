@@ -6,12 +6,12 @@
 import React, { useState, useEffect } from "react";
 
 const C = {
-  navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
-  yes:"#1B5E20", yesLight:"#E8F5E9",
-  no:"#B71C1C", noLight:"#FFEBEE",
-  parchment:"#FBF7EC", muted:"#5C5347", line:"#D8C9A0",
+  navy:"#0E2A6B", gold:"#F5B82E", crimson:"#D62839",
+  yes:"#15803D", yesLight:"#E8F5E9",
+  no:"#DC2626", noLight:"#FFEBEE",
+  parchment:"#FFFFFF", muted:"#5B6578", line:"#E2E8F0",
 };
-const serif = "Georgia,'Times New Roman',serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export default function PublicVoterCard({ voterId, onBack }) {
   const [state, setState] = useState("loading"); // loading | ready | notfound | error
@@ -56,8 +56,8 @@ export default function PublicVoterCard({ voterId, onBack }) {
   return (
     <Shell onBack={onBack}>
       {/* Header */}
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px",
-                    borderRadius: "8px 8px 0 0", borderBottom: `3px solid ${C.gold}` }}>
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px",
+                    borderRadius: "18px 18px 0 0", borderBottom: `3px solid ${C.gold}` }}>
         <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1 }}>
           PUBLIC VOTER PROFILE
         </div>
@@ -69,11 +69,11 @@ export default function PublicVoterCard({ voterId, onBack }) {
       </div>
 
       <div style={{ background: C.parchment, border: `1px solid ${C.line}`, borderTop: "none",
-                    borderRadius: "0 0 8px 8px", padding: "22px 24px" }}>
+                    borderRadius: "0 0 18px 18px", padding: "22px 24px" }}>
         {voter.bio && (
-          <div style={{ fontSize: 14, color: "#1A1A1A", fontStyle: "italic",
+          <div style={{ fontSize: 14, color: "#0F172A", fontStyle: "italic",
                         lineHeight: 1.6, marginBottom: 18, padding: "12px 14px",
-                        background: "#fff", border: `1px solid ${C.line}`, borderRadius: 6 }}>
+                        background: "#fff", border: `1px solid ${C.line}`, borderRadius: 12 }}>
             "{voter.bio}"
           </div>
         )}
@@ -91,8 +91,8 @@ export default function PublicVoterCard({ voterId, onBack }) {
         {voter.votes.map((v, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 12,
                                 background: "#fff", border: `1px solid ${C.line}`,
-                                borderRadius: 6, padding: "12px 14px", marginBottom: 8 }}>
-            <div style={{ minWidth: 70, textAlign: "center", padding: "6px 8px", borderRadius: 4,
+                                borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+            <div style={{ minWidth: 70, textAlign: "center", padding: "6px 8px", borderRadius: 8,
                           background: positionBg(v.position), color: positionColor(v.position),
                           fontWeight: 900, fontSize: 13 }}>
               {positionLabel(v.position)}
@@ -127,7 +127,7 @@ function Shell({ children, onBack }) {
       {onBack && (
         <button onClick={onBack}
           style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy,
-                   background: "none", border: `1px solid ${C.line}`, borderRadius: 4,
+                   background: "none", border: `1px solid ${C.line}`, borderRadius: 8,
                    padding: "8px 14px", cursor: "pointer", marginBottom: 14 }}>
           ← All Constituents
         </button>
@@ -140,7 +140,7 @@ function Shell({ children, onBack }) {
 function Center({ children }) {
   return (
     <div style={{ textAlign: "center", padding: "50px 20px", color: C.muted,
-                  background: C.parchment, border: `1px solid ${C.line}`, borderRadius: 8 }}>
+                  background: C.parchment, border: `1px solid ${C.line}`, borderRadius: 16 }}>
       {children}
     </div>
   );

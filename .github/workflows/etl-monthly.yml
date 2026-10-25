@@ -28,11 +28,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       - run: npm ci
       - name: 1. USASpending federal awards
+        # Retries transient API errors itself; if the API is down for good,
+        # do not let it block the EIN, 990, and transparency steps below.
+        continue-on-error: true
         run: npm run etl:usaspending -- --fy $(date +%Y)
       - name: 2. FEC disbursements
+        continue-on-error: true
         run: npm run etl:fec -- --fy $(date +%Y)
       - name: 3. FARA foreign principals
         # etl_fara.js deliberately throws until a working FARA endpoint is

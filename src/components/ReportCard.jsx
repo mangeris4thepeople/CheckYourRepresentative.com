@@ -16,12 +16,12 @@
 import React, { useState, useEffect } from "react";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  parchmentEdge: "#F0E6CE", ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
-  green: "#1B5E20", red: "#B71C1C",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  parchmentEdge: "#F1F5FB", ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
+  green: "#15803D", red: "#DC2626",
 };
-const serif = "Georgia, 'Times New Roman', serif";
-const mono = "'Courier New', monospace";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";
 
 const PARTY = {
   D: { label: "Democrat", color: C.navy }, Democrat: { label: "Democrat", color: C.navy },
@@ -29,9 +29,9 @@ const PARTY = {
   I: { label: "Independent", color: C.muted }, Independent: { label: "Independent", color: C.muted },
 };
 
-const usd = (n) => n == null ? "—" : new Intl.NumberFormat("en-US",
+const usd = (n) => n == null ? "n/a" : new Intl.NumberFormat("en-US",
   { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(n) || 0);
-const num = (n) => n == null ? "—" : new Intl.NumberFormat("en-US").format(Number(n) || 0);
+const num = (n) => n == null ? "n/a" : new Intl.NumberFormat("en-US").format(Number(n) || 0);
 
 export default function ReportCard({ bioguide, district, onClose }) {
   const [phase, setPhase] = useState("loading"); // loading | ready | error | notready
@@ -87,7 +87,7 @@ export default function ReportCard({ bioguide, district, onClose }) {
       <div style={{ display: "flex", alignItems: "center", gap: 16, borderBottom: `3px double ${C.line}`, paddingBottom: 16 }}>
         {member.photo_url && (
           <img src={member.photo_url} alt={member.name}
-            style={{ width: 76, height: 94, objectFit: "cover", borderRadius: 4, border: `2px solid ${C.line}` }} />
+            style={{ width: 76, height: 94, objectFit: "cover", borderRadius: 8, border: `2px solid ${C.line}` }} />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: 2, color: C.muted }}>REPRESENTATIVE REPORT CARD</div>
@@ -188,7 +188,7 @@ export default function ReportCard({ bioguide, district, onClose }) {
       </Section>
 
       {/* Footer: constituent engagement */}
-      <div style={{ marginTop: 18, padding: "14px 16px", background: C.parchmentEdge, borderRadius: 4, border: `1px solid ${C.line}` }}>
+      <div style={{ marginTop: 18, padding: "14px 16px", background: C.parchmentEdge, borderRadius: 8, border: `1px solid ${C.line}` }}>
         <div style={{ fontFamily: serif, fontSize: 14, color: C.ink }}>
           {districtVotes?.positions
             ? <>Constituents here have cast <b>{num(districtVotes.positions)}</b> positions on <b>{num(districtVotes.bills)}</b> bills on this site. They're watching.</>
@@ -207,7 +207,7 @@ export default function ReportCard({ bioguide, district, onClose }) {
 function Panel({ children }) {
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", background: C.parchment, border: `1px solid ${C.line}`,
-                  borderRadius: 6, padding: "22px 26px", boxShadow: "0 2px 8px rgba(10,26,63,0.08)" }}>
+                  borderRadius: 12, padding: "22px 26px", boxShadow: "0 2px 8px rgba(10,26,63,0.08)" }}>
       {children}
     </div>
   );
@@ -245,8 +245,8 @@ function Src({ href, children }) {
   return <a href={href} target="_blank" rel="noreferrer" style={{ color: C.navy, fontWeight: 700 }}>{children} ↗</a>;
 }
 const shareBtn = { fontFamily: serif, fontSize: 12, fontWeight: 700, color: "#fff", background: C.navy,
-  border: `1px solid ${C.navy}`, borderRadius: 4, padding: "7px 12px", cursor: "pointer", whiteSpace: "nowrap" };
+  border: `1px solid ${C.navy}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer", whiteSpace: "nowrap" };
 const closeBtn = { fontFamily: serif, fontSize: 12, color: C.muted, background: "transparent",
-  border: `1px solid ${C.line}`, borderRadius: 4, padding: "6px 12px", cursor: "pointer" };
+  border: `1px solid ${C.line}`, borderRadius: 8, padding: "6px 12px", cursor: "pointer" };
 const linkBtn = { fontFamily: serif, fontSize: 13, color: C.navy, background: "none", border: "none",
   textDecoration: "underline", cursor: "pointer" };

@@ -9,19 +9,19 @@ import React, { useState, useEffect, useRef } from "react";
 import { getStoredSession } from "../lib/session.js";
 
 const C = {
-  crimson: "#8B0000",
+  crimson: "#D62839",
   crimsonBright: "#B22234",
-  navy: "#0A1A3F",
-  gold: "#C9A227",
-  parchment: "#FBF7EC",
-  parchmentEdge: "#F0E6CE",
-  ink: "#1A1A1A",
-  muted: "#5C5347",
-  line: "#D8C9A0",
-  green: "#1B5E20",
+  navy: "#0E2A6B",
+  gold: "#F5B82E",
+  parchment: "#FFFFFF",
+  parchmentEdge: "#F1F5FB",
+  ink: "#0F172A",
+  muted: "#5B6578",
+  line: "#E2E8F0",
+  green: "#15803D",
   greenLight: "#E8F5E9",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const CHAMBER_ICON = { House: "🏛️", Senate: "⚖️" };
 const PARTY_COLOR  = { Democrat: C.navy, Republican: C.crimson, Independent: C.muted };
@@ -109,7 +109,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
   return (
     <div style={{
       fontFamily: serif, color: C.ink, background: C.parchment,
-      border: `2px solid ${C.gold}`, borderRadius: 8, overflow: "hidden",
+      border: `2px solid ${C.gold}`, borderRadius: 16, overflow: "hidden",
       maxWidth: 720, margin: "24px auto 0",
       boxShadow: "0 4px 24px rgba(10,26,63,0.12)"
     }}>
@@ -202,7 +202,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
                 style={{
                   width: "100%", minHeight: 280, fontFamily: serif, fontSize: 13.5,
                   lineHeight: 1.7, color: C.ink, background: "#fff",
-                  border: `1px solid ${C.line}`, borderRadius: 4, padding: "14px 16px",
+                  border: `1px solid ${C.line}`, borderRadius: 8, padding: "14px 16px",
                   resize: "vertical", boxSizing: "border-box",
                 }}
               />
@@ -212,7 +212,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
               <button onClick={copyLetter} style={{
                 fontFamily: serif, fontSize: 14, fontWeight: 700,
-                padding: "10px 20px", borderRadius: 4, cursor: "pointer",
+                padding: "10px 20px", borderRadius: 8, cursor: "pointer",
                 background: copied ? C.green : "#fff",
                 color: copied ? "#fff" : C.navy,
                 border: `2px solid ${copied ? C.green : C.navy}`,
@@ -226,7 +226,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
                   onClick={() => openContact(legislators[activeTab].contactUrl)}
                   style={{
                     fontFamily: serif, fontSize: 14, fontWeight: 700,
-                    padding: "10px 20px", borderRadius: 4, cursor: "pointer",
+                    padding: "10px 20px", borderRadius: 8, cursor: "pointer",
                     background: C.crimson, color: "#fff", border: "none", flex: 1,
                   }}>
                   ✉️ Open Contact Page - {legislators[activeTab].name.split(",")[0]}
@@ -237,7 +237,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
             {/* All contact links */}
             <div style={{
               background: "#fff", border: `1px solid ${C.line}`,
-              borderRadius: 4, padding: "14px 16px"
+              borderRadius: 8, padding: "14px 16px"
             }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 10, letterSpacing: 1 }}>
                 ALL CONTACT PAGES
@@ -260,8 +260,8 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
                     onClick={() => openContact(leg.contactUrl)}
                     style={{
                       fontFamily: serif, fontSize: 12, fontWeight: 700,
-                      padding: "6px 14px", borderRadius: 4, cursor: "pointer",
-                      background: C.navy, color: "#fff", border: "none",
+                      padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+                      background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", border: "none",
                       whiteSpace: "nowrap", marginLeft: 12,
                     }}>
                     Contact →
@@ -273,7 +273,7 @@ export default function ContactRep({ district, billId, billTitle, position, onCl
             {/* Tip */}
             <div style={{
               marginTop: 14, padding: "10px 14px", background: C.parchmentEdge,
-              borderRadius: 4, fontSize: 12, color: C.muted, lineHeight: 1.5
+              borderRadius: 8, fontSize: 12, color: C.muted, lineHeight: 1.5
             }}>
               <strong>Tip:</strong> Clicking "Contact →" copies your letter to the clipboard and opens the
               official contact page in a new tab. Paste it into the message field, fill in your name and
@@ -292,7 +292,7 @@ function LegislatorCard({ leg, active, onClick }) {
   return (
     <button onClick={onClick} style={{
       fontFamily: serif, textAlign: "left", cursor: "pointer",
-      flex: "1 1 180px", padding: "10px 14px", borderRadius: 6,
+      flex: "1 1 180px", padding: "10px 14px", borderRadius: 12,
       border: `2px solid ${active ? C.gold : C.line}`,
       background: active ? C.navy : "#fff",
       color: active ? "#fff" : C.ink,

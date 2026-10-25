@@ -19,11 +19,11 @@ import BillVotingQueue from "./BillVotingQueue.jsx";
 import { getStoredSession } from "../lib/session.js";
 
 const C = {
-  yes: "#1B5E20", no: "#B71C1C",
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000",
-  parchment: "#FBF7EC", ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
+  yes: "#15803D", no: "#DC2626",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839",
+  parchment: "#FFFFFF", ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const VOTED_MODES = new Set(["voted", "previous_history"]);
 
 async function fetchCounts(token) {
@@ -215,7 +215,7 @@ export default function ConstituentVoting({ district, location, session, onNeedS
     <div style={{ fontFamily: serif, maxWidth: 760, margin: "0 auto" }}>
       {district && (
         <div style={{ margin: "0 0 12px", padding: "10px 14px", background: "#fff",
-                      border: "1px solid " + C.line, borderRadius: 4, fontSize: 13 }}>
+                      border: "1px solid " + C.line, borderRadius: 8, fontSize: 13 }}>
           Voting as <strong style={{ color: C.crimson }}>District {district}</strong>
           {location?.city && <span style={{ color: C.muted }}> · {location.city}, {location.state}</span>}
         </div>
@@ -237,7 +237,7 @@ export default function ConstituentVoting({ district, location, session, onNeedS
 
       {lastAction?.phase === "signin" && (
         <div style={{ margin: "16px 0", padding: 24, background: "#fff",
-                      border: "2px solid " + C.crimson, borderRadius: 8, textAlign: "center" }}>
+                      border: "2px solid " + C.crimson, borderRadius: 16, textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>🔒</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: C.navy, marginBottom: 8 }}>
             Sign in to vote
@@ -248,7 +248,7 @@ export default function ConstituentVoting({ district, location, session, onNeedS
           </div>
           <button onClick={() => onNeedSignIn?.()}
             style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, padding: "12px 28px",
-                     background: C.crimson, color: "#fff", border: "none", borderRadius: 6,
+                     background: C.crimson, color: "#fff", border: "none", borderRadius: 12,
                      cursor: "pointer" }}>
             Sign In to Vote →
           </button>
@@ -262,7 +262,7 @@ export default function ConstituentVoting({ district, location, session, onNeedS
       )}
 
       {lastAction?.phase === "error" && (
-        <div style={{ margin: "16px 0", padding: "10px 12px", borderRadius: 4,
+        <div style={{ margin: "16px 0", padding: "10px 12px", borderRadius: 8,
                       background: "#FBE9E7", color: C.crimson, fontSize: 13,
                       border: "1px solid " + C.crimson }}>
           {lastAction.error}
@@ -271,7 +271,7 @@ export default function ConstituentVoting({ district, location, session, onNeedS
 
       {lastAction?.phase === "done" && (
         <div style={{ margin: "16px 0", padding: "14px 16px", background: C.yes, color: "#fff",
-                      borderRadius: 6, textAlign: "center" }}>
+                      borderRadius: 12, textAlign: "center" }}>
           <div style={{ fontSize: 20, fontWeight: 900 }}>
             {lastAction.position === "support" ? "✓ YES recorded" : lastAction.position === "oppose" ? "✗ NO recorded" : "Undecided recorded"}
           </div>
@@ -282,8 +282,8 @@ export default function ConstituentVoting({ district, location, session, onNeedS
       )}
 
       {lastAction?.phase === "already" && (
-        <div style={{ margin: "16px 0", padding: "14px 16px", background: C.navy, color: "#fff",
-                      borderRadius: 6, textAlign: "center" }}>
+        <div style={{ margin: "16px 0", padding: "14px 16px", background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff",
+                      borderRadius: 12, textAlign: "center" }}>
           <div style={{ fontSize: 18, fontWeight: 900 }}>
             You already voted {lastAction.position === "support" ? "YES" : lastAction.position === "oppose" ? "NO" : "Undecided"} on {bannerBillTitle}
           </div>
@@ -298,7 +298,7 @@ export default function ConstituentVoting({ district, location, session, onNeedS
           {contactOpenFor !== lastAction.billId && (
             <button onClick={() => setContactOpenFor(lastAction.billId)}
               style={{ width: "100%", padding: "10px", fontFamily: serif, fontSize: 14,
-                       fontWeight: 700, borderRadius: 4, border: "1px solid " + C.line,
+                       fontWeight: 700, borderRadius: 8, border: "1px solid " + C.line,
                        background: "#fff", color: C.navy, cursor: "pointer" }}>
               Contact Your Representative About This Bill
             </button>

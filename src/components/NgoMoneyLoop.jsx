@@ -14,10 +14,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0", red: "#B71C1C",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", red: "#DC2626",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const usd = (n) => n == null ? "" :
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -80,7 +80,7 @@ export default function NgoMoneyLoop() {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
           NGO Money Loop
@@ -115,7 +115,7 @@ export default function NgoMoneyLoop() {
       {phase === "ready" && rows.length === 0 && <Center>No contributions match these filters yet.</Center>}
 
       {rows.length > 0 && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflowX: "auto" }}>
+        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflowX: "auto" }}>
           <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 900, fontFamily: serif }}>
             <thead>
               <tr style={{ background: C.parchment, borderBottom: `2px solid ${C.line}` }}>
@@ -132,13 +132,13 @@ export default function NgoMoneyLoop() {
             <tbody>
               {rows.map((r, i) => (
                 <tr key={r.contribution_id}
-                  style={{ borderBottom: i < rows.length - 1 ? "1px solid #ece7d5" : "none" }}>
+                  style={{ borderBottom: i < rows.length - 1 ? "1px solid #EEF2F8" : "none" }}>
                   <td style={tdStyle}>
                     <div style={{ fontWeight: 700, color: C.navy }}>{r.contributor_name}</div>
                     {r.match_status === "candidate" && (
                       <span title="This name match is machine-suggested and has not been human-reviewed yet"
                         style={{ fontSize: 10, fontWeight: 700, color: C.muted, border: `1px solid ${C.line}`,
-                                 borderRadius: 4, padding: "1px 5px" }}>
+                                 borderRadius: 8, padding: "1px 5px" }}>
                         UNREVIEWED MATCH
                       </span>
                     )}
@@ -155,7 +155,7 @@ export default function NgoMoneyLoop() {
                     {r.exemption_revoked && (
                       <span title={`On the IRS Auto-Revocation List${r.revocation_date ? `, revoked ${fmtDate(r.revocation_date)}` : ""}`}
                         style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#fff", background: C.red,
-                                 borderRadius: 4, padding: "2px 6px", whiteSpace: "nowrap", verticalAlign: "middle" }}>
+                                 borderRadius: 8, padding: "2px 6px", whiteSpace: "nowrap", verticalAlign: "middle" }}>
                         EXEMPTION REVOKED
                       </span>
                     )}
@@ -182,7 +182,7 @@ export default function NgoMoneyLoop() {
       {phase === "ready" && hasMore && (
         <button onClick={() => load(offset + PAGE_SIZE, true)}
           style={{ width: "100%", padding: 12, fontFamily: serif, fontWeight: 700, fontSize: 13,
-                   background: C.navy, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", marginTop: 10 }}>
+                   background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 10 }}>
           Load More Contributions
         </button>
       )}
@@ -201,7 +201,7 @@ export default function NgoMoneyLoop() {
 }
 
 const thStyle = {
-  fontFamily: serif, fontSize: 11, fontWeight: 700, color: "#5C5347", letterSpacing: 1,
+  fontFamily: serif, fontSize: 11, fontWeight: 700, color: "#5B6578", letterSpacing: 1,
   textTransform: "uppercase", textAlign: "left", padding: "10px 12px", whiteSpace: "nowrap",
 };
 const tdStyle = { fontSize: 13, padding: "10px 12px", verticalAlign: "top", lineHeight: 1.5 };
@@ -212,7 +212,7 @@ function Select({ label, value, onChange, options }) {
       {label}
       <select value={value} onChange={e => onChange(e.target.value)}
         style={{ fontFamily: serif, fontSize: 13, padding: "7px 10px", border: `1px solid ${C.line}`,
-                 borderRadius: 6, background: "#fff", minWidth: 160, maxWidth: 320 }}>
+                 borderRadius: 12, background: "#fff", minWidth: 160, maxWidth: 320 }}>
         <option value="">All</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>

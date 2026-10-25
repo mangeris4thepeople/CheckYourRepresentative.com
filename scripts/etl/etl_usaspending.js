@@ -22,8 +22,28 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 // instead of erroring. The one working value for this facet is "nonprofit".
 const NONPROFIT_RECIPIENT_TYPES = ['nonprofit'];
 
+// USASpending throws occasional 502/503/429s mid run; one of those killed the
+// whole October 2026 monthly pipeline at page 9. Retry transient failures
+// with exponential backoff before giving up.
+async function fetchWithRetry(url, opts, attempts = 5) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url, opts);
+      if (res.ok || ![429, 500, 502, 503, 504].includes(res.status)) return res;
+      lastErr = new Error(`USASpending API error: ${res.status}`);
+    } catch (err) {
+      lastErr = err;
+    }
+    const wait = Math.min(30000, 1500 * 2 ** i);
+    console.warn(`USASpending transient failure (${lastErr.message}), retry ${i + 1}/${attempts - 1} in ${wait}ms`);
+    await new Promise(r => setTimeout(r, wait));
+  }
+  throw lastErr;
+}
+
 async function fetchAwardsPage(page) {
-  const res = await fetch('https://api.usaspending.gov/api/v2/search/spending_by_award/', {
+  const res = await fetchWithRetry('https://api.usaspending.gov/api/v2/search/spending_by_award/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

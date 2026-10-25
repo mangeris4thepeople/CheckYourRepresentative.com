@@ -9,13 +9,13 @@ import AddressLookup from "./AddressLookup.jsx";
 import ConstituentOnboarding from "./ConstituentOnboarding.jsx";
 
 const C = {
-  navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
+  navy:"#0E2A6B", gold:"#F5B82E", crimson:"#D62839",
   crimsonBright:"#B22234",
-  yes:"#1B5E20", yesLight:"#E8F5E9",
-  no:"#B71C1C", noLight:"#FFEBEE",
-  parchment:"#FBF7EC", muted:"#5C5347", line:"#D8C9A0", panel:"#fff"
+  yes:"#15803D", yesLight:"#E8F5E9",
+  no:"#DC2626", noLight:"#FFEBEE",
+  parchment:"#FFFFFF", muted:"#5B6578", line:"#E2E8F0", panel:"#fff"
 };
-const serif = "Georgia,'Times New Roman',serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 function humanizeSendError(code) {
   const m = {
@@ -190,8 +190,8 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
   if (authPhase === "signed-out" || authPhase === "sending") {
     return (
       <div style={{ fontFamily: serif, maxWidth: 480, margin: "0 auto" }}>
-        <div style={{ background: C.navy, color: "#fff", padding: "24px",
-                      borderRadius: "8px 8px 0 0", borderBottom: `3px solid ${C.gold}`,
+        <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "24px",
+                      borderRadius: "18px 18px 0 0", borderBottom: `3px solid ${C.gold}`,
                       textAlign: "center" }}>
           <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 2, marginBottom: 8 }}>
             MY PROFILE
@@ -202,13 +202,13 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
           </div>
         </div>
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                      borderTop: "none", borderRadius: "0 0 8px 8px", padding: "28px 24px" }}>
+                      borderTop: "none", borderRadius: "0 0 18px 18px", padding: "28px 24px" }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: C.navy, letterSpacing: 1,
                           display: "block", marginBottom: 8 }}>
             YOUR EMAIL ADDRESS
           </label>
           {sendError && (
-            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 4,
+            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 8,
                           background: "#FBE9E7", color: C.crimson, fontSize: 12.5,
                           border: `1px solid ${C.crimson}` }}>
               {sendError}
@@ -220,13 +220,13 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
             onKeyDown={e => e.key === "Enter" && sendMagicLink()}
             placeholder="you@email.com"
             style={{ width: "100%", padding: "12px 14px", fontFamily: serif, fontSize: 15,
-                     border: `1px solid ${C.line}`, borderRadius: 6, background: "#fff",
+                     border: `1px solid ${C.line}`, borderRadius: 12, background: "#fff",
                      boxSizing: "border-box", marginBottom: 14 }}
           />
           <button onClick={sendMagicLink} disabled={authPhase === "sending" || !email.includes("@")}
             style={{ width: "100%", padding: "14px", fontFamily: serif, fontSize: 16,
-                     fontWeight: 700, background: email.includes("@") ? C.crimson : "#C9BFAB",
-                     color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+                     fontWeight: 700, background: email.includes("@") ? C.crimson : "#D5DDEA",
+                     color: "#fff", border: "none", borderRadius: 12, cursor: "pointer" }}>
             {authPhase === "sending" ? "Sending…" : "Send Sign-In Link →"}
           </button>
           <p style={{ fontSize: 12, color: C.muted, marginTop: 14, lineHeight: 1.6, textAlign: "center" }}>
@@ -234,7 +234,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
             Your votes and profile are saved to your email address.
           </p>
           <div style={{ marginTop: 12, padding: "10px 12px", background: "#fff",
-                        border: `1px solid ${C.line}`, borderRadius: 6,
+                        border: `1px solid ${C.line}`, borderRadius: 12,
                         fontSize: 12, color: C.muted, lineHeight: 1.6, textAlign: "center" }}>
             🔒 {PRIVACY_SHORT}
           </div>
@@ -248,7 +248,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
     return (
       <div style={{ fontFamily: serif, maxWidth: 480, margin: "0 auto", textAlign: "center",
                     padding: "48px 24px", background: C.parchment, border: `1px solid ${C.line}`,
-                    borderRadius: 8 }}>
+                    borderRadius: 16 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
         <div style={{ fontSize: 22, fontWeight: 700, color: C.navy, marginBottom: 10 }}>
           Check your inbox
@@ -259,7 +259,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
         </div>
         <button onClick={() => setAuthPhase("signed-out")}
           style={{ fontFamily: serif, fontSize: 13, color: C.muted, background: "none",
-                   border: `1px solid ${C.line}`, borderRadius: 6, padding: "8px 16px", cursor: "pointer" }}>
+                   border: `1px solid ${C.line}`, borderRadius: 12, padding: "8px 16px", cursor: "pointer" }}>
           ← Use a different email
         </button>
       </div>
@@ -281,8 +281,8 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
     <div style={{ fontFamily: serif, maxWidth: 680, margin: "0 auto" }}>
 
       {/* Header */}
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px",
-                    borderRadius: "8px 8px 0 0", borderBottom: `3px solid ${C.gold}`,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px",
+                    borderRadius: "18px 18px 0 0", borderBottom: `3px solid ${C.gold}`,
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     flexWrap: "wrap", gap: 10 }}>
         <div>
@@ -301,7 +301,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
         <button onClick={signOut}
           style={{ fontFamily: serif, fontSize: 12, fontWeight: 700, color: "#cfd6e4",
                    background: "none", border: "1px solid rgba(255,255,255,0.25)",
-                   borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}>
+                   borderRadius: 8, padding: "6px 12px", cursor: "pointer" }}>
           Sign Out
         </button>
       </div>
@@ -328,7 +328,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
       {/* ── PROFILE TAB ── */}
       {tab === "profile" && (
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                      borderTop: "none", borderRadius: "0 0 8px 8px", padding: "24px" }}>
+                      borderTop: "none", borderRadius: "0 0 18px 18px", padding: "24px" }}>
 
           {/* Stats row */}
           <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
@@ -338,7 +338,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
               { n: district || profile?.district || " - ", label: "District" },
             ].map((s, i) => (
               <div key={i} style={{ flex: "1 1 100px", background: "#fff", border: `1px solid ${C.line}`,
-                                    borderRadius: 6, padding: "12px 14px", textAlign: "center" }}>
+                                    borderRadius: 12, padding: "12px 14px", textAlign: "center" }}>
                 <div style={{ fontSize: 22, fontWeight: 700, color: C.navy }}>{s.n}</div>
                 <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{s.label}</div>
               </div>
@@ -392,7 +392,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
 
           {/* Public toggle */}
           <div style={{ padding: "16px", background: "#fff", border: `1px solid ${C.line}`,
-                        borderRadius: 6, marginBottom: 20, display: "flex",
+                        borderRadius: 12, marginBottom: 20, display: "flex",
                         justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>
@@ -406,7 +406,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
             </div>
             <button onClick={() => setDraft(d => ({ ...d, is_public: !d.is_public }))}
               style={{ fontFamily: serif, padding: "8px 16px", fontWeight: 700, fontSize: 13,
-                       cursor: "pointer", borderRadius: 6, border: "none",
+                       cursor: "pointer", borderRadius: 12, border: "none",
                        background: draft.is_public ? C.yes : C.muted, color: "#fff" }}>
               {draft.is_public ? "Make Private" : "Make Public"}
             </button>
@@ -421,7 +421,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
           <button onClick={saveProfile} disabled={saving}
             style={{ width: "100%", padding: "14px", fontFamily: serif, fontSize: 16,
                      fontWeight: 900, background: saved ? C.yes : C.navy,
-                     color: "#fff", border: "none", borderRadius: 6, cursor: "pointer",
+                     color: "#fff", border: "none", borderRadius: 12, cursor: "pointer",
                      transition: "background 0.2s" }}>
             {saving ? "Saving…" : saved ? "✓ Saved!" : "Save Profile"}
           </button>
@@ -460,7 +460,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
       {/* ── VOTES TAB ── */}
       {tab === "votes" && (
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                      borderTop: "none", borderRadius: "0 0 8px 8px" }}>
+                      borderTop: "none", borderRadius: "0 0 18px 18px" }}>
 
           {/* Bill-type tally pills */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 20px",
@@ -531,7 +531,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
                 <button onClick={() => loadMyVotes(voteFilter, voteOffset + PAGE_SIZE, true)}
                   disabled={voteListPhase === "loading"}
                   style={{ width: "100%", padding: 12, fontFamily: serif, fontWeight: 700, fontSize: 13,
-                           background: C.navy, color: "#fff", border: "none", cursor: "pointer" }}>
+                           background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", border: "none", cursor: "pointer" }}>
                   {voteListPhase === "loading" ? "Loading…" : "Load More Votes"}
                 </button>
               )}
@@ -543,7 +543,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
       {/* ── SHARE TAB ── */}
       {tab === "share" && (
         <div style={{ background: C.parchment, border: `1px solid ${C.line}`,
-                      borderTop: "none", borderRadius: "0 0 8px 8px", padding: "24px" }}>
+                      borderTop: "none", borderRadius: "0 0 18px 18px", padding: "24px" }}>
           {!draft.is_public ? (
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
@@ -555,7 +555,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
               </div>
               <button onClick={() => { setDraft(d => ({ ...d, is_public: true })); setTab("profile"); }}
                 style={{ fontFamily: serif, padding: "12px 24px", background: C.yes, color: "#fff",
-                         border: "none", borderRadius: 6, fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
+                         border: "none", borderRadius: 12, fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
                 Make My Profile Public →
               </button>
             </div>
@@ -565,7 +565,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
                 🌐 Your shareable public link
               </div>
               <div style={{ padding: "12px 14px", background: "#fff", border: `1px solid ${C.line}`,
-                            borderRadius: 6, fontFamily: "monospace", fontSize: 12,
+                            borderRadius: 12, fontFamily: "monospace", fontSize: 12,
                             wordBreak: "break-all", marginBottom: 12, color: C.navy }}>
                 {publicUrl}
               </div>
@@ -576,14 +576,14 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
               }}
                 style={{ width: "100%", padding: "12px", fontFamily: serif, fontSize: 14,
                          fontWeight: 700, background: copied ? C.yes : C.navy,
-                         color: "#fff", border: "none", borderRadius: 6, cursor: "pointer",
+                         color: "#fff", border: "none", borderRadius: 12, cursor: "pointer",
                          marginBottom: 20, transition: "background 0.2s" }}>
                 {copied ? "✓ Copied!" : "Copy Link"}
               </button>
 
               {/* Public card preview */}
               <div style={{ padding: "18px", background: "#fff", border: `2px solid ${C.gold}`,
-                            borderRadius: 8 }}>
+                            borderRadius: 16 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, marginBottom: 12 }}>
                   PUBLIC CARD PREVIEW
                 </div>
@@ -631,12 +631,12 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
 
 const inp = {
   width: "100%", padding: "10px 12px", fontFamily: serif, fontSize: 14,
-  border: `1px solid #D8C9A0`, borderRadius: 6, background: "#fff",
+  border: `1px solid #E2E8F0`, borderRadius: 12, background: "#fff",
   boxSizing: "border-box",
 };
 const Field = ({ label, children }) => (
   <div style={{ marginBottom: 16 }}>
-    <label style={{ fontSize: 11, fontWeight: 700, color: "#0A1A3F",
+    <label style={{ fontSize: 11, fontWeight: 700, color: "#0E2A6B",
                     letterSpacing: 1, display: "block", marginBottom: 6 }}>
       {label}
     </label>

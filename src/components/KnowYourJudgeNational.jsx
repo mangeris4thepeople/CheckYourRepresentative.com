@@ -14,10 +14,10 @@ import NationalJudges from "./NationalJudges.jsx";
 import KnowYourJudge from "./KnowYourJudge.jsx";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -161,7 +161,7 @@ function NationalView({ onSelectState, onSelectJudge }) {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
           Know Your Judge
@@ -189,7 +189,7 @@ function NationalView({ onSelectState, onSelectJudge }) {
             {pill("judges", "Total judges", false)}
             {pill("per_100k", "Per 100,000 residents", !hasPop)}
           </div>
-          <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: 18, marginBottom: 18 }}>
+          <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 18 }}>
             <USAHeatMap
               values={values}
               onSelect={onSelectState}
@@ -205,7 +205,7 @@ function NationalView({ onSelectState, onSelectJudge }) {
               <button key={s.state_abbr} onClick={() => onSelectState(s.state_abbr)}
                 style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
                          padding: "9px 14px", background: "transparent", border: "none",
-                         borderBottom: "1px solid #f0ead8", cursor: "pointer", fontFamily: serif }}>
+                         borderBottom: "1px solid #EEF3FB", cursor: "pointer", fontFamily: serif }}>
                 <span style={{ flex: 2, fontSize: 13.5, fontWeight: 700, color: C.navy }}>
                   {STATE_NAMES[s.state_abbr] || s.state_abbr}
                 </span>
@@ -282,7 +282,7 @@ function StateView({ state, onBack, onSelectCounty, onSelectJudge }) {
   return (
     <Wrap>
       {back}
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 20, fontWeight: 900 }}>{stateName}</div>
         <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6, lineHeight: 1.6 }}>
@@ -299,7 +299,7 @@ function StateView({ state, onBack, onSelectCounty, onSelectJudge }) {
       </Section>
 
       {shapes && counties.length > 0 && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, padding: 18, marginBottom: 18 }}>
+        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, marginBottom: 18 }}>
           <USAHeatMap
             regions={shapes.counties}
             viewBox={shapes.viewBox}
@@ -324,7 +324,7 @@ function StateView({ state, onBack, onSelectCounty, onSelectJudge }) {
             <button key={c.county_fips} onClick={() => onSelectCounty({ fips: c.county_fips, name: c.county_name })}
               style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
                        padding: "9px 14px", background: "transparent", border: "none",
-                       borderBottom: "1px solid #f0ead8", cursor: "pointer", fontFamily: serif }}>
+                       borderBottom: "1px solid #EEF3FB", cursor: "pointer", fontFamily: serif }}>
               <span style={{ flex: 2, fontSize: 13.5, fontWeight: 700, color: C.navy }}>{c.county_name} County</span>
               <span style={{ flex: 1, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(c.court_count)} courts</span>
               <span style={{ flex: 1, fontSize: 13, color: C.ink, textAlign: "right" }}>{fmtInt(c.judge_count)} judges</span>
@@ -334,12 +334,12 @@ function StateView({ state, onBack, onSelectCounty, onSelectJudge }) {
 
       {unlocated.length > 0 && (
         <Section title="Courts not yet mapped to a county">
-          <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, lineHeight: 1.6, borderBottom: "1px solid #f0ead8" }}>
+          <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, lineHeight: 1.6, borderBottom: "1px solid #EEF3FB" }}>
             These courts' official names do not name a county, so they are flagged here rather
             than pinned to a guessed location.
           </div>
           {unlocated.map(c => (
-            <div key={c.cl_id} style={{ display: "flex", gap: 12, padding: "9px 14px", borderBottom: "1px solid #f0ead8" }}>
+            <div key={c.cl_id} style={{ display: "flex", gap: 12, padding: "9px 14px", borderBottom: "1px solid #EEF3FB" }}>
               <span style={{ flex: 3, fontSize: 13, color: C.ink }}>{c.full_name}</span>
               <span style={{ flex: 1, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmtInt(c.judge_count)} judges</span>
             </div>
@@ -397,7 +397,7 @@ function CountyView({ state, county, onBack, onSelectJudge }) {
   return (
     <Wrap>
       {back}
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 20, fontWeight: 900 }}>{county.name} County, {STATE_NAMES[state] || state}</div>
         <div style={{ fontSize: 13, color: "#cfd6e4", marginTop: 6 }}>
@@ -427,7 +427,7 @@ function CountyView({ state, county, onBack, onSelectJudge }) {
 function CourtBlock({ court, onSelectJudge }) {
   const judges = Array.isArray(court.judges) ? court.judges : [];
   return (
-    <div style={{ borderBottom: "1px solid #f0ead8" }}>
+    <div style={{ borderBottom: "1px solid #EEF3FB" }}>
       <div style={{ padding: "12px 14px 4px" }}>
         <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy }}>
           {court.full_name}
@@ -446,7 +446,7 @@ function CourtBlock({ court, onSelectJudge }) {
           <button key={j.cl_person_id} onClick={() => onSelectJudge(j)}
             style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 12,
                      padding: "8px 14px 8px 26px", background: "transparent", border: "none",
-                     borderTop: "1px solid #f7f2e4", cursor: "pointer", fontFamily: serif }}>
+                     borderTop: "1px solid #F6F8FC", cursor: "pointer", fontFamily: serif }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <span style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{j.full_name}</span>
               <span style={{ fontSize: 12, color: C.muted, marginLeft: 8 }}>
@@ -497,7 +497,7 @@ function JudgeProfile({ judgeRow, onBack }) {
     <Wrap>
       <BackButton onClick={onBack}>← Back</BackButton>
 
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 20, fontWeight: 900 }}>{judge.full_name}</div>
         <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
@@ -517,7 +517,7 @@ function JudgeProfile({ judgeRow, onBack }) {
       </Section>
 
       <Section title="Ruling record">
-        <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, lineHeight: 1.6, borderBottom: "1px solid #f0ead8" }}>
+        <div style={{ padding: "10px 14px", fontSize: 12, color: C.muted, lineHeight: 1.6, borderBottom: "1px solid #EEF3FB" }}>
           Raw public record counts from opinions this judge authored, as published by
           CourtListener. These are counts, not a score, grade, or ranking.
         </div>
@@ -556,7 +556,7 @@ function JudgeProfile({ judgeRow, onBack }) {
             </div>
             {recent.map(o => (
               <a key={o.cl_opinion_id} href={o.url || clUrl} target="_blank" rel="noopener noreferrer"
-                style={{ display: "flex", gap: 12, padding: "8px 14px", borderTop: "1px solid #f7f2e4",
+                style={{ display: "flex", gap: 12, padding: "8px 14px", borderTop: "1px solid #F6F8FC",
                          textDecoration: "none", fontFamily: serif, alignItems: "baseline" }}>
                 <span style={{ flex: 2, fontSize: 13, color: C.navy, fontWeight: 700, minWidth: 0 }}>
                   {o.case_name || "Untitled opinion"}
@@ -572,7 +572,7 @@ function JudgeProfile({ judgeRow, onBack }) {
         <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.line}` }}>
           <a href={clUrl} target="_blank" rel="noopener noreferrer"
             style={{ display: "inline-block", fontFamily: serif, fontSize: 13, fontWeight: 700,
-                     color: "#fff", background: C.crimson, borderRadius: 6, padding: "9px 18px",
+                     color: "#fff", background: C.crimson, borderRadius: 12, padding: "9px 18px",
                      textDecoration: "none" }}>
             All opinions and biography on CourtListener →
           </a>
@@ -589,7 +589,7 @@ function BackButton({ onClick, children }) {
   return (
     <button onClick={onClick}
       style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
-               border: `1px solid ${C.line}`, borderRadius: 6, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
+               border: `1px solid ${C.line}`, borderRadius: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
       {children}
     </button>
   );
@@ -598,13 +598,13 @@ function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
     </div>
   );
 }
 function Row({ label, value }) {
   return (
-    <div style={{ display: "flex", gap: 12, padding: "10px 14px", borderBottom: "1px solid #f0ead8", fontFamily: serif }}>
+    <div style={{ display: "flex", gap: 12, padding: "10px 14px", borderBottom: "1px solid #EEF3FB", fontFamily: serif }}>
       <span style={{ flex: "0 0 160px", fontSize: 12, fontWeight: 700, color: C.muted }}>{label}</span>
       <span style={{ flex: 1, fontSize: 13.5, color: C.ink }}>{value}</span>
     </div>

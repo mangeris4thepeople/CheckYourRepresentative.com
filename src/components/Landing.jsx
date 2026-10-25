@@ -10,20 +10,20 @@ import LandingNav from "./marketing/LandingNav.jsx";
 import ContactUsForm from "./ContactUsForm.jsx";
 
 const C = {
-  black:    "#0D0D0D",
+  black:    "#0B1B44",
   white:    "#FAFAFA",
-  crimson:  "#C41E3A",
-  cobalt:   "#1A3A6B",
-  gold:     "#D4A843",
-  goldDim:  "#8B6914",
+  crimson:  "#E0313F",
+  cobalt:   "#1D4ED8",
+  gold:     "#F5B82E",
+  goldDim:  "#B7791F",
   gray:     "#6B6B6B",
   grayLight:"#E8E8E8",
-  parchment:"#F5F0E8",
+  parchment:"#F6F8FC",
 };
 
 const bebas = "'Bebas Neue', 'Arial Black', Impact, sans-serif";
-const serif = "Georgia, 'Times New Roman', serif";
-const mono  = "'Courier New', Courier, monospace";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";
 
 // No mock data - all data is real
 
@@ -232,7 +232,7 @@ export default function Landing({ onEnter, onNavigate }) {
           {/* Real CTA */}
           <div style={{
             marginTop: 32, background: C.white, border: `2px solid ${C.crimson}`,
-            borderRadius: 4, padding: "20px", width: "100%", maxWidth: 320,
+            borderRadius: 8, padding: "20px", width: "100%", maxWidth: 320,
             textAlign: "center",
           }}>
             <div style={{ fontFamily: bebas, fontSize: 18, color: C.crimson, letterSpacing: 2, marginBottom: 8 }}>
@@ -408,7 +408,7 @@ export default function Landing({ onEnter, onNavigate }) {
           {/* Political spectrum bar */}
           <div style={{ margin: "0 auto 40px", maxWidth: 500 }}>
             <div style={{
-              height: 8, borderRadius: 4,
+              height: 8, borderRadius: 8,
               background: `linear-gradient(to right, #1565C0, #7B1FA2, #9E9E9E, #E65100, ${C.crimson})`,
               marginBottom: 8,
             }} />

@@ -7,10 +7,10 @@ import React, { useState, useEffect } from "react";
 import PublicVoterCard from "./PublicVoterCard.jsx";
 
 const C = {
-  navy:"#0A1A3F", gold:"#C9A227", crimson:"#8B0000",
-  parchment:"#FBF7EC", muted:"#5C5347", line:"#D8C9A0",
+  navy:"#0E2A6B", gold:"#F5B82E", crimson:"#D62839",
+  parchment:"#FFFFFF", muted:"#5B6578", line:"#E2E8F0",
 };
-const serif = "Georgia,'Times New Roman',serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export default function ConstituentsDirectory({ district, initialVoterId }) {
   const [scope, setScope] = useState(district ? "district" : "national");
@@ -38,8 +38,8 @@ export default function ConstituentsDirectory({ district, initialVoterId }) {
 
   return (
     <div style={{ fontFamily: serif, maxWidth: 760, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px",
-                    borderRadius: "8px 8px 0 0", borderBottom: `3px solid ${C.gold}` }}>
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px",
+                    borderRadius: "18px 18px 0 0", borderBottom: `3px solid ${C.gold}` }}>
         <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: 1 }}>
           THE PUBLIC RECORD
         </div>
@@ -50,11 +50,11 @@ export default function ConstituentsDirectory({ district, initialVoterId }) {
       </div>
 
       <div style={{ background: C.parchment, border: `1px solid ${C.line}`, borderTop: "none",
-                    borderRadius: "0 0 8px 8px", padding: "18px 24px" }}>
+                    borderRadius: "0 0 18px 18px", padding: "18px 24px" }}>
 
         {/* Scope toggle */}
         <div style={{ display: "flex", gap: 0, marginBottom: 16, border: `1px solid ${C.navy}`,
-                      borderRadius: 6, overflow: "hidden", width: "fit-content" }}>
+                      borderRadius: 12, overflow: "hidden", width: "fit-content" }}>
           <ScopeBtn active={scope === "district"} disabled={!district}
             onClick={() => district && setScope("district")}>
             My District{district ? ` (${district})` : ""}
@@ -89,7 +89,7 @@ export default function ConstituentsDirectory({ district, initialVoterId }) {
           <button key={p.id} onClick={() => setViewing(p.id)}
             style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
                      textAlign: "left", background: "#fff", border: `1px solid ${C.line}`,
-                     borderRadius: 6, padding: "14px 16px", marginBottom: 8,
+                     borderRadius: 12, padding: "14px 16px", marginBottom: 8,
                      cursor: "pointer", fontFamily: serif }}>
             <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.navy,
                           color: C.gold, display: "flex", alignItems: "center",
@@ -128,8 +128,8 @@ function ScopeBtn({ active, disabled, onClick, children }) {
     <button onClick={onClick} disabled={disabled}
       style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, padding: "9px 16px",
                border: "none", cursor: disabled ? "not-allowed" : "pointer",
-               background: active ? "#0A1A3F" : "#fff",
-               color: active ? "#fff" : disabled ? "#bbb" : "#0A1A3F" }}>
+               background: active ? "#0E2A6B" : "#fff",
+               color: active ? "#fff" : disabled ? "#bbb" : "#0E2A6B" }}>
       {children}
     </button>
   );

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 
-const C = { crimson:"#8B0000", navy:"#0A1A3F", gold:"#C9A227", parchment:"#FBF7EC",
-  ink:"#1A1A1A", muted:"#5C5347", line:"#D8C9A0" };
-const serif = "Georgia, 'Times New Roman', serif";
+const C = { crimson:"#D62839", navy:"#0E2A6B", gold:"#F5B82E", parchment:"#FFFFFF",
+  ink:"#0F172A", muted:"#5B6578", line:"#E2E8F0" };
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA",
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND",
   "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -132,12 +132,12 @@ export default function AddressLookup({ onResolved }) {
 }
 
 const inp = { padding:"9px 11px", width:"100%", boxSizing:"border-box",
-  fontFamily:serif, fontSize:14, border:"1px solid #D8C9A0", borderRadius:4, background:"#fff" };
-const lbl = { fontSize:11, fontWeight:700, color:"#0A1A3F", display:"block", marginBottom:4 };
+  fontFamily:serif, fontSize:14, border:"1px solid #E2E8F0", borderRadius:4, background:"#fff" };
+const lbl = { fontSize:11, fontWeight:700, color:"#0E2A6B", display:"block", marginBottom:4 };
 const Stars = () => (
-  <div style={{ background:"#0A1A3F", padding:"6px 0", display:"flex", justifyContent:"center", gap:9 }}>
+  <div style={{ background:"#0E2A6B", padding:"6px 0", display:"flex", justifyContent:"center", gap:9 }}>
     {Array.from({length:13}).map((_,i) => (
-      <span key={i} style={{ color:"#C9A227", fontSize:11 }}>*</span>
+      <span key={i} style={{ color:"#F5B82E", fontSize:11 }}>*</span>
     ))}
   </div>
 );

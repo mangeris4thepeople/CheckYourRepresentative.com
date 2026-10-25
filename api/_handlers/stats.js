@@ -12,6 +12,7 @@ export default async function handler(req, res) {
   try {
     let totalVotes = 0;
     let totalBills = 0;
+    let totalReps = 0;
 
     if (hasDb) {
       try {
@@ -19,14 +20,19 @@ export default async function handler(req, res) {
         totalVotes = voteRow[0]?.n || 0;
       } catch {}
 
+      // Every bill tracked from Congress.gov, not just the ones that have a
+      // plain language summary yet (bill_summaries is a much smaller table).
       try {
-        const billRow = await sql`SELECT count(*)::int AS n FROM bill_summaries`;
+        const billRow = await sql`SELECT count(*)::int AS n FROM bills`;
         totalBills = billRow[0]?.n || 0;
       } catch {}
-    }
 
-    // Congress always has 535 members (435 House + 100 Senate)
-    const totalReps = 535;
+      try {
+        const r = await sql`SELECT (SELECT count(*) FROM representatives)::int
+                                 + (SELECT count(*) FROM senators)::int AS n`;
+        totalReps = r[0]?.n || 0;
+      } catch {}
+    }
 
     return res.status(200).json({
       totalVotes,

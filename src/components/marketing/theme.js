@@ -2,18 +2,20 @@
 // About, How It Works, How This Benefits, Site Tutorial, and Privacy pages all
 // look like the same site. No new colors are introduced here.
 export const C = {
-  black:    "#0D0D0D",
+  black:    "#0B1B44",
   white:    "#FAFAFA",
-  crimson:  "#C41E3A",
-  cobalt:   "#1A3A6B",
-  gold:     "#D4A843",
-  goldDim:  "#8B6914",
+  crimson:  "#E0313F",
+  cobalt:   "#1D4ED8",
+  gold:     "#F5B82E",
+  goldDim:  "#B7791F",
   gray:     "#6B6B6B",
   grayLight:"#E8E8E8",
-  parchment:"#F5F0E8",
-  navy:     "#0A1A3F",
+  parchment:"#F6F8FC",
+  navy:     "#0E2A6B",
 };
 
-export const bebas = "'Bebas Neue', 'Arial Black', Impact, sans-serif";
-export const serif = "Georgia, 'Times New Roman', serif";
-export const mono  = "'Courier New', Courier, monospace";
+// "bebas" keeps its name so existing imports keep working; it now points at
+// the display face used across the October 2026 revamp.
+export const bebas = "'Fraunces', Georgia, serif";
+export const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+export const mono = "'JetBrains Mono', ui-monospace, Menlo, monospace";

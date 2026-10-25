@@ -6,10 +6,10 @@
 import React from "react";
 
 const C = {
-  navy: "#0A1A3F", muted: "#5C5347", line: "#D8C9A0",
-  green: "#1B5E20", red: "#B71C1C", track: "#EDE6D0",
+  navy: "#0E2A6B", muted: "#5B6578", line: "#E2E8F0",
+  green: "#15803D", red: "#DC2626", track: "#F1F5FB",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const num = (n) => n == null ? "?" : new Intl.NumberFormat("en-US").format(Number(n));
 
@@ -20,7 +20,7 @@ export default function RetentionBar({ electionYear, yesVotes, noVotes, retained
   const yesPct = total > 0 ? Math.round((yes / total) * 100) : null;
 
   return (
-    <div style={{ fontFamily: serif, padding: "10px 14px", borderBottom: "1px solid #f0ead8" }}>
+    <div style={{ fontFamily: serif, padding: "10px 14px", borderBottom: "1px solid #EEF3FB" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
         <span style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{electionYear} retention election</span>
         <span style={{ fontSize: 13, fontWeight: 900, color: retained === false ? C.red : C.green }}>

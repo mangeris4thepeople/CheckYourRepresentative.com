@@ -28,6 +28,16 @@ export const BANNER = {
 
 export const ABOUT = {
   heading: "What We Stand For",
+  kicker: "Our mission",
+  lede:
+    "A free, non-partisan public record of what Congress does, who pays for it, and what " +
+    "the people it represents actually think.",
+  pillars: [
+    { icon: "🧭", title: "Non-partisan", body: "The bills are the same for everyone, and so is the record. Start wherever you start." },
+    { icon: "🔒", title: "Never sold", body: "Your votes and your information are never sold to a campaign, PAC, data broker, or anyone." },
+    { icon: "🧾", title: "Every number sourced", body: "Every figure traces to a named public record, with a link to the original wherever one exists." },
+    { icon: "⚡", title: "Live, every day", body: "Bills, campaign finance, judges, and opinions refresh automatically on a daily schedule." },
+  ],
   missionLine:
     "This site exists to capture what We the People actually think, before our " +
     "representatives ever cast a vote.",
@@ -50,7 +60,11 @@ export const ABOUT = {
       "it visible. When someone has held a seat for twenty, thirty, fifty years, you can " +
       "finally see, bill by bill, whether their voting record still matches the people " +
       "who kept sending them back, or whether it quietly stopped a long time ago.",
-    "So the whole record lives here, in one place. Vote on Bills and All Active Bills " +
+    "So the whole record lives here, in one place. Home is the front door: live counts " +
+      "pulled straight from the database, the bills moving in Congress right now, and a " +
+      "data freshness board that shows exactly when each public source last refreshed, so " +
+      "you never have to wonder whether what you are reading is current. " +
+      "Vote on Bills and All Active Bills " +
       "put every live bill in front of you with a plain language breakdown of who " +
       "benefits, who pays, and whose money is behind it. Roll Calls shows every recorded " +
       "vote with every name attached. Accountability lines your district's positions up " +
@@ -349,6 +363,10 @@ export const PRIVACY_POLICY = {
 // the end of setup: there is no separate identity verification step.
 export const TUTORIAL_GETTING_STARTED = {
   heading: "Getting started",
+  kicker: "Site tutorial",
+  lede:
+    "Everything on the site, what each control does, and where every number comes from. " +
+    "Setup takes about a minute, and everything except casting votes works without signing in.",
   steps: [
     {
       n: "1",
@@ -369,6 +387,22 @@ export const TUTORIAL_GETTING_STARTED = {
         "used only for that match, never stored, never shown. That is all the setup " +
         "there is; everything except casting votes works without signing in at all.",
     },
+  ],
+};
+
+// The Home tab, added in the October 2026 revamp. Shown first on the Site
+// Tutorial page and in the first run walkthrough.
+export const TUTORIAL_HOME = {
+  title: "Home",
+  intro:
+    "The front door. Everything on it is counted live from the database the moment you " +
+    "open it, so it doubles as a health check on the whole site.",
+  items: [
+    { label: "Right now panel", desc: "Active bills before Congress, positions cast by constituents, and judges on the public record, counted live." },
+    { label: "The record, counted live", desc: "Tiles for every major dataset: bills, campaign finance filings, judges, opinions, nonprofits, and how many districts have been heard from. A number only appears when the database has it." },
+    { label: "Moving in Congress", desc: "The bills with the most recent official action, newest first, straight from the daily Congress.gov sync. Tap one to read and vote." },
+    { label: "Data freshness", desc: "Every public source and exactly when it last refreshed. Green means it pulled on schedule, amber means it is due for its next pull." },
+    { label: "Pick a thread and pull it", desc: "Shortcuts into every section of the site." },
   ],
 };
 

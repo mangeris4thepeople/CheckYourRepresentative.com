@@ -16,10 +16,10 @@ import MedicaidMap from "./MedicaidMap.jsx";
 import MoneyMap from "./MoneyMap.jsx";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const SECTIONS = [
   { key: "know-your-rep", label: "Know Your Rep" },
@@ -66,7 +66,7 @@ export default function FollowTheMoney({ district }) {
         {SECTIONS.map(s => (
           <button key={s.key} onClick={() => selectSection(s.key)}
             style={{ flex: "1 1 200px", fontFamily: serif, fontWeight: 700, fontSize: 13, padding: "10px 14px",
-                     borderRadius: 6, cursor: "pointer", border: `2px solid ${C.navy}`,
+                     borderRadius: 12, cursor: "pointer", border: `2px solid ${C.navy}`,
                      background: section === s.key ? C.navy : "#fff",
                      color: section === s.key ? "#fff" : C.navy }}>
             {s.label}

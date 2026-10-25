@@ -11,10 +11,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import TransparencyScore from "./TransparencyScore.jsx";
 
 const C = {
-  navy: "#0A1A3F", gold: "#C9A227", crimson: "#8B0000", parchment: "#FBF7EC",
-  ink: "#1A1A1A", muted: "#5C5347", line: "#D8C9A0", green: "#1B5E20", red: "#B71C1C",
+  navy: "#0E2A6B", gold: "#F5B82E", crimson: "#D62839", parchment: "#FFFFFF",
+  ink: "#0F172A", muted: "#5B6578", line: "#E2E8F0", green: "#15803D", red: "#DC2626",
 };
-const serif = "Georgia, 'Times New Roman', serif";
+const serif = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const SOURCE_LABELS = {
   federal_award: "Federal award",
@@ -65,7 +65,7 @@ export default function NgosDirectory() {
 
   return (
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ background: C.navy, color: "#fff", padding: "22px 24px", borderRadius: 8,
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "22px 24px", borderRadius: 16,
                     border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: C.gold, textTransform: "uppercase", marginBottom: 8 }}>
           NGO Funding Transparency
@@ -101,14 +101,14 @@ export default function NgosDirectory() {
       {phase === "ready" && orgs.length === 0 && <Center>No organizations match these filters yet.</Center>}
 
       {orgs.length > 0 && (
-        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+        <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>
           {orgs.map((o, i) => {
             const pct = o.pct_transparent;
             const barColor = pct == null ? "#ccc" : pct >= 75 ? C.green : pct >= 40 ? C.gold : C.red;
             return (
               <button key={o.id} onClick={() => setSelected(o.id)}
                 style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "transparent",
-                         border: "none", borderBottom: i < orgs.length - 1 ? `1px solid #ece7d5` : "none",
+                         border: "none", borderBottom: i < orgs.length - 1 ? `1px solid #EEF2F8` : "none",
                          padding: "12px 16px", display: "flex", alignItems: "center", gap: 14, fontFamily: serif }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -119,7 +119,7 @@ export default function NgosDirectory() {
                   </div>
                 </div>
                 <div style={{ width: 120, flexShrink: 0 }}>
-                  <div style={{ height: 7, borderRadius: 999, background: "#EDE6D0", overflow: "hidden" }}>
+                  <div style={{ height: 7, borderRadius: 999, background: "#F1F5FB", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${Math.min(pct || 0, 100)}%`, background: barColor }} />
                   </div>
                   <div style={{ fontSize: 11, color: C.muted, textAlign: "right", marginTop: 2 }}>
@@ -135,7 +135,7 @@ export default function NgosDirectory() {
       {phase === "ready" && hasMore && (
         <button onClick={() => loadList(offset + PAGE_SIZE, true)}
           style={{ width: "100%", padding: 12, fontFamily: serif, fontWeight: 700, fontSize: 13,
-                   background: C.navy, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", marginTop: 10 }}>
+                   background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 10 }}>
           Load More Organizations
         </button>
       )}
@@ -168,7 +168,7 @@ function NgoDetail({ orgId, onBack }) {
   const back = (
     <button onClick={onBack}
       style={{ fontFamily: serif, fontSize: 13, fontWeight: 700, color: C.navy, background: "none",
-               border: `1px solid ${C.line}`, borderRadius: 6, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
+               border: `1px solid ${C.line}`, borderRadius: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 16 }}>
       ← All organizations
     </button>
   );
@@ -183,7 +183,7 @@ function NgoDetail({ orgId, onBack }) {
     <div style={{ fontFamily: serif, color: C.ink, maxWidth: 900, margin: "0 auto" }}>
       {back}
 
-      <div style={{ background: C.navy, color: "#fff", padding: "20px 24px", borderRadius: 8, border: `3px solid ${C.gold}`, marginBottom: 18 }}>
+      <div style={{ background: "linear-gradient(125deg,#0B225A 0%,#1D3FA6 58%,#2563EB 100%)", color: "#fff", padding: "20px 24px", borderRadius: 16, border: `3px solid ${C.gold}`, marginBottom: 18 }}>
         <div style={{ fontSize: 20, fontWeight: 900 }}>{org.name}</div>
         <div style={{ fontSize: 12.5, color: "#cfd6e4", marginTop: 4 }}>
           {[org.city, org.state].filter(Boolean).join(", ")}
@@ -242,7 +242,7 @@ function Select({ label, value, onChange, options, labelFor }) {
     <label style={{ fontFamily: serif, fontSize: 12, color: C.muted, display: "flex", flexDirection: "column", gap: 4 }}>
       {label}
       <select value={value} onChange={e => onChange(e.target.value)}
-        style={{ fontFamily: serif, fontSize: 13, padding: "7px 10px", border: `1px solid ${C.line}`, borderRadius: 6, background: "#fff", minWidth: 140 }}>
+        style={{ fontFamily: serif, fontSize: 13, padding: "7px 10px", border: `1px solid ${C.line}`, borderRadius: 12, background: "#fff", minWidth: 140 }}>
         <option value="">All</option>
         {options.map(o => <option key={o} value={o}>{labelFor ? labelFor(o) : o}</option>)}
       </select>
@@ -253,13 +253,13 @@ function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
-      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>{children}</div>
     </div>
   );
 }
 function Row({ left, sub, right }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: "1px solid #f0ead8" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: "1px solid #EEF3FB" }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>{left}</div>
         {sub ? <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{sub}</div> : null}
