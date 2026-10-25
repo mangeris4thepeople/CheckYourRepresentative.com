@@ -83,5 +83,17 @@ export default async function handler(req, res) {
 
   const fn = OPS[req.query.op];
   if (!fn) return res.status(404).json({ error: "unknown operation" });
+
+  // Log every failed cron response body so the reason shows up in Vercel
+  // runtime logs (the dashboard only shows the status code otherwise).
+  let code = 200;
+  const origStatus = res.status.bind(res);
+  const origJson = res.json.bind(res);
+  res.status = (c) => { code = c; return origStatus(c); };
+  res.json = (body) => {
+    if (code >= 400) console.error(`[cron ${req.query.op}] ${code}`, JSON.stringify(body).slice(0, 800));
+    else console.log(`[cron ${req.query.op}] ${code}`, JSON.stringify(body).slice(0, 300));
+    return origJson(body);
+  };
   return fn(req, res);
 }
