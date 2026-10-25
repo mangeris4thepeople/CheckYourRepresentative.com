@@ -34,6 +34,22 @@ const ACTIVE_SINCE = "2025-01-01"; // start of the 119th Congress, matches bills
 const MAX_PAGES = 150; // safety cap, comfortably above one Congress's real page count
 const TIME_BUDGET_MS = 45000; // leaves margin below the platform's hard invocation limit
 
+// A bill stops being "active" once nothing more can happen to it on the
+// floor: it became law, or (for a simple resolution, which never goes to the
+// President) the chamber agreed to it. Vetoed and failed measures stay active
+// because an override or a motion to reconsider can still bring them back.
+// Before this, every bill was stored as active, so the Home tab's "active
+// bills" count equaled every bill in the Congress and enacted bills kept
+// showing up in the vote queue.
+const ENACTED = /(became public law|became private law|signed by president)/i;
+const RES_AGREED = /(resolution agreed to|submitted in the senate.*agreed to|agreed to without amendment|agreed to by (voice|unanimous|yea))/i;
+export function isBillActive(type, latestAction) {
+  const text = String(latestAction || "");
+  if (ENACTED.test(text)) return false;
+  if ((type === "hres" || type === "sres") && RES_AGREED.test(text)) return false;
+  return true;
+}
+
 export default async function handler(req, res) {
   if (!CONGRESS_API_KEY) return res.status(500).json({ error: "CONGRESS_API_KEY not set" });
   if (!hasDb) return res.status(500).json({ error: "no database configured" });
@@ -65,7 +81,7 @@ export default async function handler(req, res) {
           policyArea: b.policyArea?.name || "",
           latestAction: b.latestAction?.text || "",
           actionDate,
-          isActive: true,
+          isActive: isBillActive(type, b.latestAction?.text),
         });
       }
       scanned += (data.bills || []).length;

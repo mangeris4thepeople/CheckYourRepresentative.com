@@ -8,7 +8,7 @@
 //
 // Response:
 //   counts:    { bills, activeBills, votes, voters, publicProfiles, reps,
-//                senators, judges, opinions, ngos, fecFilings, alertsSent }
+//                senators, ngos, fecFilings, alertsSent }
 //   freshness: [{ key, label, source, syncedAt }]   newest first
 //   moving:    [{ id, type, number, title, latestAction, actionDate }]
 //   generatedAt
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   if (!hasDb) return res.status(500).json({ error: "no database configured" });
 
   const [
-    bills, votes, profiles, reps, senators, judges, coJudges, opinions,
+    bills, votes, profiles, reps, senators,
     ngos, fecFilings, senFilings, alerts,
   ] = await Promise.all([
     one(sql`SELECT count(*)::int AS n, count(*) FILTER (WHERE is_active)::int AS active,
@@ -37,9 +37,6 @@ export default async function handler(req, res) {
     one(sql`SELECT count(*) FILTER (WHERE is_public)::int AS public FROM profiles`),
     one(sql`SELECT count(*)::int AS n, max(updated_at) AS synced FROM representatives`),
     one(sql`SELECT count(*)::int AS n, max(updated_at) AS synced FROM senators`),
-    one(sql`SELECT count(*)::int AS n, max(synced_at) AS synced FROM national_judges`),
-    one(sql`SELECT count(*)::int AS n, max(synced_at) AS synced FROM co_judges`),
-    one(sql`SELECT count(*)::int AS n, max(synced_at) AS synced FROM judicial_opinions`),
     one(sql`SELECT count(*)::int AS n, max(updated_at) AS synced FROM ngo_orgs`),
     one(sql`SELECT count(*)::int AS n, max(synced_at) AS synced FROM rep_fec_filings`),
     one(sql`SELECT count(*)::int AS n, max(synced_at) AS synced FROM senator_filings`),
@@ -68,8 +65,6 @@ export default async function handler(req, res) {
     publicProfiles: profiles?.public ?? null,
     reps: reps?.n ?? null,
     senators: senators?.n ?? null,
-    judges: (judges?.n ?? 0) + (coJudges?.n ?? 0) || null,
-    opinions: opinions?.n ?? null,
     ngos: ngos?.n ?? null,
     fecFilings: (fecFilings?.n ?? 0) + (senFilings?.n ?? 0) || null,
     alertsSent: alerts?.n ?? null,
@@ -79,8 +74,6 @@ export default async function handler(req, res) {
     { key: "bills",    label: "Bills and actions",        source: "Congress.gov",              syncedAt: bills?.synced },
     { key: "housefec", label: "House campaign finance",   source: "FEC",                       syncedAt: fecFilings?.synced },
     { key: "senfec",   label: "Senate campaign finance",  source: "FEC",                       syncedAt: senFilings?.synced },
-    { key: "judges",   label: "Judges nationwide",        source: "CourtListener",             syncedAt: judges?.synced },
-    { key: "opinions", label: "Judicial opinions",        source: "CourtListener",             syncedAt: opinions?.synced },
     { key: "repspace", label: "RepSpace activity",        source: "House and Senate clerks",   syncedAt: repspace?.synced },
     { key: "reps",     label: "House roster",             source: "Congress.gov",              syncedAt: reps?.synced },
     { key: "senators", label: "Senate roster",            source: "Congress.gov",              syncedAt: senators?.synced },

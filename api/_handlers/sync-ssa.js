@@ -11,7 +11,7 @@
 // edition, which is why the site showed 11-year-old data.)
 //
 // Creates and heals its own schema on every run, the same pattern as
-// sync-judges, so one authenticated trigger fully provisions this feature
+// the other syncs, so one authenticated trigger fully provisions this feature
 // against whatever database the deployment actually uses.
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
@@ -135,7 +135,7 @@ function toInt(v) {
 }
 
 async function ensureSchema() {
-  // Same healing rule as sync-judges: a pre-existing table that is not
+  // Same healing rule as the other syncs: a pre-existing table that is not
   // exactly the expected shape gets rebuilt. This table is a pure mirror of
   // the SSA dataset, refetched in full on every run, so nothing is lost.
   const wanted = ["id", "state", "state_abbr", "data_year", "total_beneficiaries",

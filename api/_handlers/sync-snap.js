@@ -12,7 +12,7 @@
 // requests get an error page), so CENSUS_API_KEY must be set in Vercel.
 //
 // The load runs as stages (one states query, one counties query, then one
-// places query per state), resumable exactly like sync-national-judges: a
+// places query per state), resumable in chunks: a
 // cursor in sync_state records the next stage, each run consumes its time
 // budget under the 60 second function limit, and an incomplete run kicks
 // its own URL so one trigger walks every stage to completion.
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
     const passComplete = idx >= STAGES.length;
     if (passComplete) await setCursor(0);
 
-    // Chain the next chunk, same pattern as sync-national-judges: the kick
+    // Chain the next chunk, chunked pattern: the kick
     // only needs to start the next invocation before this one returns.
     let chained = false;
     if (!passComplete && errors.length < 10 && process.env.CRON_SECRET) {
