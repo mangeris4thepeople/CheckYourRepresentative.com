@@ -4,8 +4,9 @@
 // Vercel Web Analytics is cookieless: no cookies, no local storage, no
 // cross-site tracking, and visitors are counted with a hash that resets
 // every day, so a visit cannot be tied to a person or followed over time.
-// The privacy policy (PRIVACY_POLICY in src/content/siteCopy.js) describes
-// exactly this setup; keep the two in sync.
+// This runs for every visitor. Google Analytics is separate and runs only
+// after consent; see src/lib/ga.js. The privacy policy (PRIVACY_POLICY in
+// src/content/siteCopy.js) describes both; keep them in sync.
 //
 // The app has no router (route changes are state changes), so auto page
 // tracking is off and App.jsx reports each view itself through

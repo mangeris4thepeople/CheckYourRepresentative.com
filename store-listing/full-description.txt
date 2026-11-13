@@ -14,7 +14,7 @@ Know Your Judge. The judges of every state, from the Free Law Project's CourtLis
 
 WHAT WE NEVER DO
 
-Your information and your votes are never sold to anyone. Not a campaign, not a PAC, not a data broker, not any institution, for any price, period. No ads, no tracking SDKs, no analytics profiles. Sign in is a one time email link; there is no password to steal. The address you use to find your district is never stored.
+Your information and your votes are never sold to anyone. Not a campaign, not a PAC, not a data broker, not any institution, for any price, period. No ads and no tracking SDKs. Google Analytics runs only if you click Allow analytics, and it never builds a profile of you. Sign in is a one time email link; there is no password to steal. The address you use to find your district is never stored.
 
 Where public data ends, the app says so plainly. A gap on a map is labeled as a government disclosure gap, because pretending to know more than the record shows is the exact disease this app exists to fight.
 

@@ -1,8 +1,9 @@
 // =============================================================================
 // AboutPage.jsx - "What We Stand For". Fully rerendered for the October 2026
 // revamp: gradient hero, mission pull quote, four pillars, the full mission
-// text, a map of the site, and the named data sources. All copy lives in
-// src/content/siteCopy.js. House style: no em dashes.
+// text, a map of the site, and the named data sources. Re-rendered in full
+// on 13 Nov 2026 for the optional analytics banner (no page copy changed).
+// All copy lives in src/content/siteCopy.js. House style: no em dashes.
 // =============================================================================
 import React from "react";
 import MarketingPage, { SectionTitle } from "./MarketingPage.jsx";

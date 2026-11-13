@@ -25,6 +25,8 @@ import SiteTutorialPage, { FirstRunTutorial } from "./components/marketing/SiteT
 import { getStoredSession } from "./lib/session.js";
 import { applySeo } from "./lib/seo.js";
 import { trackPageview } from "./lib/analytics.js";
+import { trackGAPageview } from "./lib/ga.js";
+import ConsentBanner from "./components/ConsentBanner.jsx";
 
 // Heavy or cold views load on demand instead of riding in the main bundle:
 // Follow the Money pulls the big map trees, and the
@@ -156,6 +158,8 @@ export default function App() {
     applySeo(routeKey);
     // Cookieless page view for the same route key; see src/lib/analytics.js.
     trackPageview(routeKey);
+    // Google Analytics page view, sent only after the visitor allows analytics; see src/lib/ga.js.
+    trackGAPageview(routeKey);
   }, [view, tab, navigated]);
 
   // "Enter the Tool" always lands on the Profile tab - sign in first,
@@ -306,6 +310,8 @@ export default function App() {
         <FirstRunTutorial onDismiss={dismissTutorial}
           onNavigate={(v) => { dismissTutorial(); setView(v); }} />
       )}
+      <ConsentBanner />
+
 
       <main className="cyr-main" key={tab}>
         {tab === "home" && (

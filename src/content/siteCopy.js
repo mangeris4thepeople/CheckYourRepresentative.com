@@ -211,14 +211,15 @@ export const PRIVACY_SHORT =
 // The Privacy Policy shown on the footer "Privacy" page. The data storage,
 // analytics, and contact sections are filled from the real infrastructure
 // (Neon PostgreSQL, Resend, Vercel, cookieless Vercel Web Analytics wired in
-// src/lib/analytics.js). If the analytics setup changes, this copy changes
+// src/lib/analytics.js, and Google Analytics wired in src/lib/ga.js, which
+// runs only after the visitor clicks Allow analytics). If the analytics setup changes, this copy changes
 // with it. This draft still needs legal review before it is treated as final.
 export const PRIVACY_POLICY = {
   title: "Privacy Policy",
   // Set to the publish date. Update if the policy is approved on a later date.
   effectiveDate: "July 4, 2026",
   // Bump whenever a section below changes.
-  lastUpdated: "October 14, 2026",
+  lastUpdated: "November 13, 2026",
   sections: [
     {
       heading: "What we collect",
@@ -301,8 +302,18 @@ export const PRIVACY_POLICY = {
           "any page address leaves your browser, we strip out everything except the page " +
           "itself and standard campaign tags, so sign in links, profile card IDs, and other " +
           "personal details in a link are never sent.",
-        "We do not use Google Analytics, advertising pixels, or any tool that builds a " +
-          "profile of you, and we never tie browsing activity to your account.",
+        "We do not use advertising pixels or any tool that builds a profile of you, and " +
+          "we never tie browsing activity to your account.",
+        "Google Analytics is optional. It runs only if you click Allow analytics on the banner, " +
+          "and it never runs if you click No thanks. If you allow it, Google Analytics sets " +
+          "first party cookies on this site (named _ga and _ga followed by an ID) so it can tell " +
+          "visits apart. It records the page address after the scrubbing described above, " +
+          "approximate location, browser, operating system, device type, and the referring site " +
+          "where your browser shares it. Google signals and ad personalization are turned off, " +
+          "IP addresses are anonymized, and we never send account identifiers to Google. Google " +
+          "processes this data as our analytics provider, and we keep it for the retention period " +
+          "set in our Google Analytics account. You can choose No thanks at any time, and clearing " +
+          "this site's data in your browser shows the choice again.",
         "We also keep our own anonymous daily counters: total visits, walkthrough dismissals, " +
           "and sign ins, each stored as a single number per day. These counters contain no " +
           "IP address, no device information, no cookies, and no account identifiers, so " +
@@ -310,8 +321,9 @@ export const PRIVACY_POLICY = {
           "working for people, and the running totals are publicly readable at " +
           "/api/metrics-summary because our transparency standard applies to us too.",
         "Apart from the analytics script above, which is served by our host, the only " +
-          "third-party resource loaded in your browser is Google Fonts, used for the site's " +
-          "typography, which is not analytics. Our hosting and database providers keep " +
+          "third-party resources loaded in your browser are Google Fonts, used for the site's " +
+          "typography, and, only if you click Allow analytics, Google Analytics. Our hosting and " +
+          "database providers keep " +
           "standard operational server logs, which can include IP addresses, for security and " +
           "reliability.",
       ],

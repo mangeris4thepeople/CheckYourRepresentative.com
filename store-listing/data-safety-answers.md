@@ -32,8 +32,12 @@ App activity, Other user-generated content
 
 App activity, App interactions
 - Collected: YES (page views through cookieless Vercel Web Analytics:
-  which page was viewed, the referring site, browser, OS, device type)
-- Shared: NO. Processed ephemerally: NO. Required: YES (no opt out toggle)
+  which page was viewed, the referring site, browser, OS, device type).
+  Google Analytics also collects these page views only when the visitor
+  clicks Allow analytics (optional)
+- Shared: YES, with Google as analytics provider, only when the visitor
+  allows analytics. Processed ephemerally: NO. Required: NO (visitor can
+  choose No thanks; the app works either way)
 - Purpose: Analytics
 - Not linked to the user's account or identity; the visitor hash Vercel
   uses is discarded after 24 hours. Page addresses are scrubbed in the
@@ -43,7 +47,9 @@ App activity, App interactions
 Location, Approximate location
 - Collected: YES (country, region, city derived by Vercel Web Analytics
   from the request; no IP address stored by the analytics tool)
-- Shared: NO. Required: YES
+- Shared: NO for Vercel Web Analytics. Google Analytics gets approximate
+  location only when the visitor allows analytics. Required: NO for Google
+  Analytics, YES for Vercel
 - Purpose: Analytics
 - Note: separate from the district lookup address, which is still used
   once for matching and never stored.
@@ -64,9 +70,10 @@ advertising.
 
 - Ads: NO ads of any kind, no advertising SDKs
 - Data sold: NO, to anyone, ever
-- Third parties data is shared with: none for user data. Infrastructure
-  processors only: Neon (database), Resend (sign in email), Vercel
-  (hosting and cookieless Web Analytics), consistent with the privacy policy
+- Third parties data is shared with: Google (Google Analytics, optional,
+  consent based). Infrastructure processors: Neon (database), Resend
+  (sign in email), Vercel (hosting and cookieless Web Analytics),
+  consistent with the privacy policy
 - Account creation: YES, email based (one time link, no password)
 - Account deletion URL: https://checkyourrepresentative.com/privacy
   (Your Rights section documents the deletion request path)
