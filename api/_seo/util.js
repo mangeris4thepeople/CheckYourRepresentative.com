@@ -6,7 +6,10 @@
 // or en dashes anywhere in code or copy.
 // =============================================================================
 
-export const ORIGIN = "https://checkyourrepresentative.com";
+// The live site answers on the www host (the bare domain forwards to it), so
+// every canonical URL, sitemap entry, and structured data link uses www.
+// Pointing these at the bare domain would send search engines to a redirect.
+export const ORIGIN = "https://www.checkyourrepresentative.com";
 export const SITE = "CheckYourRepresentative.com";
 
 // State and territory names for every delegation in rs_members.

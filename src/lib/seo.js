@@ -15,7 +15,9 @@
 // House style: no em dashes or en dashes anywhere in this copy.
 // =============================================================================
 
-const ORIGIN = "https://checkyourrepresentative.com";
+// The www host is the one that serves pages; the bare domain forwards to it.
+// Canonical URLs must name the host that answers, not the one that redirects.
+const ORIGIN = "https://www.checkyourrepresentative.com";
 const SITE = "CheckYourRepresentative.com";
 
 export const ROUTE_META = {

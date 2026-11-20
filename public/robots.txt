@@ -9,4 +9,4 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-Sitemap: https://checkyourrepresentative.com/sitemap.xml
+Sitemap: https://www.checkyourrepresentative.com/sitemap.xml

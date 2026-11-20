@@ -6,25 +6,25 @@ Published by We The People Inc. Contact: info@checkyourrepresentative.com
 
 ## Members of Congress
 
-- [All members of Congress](https://checkyourrepresentative.com/congress): every sitting senator, representative, and delegate, by state and A to Z
-- State delegations: https://checkyourrepresentative.com/congress/{state-name}, for example [Colorado](https://checkyourrepresentative.com/congress/colorado)
-- Member pages: https://checkyourrepresentative.com/rep/{name}-{bioguide-id}. Each has roll call attendance for the current session, FEC campaign totals by cycle, donor breakdowns by gift size and state, committee assignments, recently sponsored bills, and contact details
+- [All members of Congress](https://www.checkyourrepresentative.com/congress): every sitting senator, representative, and delegate, by state and A to Z
+- State delegations: https://www.checkyourrepresentative.com/congress/{state-name}, for example [Colorado](https://www.checkyourrepresentative.com/congress/colorado)
+- Member pages: https://www.checkyourrepresentative.com/rep/{name}-{bioguide-id}. Each has roll call attendance for the current session, FEC campaign totals by cycle, donor breakdowns by gift size and state, committee assignments, recently sponsored bills, and contact details
 
 ## Bills
 
-- [Bills in Congress, in plain English](https://checkyourrepresentative.com/bills): bills in the 119th Congress with plain-language breakdowns
-- Bill pages: https://checkyourrepresentative.com/bill/{type}-{number}-{congress}, for example https://checkyourrepresentative.com/bill/hr-1-119. Status comes from Congress.gov and refreshes daily. The plain-language breakdowns are AI-written reading aids and are labeled as such
+- [Bills in Congress, in plain English](https://www.checkyourrepresentative.com/bills): bills in the 119th Congress with plain-language breakdowns
+- Bill pages: https://www.checkyourrepresentative.com/bill/{type}-{number}-{congress}, for example https://www.checkyourrepresentative.com/bill/hr-1-119. Status comes from Congress.gov and refreshes daily. The plain-language breakdowns are AI-written reading aids and are labeled as such
 
 ## The interactive tool
 
-- [Vote on bills](https://checkyourrepresentative.com/vote): record a position on active bills
-- [Accountability Matrix](https://checkyourrepresentative.com/accountability): district positions next to the representative's recorded votes
-- [Roll calls](https://checkyourrepresentative.com/roll-calls): every recorded vote with every name attached
-- [Follow the Money](https://checkyourrepresentative.com/follow-the-money): campaign money, donors, NGO funding, Social Security, Medicaid, and SNAP by county
+- [Vote on bills](https://www.checkyourrepresentative.com/vote): record a position on active bills
+- [Accountability Matrix](https://www.checkyourrepresentative.com/accountability): district positions next to the representative's recorded votes
+- [Roll calls](https://www.checkyourrepresentative.com/roll-calls): every recorded vote with every name attached
+- [Follow the Money](https://www.checkyourrepresentative.com/follow-the-money): campaign money, donors, NGO funding, Social Security, Medicaid, and SNAP by county
 
 ## About
 
-- [What We Stand For](https://checkyourrepresentative.com/about)
-- [How It Works](https://checkyourrepresentative.com/how-it-works)
-- [Privacy Commitment](https://checkyourrepresentative.com/privacy)
-- [Sitemap](https://checkyourrepresentative.com/sitemap.xml)
+- [What We Stand For](https://www.checkyourrepresentative.com/about)
+- [How It Works](https://www.checkyourrepresentative.com/how-it-works)
+- [Privacy Commitment](https://www.checkyourrepresentative.com/privacy)
+- [Sitemap](https://www.checkyourrepresentative.com/sitemap.xml)

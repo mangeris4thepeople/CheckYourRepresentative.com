@@ -3,6 +3,14 @@
   "functions": {
     "api/**/*.js": { "maxDuration": 60 }
   },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.checkyourrep.com" }],
+      "destination": "https://www.checkyourrepresentative.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/seo?op=sitemap" },
     { "source": "/congress", "destination": "/api/seo?op=congress" },
