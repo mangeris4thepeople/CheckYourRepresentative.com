@@ -3,6 +3,8 @@
 // revamp: gradient hero, mission pull quote, four pillars, the full mission
 // text, a map of the site, and the named data sources. Re-rendered in full
 // on 13 Nov 2026 for the optional analytics banner (no page copy changed).
+// Re-rendered in full on 20 Nov 2026 for the public Congress directory,
+// member pages, and bill pages (two new entries in the site map below).
 // All copy lives in src/content/siteCopy.js. House style: no em dashes.
 // =============================================================================
 import React from "react";
@@ -17,6 +19,8 @@ const SITE_MAP = [
   ["📋", "Roll Calls", "Every recorded vote, every name attached."],
   ["💰", "Follow the Money", "FEC money, RepSpace, NGO funding, Medicaid, SNAP, Social Security, Money Map."],
   ["🌐", "Constituents", "Public voter cards, so districts can see what neighbors think."],
+  ["🏛️", "Congress Directory", "A page for every sitting member: attendance, campaign money, donors, committees, sponsored bills.", "/congress"],
+  ["📰", "Bill Pages", "Each bill with a plain language breakdown has its own page, with its current status from Congress.gov.", "/bills"],
 ];
 
 export default function AboutPage({ onNavigate, onEnter }) {
@@ -48,12 +52,14 @@ export default function AboutPage({ onNavigate, onEnter }) {
 
       <SectionTitle>What is on the site</SectionTitle>
       <div className="cyr-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-        {SITE_MAP.map(([icon, name, desc]) => (
+        {SITE_MAP.map(([icon, name, desc, href]) => (
           <div key={name} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px",
                                    borderRadius: 14, background: "#F8FAFE", border: "1px solid #E2E8F0" }}>
             <span style={{ fontSize: 20, lineHeight: 1.2 }} aria-hidden>{icon}</span>
             <span>
-              <span style={{ display: "block", fontWeight: 800, fontSize: 15, color: "var(--cyr-navy)" }}>{name}</span>
+              {href
+                ? <a href={href} style={{ display: "block", fontWeight: 800, fontSize: 15, color: "var(--cyr-navy)" }}>{name}</a>
+                : <span style={{ display: "block", fontWeight: 800, fontSize: 15, color: "var(--cyr-navy)" }}>{name}</span>}
               <span style={{ display: "block", fontSize: 13.5, lineHeight: 1.5, color: "#475569", marginTop: 2 }}>{desc}</span>
             </span>
           </div>

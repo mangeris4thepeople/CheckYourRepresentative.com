@@ -496,6 +496,22 @@ export const TUTORIAL_OTHER = [
       "shared by others near you, and so does everyone else.",
   },
   {
+    title: "Congress Directory and member pages",
+    body:
+      "Every sitting member of Congress has a public page at /congress: attendance on " +
+      "recorded votes, campaign money by cycle, where the donations come from, committee " +
+      "seats, and recently sponsored bills, each with a link to its source. Browse by " +
+      "state or by name. These pages open without signing in and can be shared or found " +
+      "through a search engine.",
+  },
+  {
+    title: "Bill pages",
+    body:
+      "Each bill with a plain language breakdown has its own page under /bills, with its " +
+      "current status straight from Congress.gov. The breakdowns are written by an AI " +
+      "model from the official record and are labeled that way; the status line is not.",
+  },
+  {
     title: "Get the app",
     body:
       "Check Your Representative is available on Android from Google Play, and installs " +
