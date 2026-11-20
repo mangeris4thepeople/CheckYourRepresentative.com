@@ -495,8 +495,8 @@ ${s?.sponsor ? `<p class="meta" style="margin:10px 0 0"><strong>Sponsor:</strong
   const summary = s ? `<section class="card"><h2>What ${esc(label)} does, in plain English</h2>
 <div class="prose"><p>${esc(s.plain)}</p></div>
 ${block("Who it affects", s.affects)}
-${block("Who benefits if it passes", s.benefits)}
-${block("Who is worse off if it passes", s.loses)}
+${block("Who benefits", s.benefits)}
+${block("Who is worse off", s.loses)}
 ${block("What changes for most people", s.impact)}
 <p class="note">This breakdown was written by an AI model from the official bill record${s.generated ? ` on ${esc(fmtDate(s.generated))}` : ""}, as a reading aid. It is not the bill text and not legal advice. The bill's current status above comes directly from Congress.gov.</p></section>` : `<section class="card"><h2>About ${esc(label)}</h2>
 <div class="prose"><p>${esc(officialTitle)}</p><p>A plain-language breakdown of this bill is generated the first time someone opens it in the tool. <a href="/?tab=allbills">Open All Active Bills</a> to read it and record your position.</p></div></section>`;
