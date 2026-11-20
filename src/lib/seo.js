@@ -4,8 +4,13 @@
 // The app has no router, so route changes are state changes; App.jsx calls
 // applySeo() whenever the active view or tab changes and this module updates
 // the tags in place. The static defaults for first paint live in index.html
-// and match the "home" entry here. Keep the paths below in sync with
-// public/sitemap.xml.
+// and match the "home" entry here.
+//
+// Every public route has a clean path of its own (/vote, /roll-calls,
+// /about ...). scripts/build-seo-pages.mjs writes one HTML file per route at
+// build time with these same titles and descriptions baked in, vercel.json
+// rewrites each path to its file, and App.jsx opens the matching view. Add a
+// route in all three places. The sitemap is generated (api/seo.js).
 //
 // House style: no em dashes or en dashes anywhere in this copy.
 // =============================================================================
@@ -16,62 +21,64 @@ const SITE = "CheckYourRepresentative.com";
 export const ROUTE_META = {
   home: {
     path: "/",
-    title: "CheckYourRepresentative.com | See How Congress Really Votes",
+    title: "Check Your Representative | How Your Member of Congress Votes and Who Funds Them",
     description:
-      "Enter your address, see exactly how your member of Congress votes, who funds them, " +
-      "and cast your own position on the bills in front of Congress right now. No spin, just the record.",
+      "Find your representative by address, see exactly how your member of Congress votes " +
+      "and who funds them, and cast your own position on the bills in front of Congress " +
+      "right now. No spin, just the record.",
   },
   profile: {
     path: "/?tab=profile",
+    noindex: true,
     title: `My Profile | ${SITE}`,
     description:
       "Sign in to save your district, cast positions on live bills, and build your own " +
       "public or private voter card.",
   },
   vote: {
-    path: "/?tab=vote",
+    path: "/vote",
     title: `Vote on Bills Before Congress | ${SITE}`,
     description:
       "Support, oppose, or undecided: cast your position on active bills and build a real " +
       "record of what your district thinks before the floor vote happens.",
   },
   allbills: {
-    path: "/?tab=allbills",
+    path: "/all-bills",
     title: `All Active Bills in Congress | ${SITE}`,
     description:
       "Every active bill in Congress with plain language breakdowns: who benefits, " +
       "who is worse off, and the money behind each one.",
   },
   matrix: {
-    path: "/?tab=matrix",
-    title: `Accountability Matrix | ${SITE}`,
+    path: "/accountability",
+    title: `Accountability Matrix: Do Their Votes Match Their District | ${SITE}`,
     description:
       "District by district, see whether each representative's votes in Washington " +
       "match what their constituents actually wanted.",
   },
   rollcalls: {
-    path: "/?tab=rollcalls",
-    title: `Roll Call Votes | ${SITE}`,
+    path: "/roll-calls",
+    title: `Roll Call Votes: How Every Member of Congress Voted | ${SITE}`,
     description:
       "Every recorded House vote, shown next to how constituents said they wanted their " +
       "representative to vote, so no one waits on a press release for the outcome.",
   },
   followthemoney: {
-    path: "/?tab=followthemoney",
-    title: `Follow the Money | ${SITE}`,
+    path: "/follow-the-money",
+    title: `Follow the Money: Campaign Donors and Public Spending | ${SITE}`,
     description:
       "Campaign money, top donors, NGO funding, Social Security, Medicaid, SNAP, and the " +
       "Money Map: six public money flows on one county level map.",
   },
   constituents: {
-    path: "/?tab=constituents",
+    path: "/constituents",
     title: `Constituents Directory | ${SITE}`,
     description:
       "Public voter cards from constituents across the country: real positions on real " +
       "bills, by district and nationwide.",
   },
   merch: {
-    path: "/?tab=merch",
+    path: "/merch",
     title: `Merch | ${SITE}`,
     description:
       "Shirts and gear that fund non-partisan voter education and keep the record in " +
@@ -114,7 +121,7 @@ export const ROUTE_META = {
   },
   landing: {
     path: "/welcome",
-    title: `Welcome | ${SITE}`,
+    title: `See How Your Member of Congress Votes | ${SITE}`,
     description:
       "See how your member of Congress votes, who funds them, and who benefits. Enter " +
       "your address and check the record.",
@@ -146,8 +153,10 @@ function setMetaByProperty(property, value) {
   }, value);
 }
 
-export function applySeo(routeKey) {
-  const meta = ROUTE_META[routeKey] || ROUTE_META.home;
+// `override` lets a view that is not in ROUTE_META (a single member's report
+// card, say) supply its own title, description, and canonical path.
+export function applySeo(routeKey, override) {
+  const meta = override || ROUTE_META[routeKey] || ROUTE_META.home;
   try {
     document.title = meta.title;
     setMetaByName("description", meta.description);
@@ -161,6 +170,10 @@ export function applySeo(routeKey) {
       l.setAttribute("rel", "canonical");
       return l;
     }, ORIGIN + meta.path);
+    // Private views stay out of search results; everything else is open.
+    const robots = document.head.querySelector('meta[name="robots"]');
+    if (meta.noindex) setMetaByName("robots", "noindex, follow");
+    else if (robots) robots.remove();
   } catch {
     // Never let a tag update break the app; worst case the previous
     // route's tags stay in place.

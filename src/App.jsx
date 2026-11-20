@@ -102,6 +102,18 @@ export default function App() {
       if (PATH_VIEWS[window.location.pathname]) {
         return { view: PATH_VIEWS[window.location.pathname], tab: null };
       }
+      // Each section of the tool has a clean address too (/vote, /roll-calls
+      // and so on), so it can be linked, shared, and indexed as its own
+      // page. Keep in sync with ROUTE_META in src/lib/seo.js and the
+      // rewrites in vercel.json.
+      const PATH_TABS = {
+        "/vote": "vote", "/all-bills": "allbills", "/accountability": "matrix",
+        "/roll-calls": "rollcalls", "/follow-the-money": "followthemoney",
+        "/constituents": "constituents", "/merch": "merch",
+      };
+      if (PATH_TABS[window.location.pathname]) {
+        return { view: "tool", tab: PATH_TABS[window.location.pathname] };
+      }
       // Shared RepSpace profile links land inside Follow the Money;
       // KnowYourRepTabs and RepSpaceTab read the rest of the path themselves.
       if (window.location.pathname.startsWith("/know-your-rep")) {
@@ -155,7 +167,14 @@ export default function App() {
   function goTab(k) { setNavigated(true); setTab(k); }
   useEffect(() => {
     const routeKey = view !== "tool" ? view : (navigated && tab !== "home" ? tab : "home");
-    applySeo(routeKey);
+    // A shared report card points search engines at that member's public
+    // page (/rep/<id> forwards to the full address) instead of the homepage.
+    const reportCardMeta = view === "report-card" && initialDeepLink?.bioguide ? {
+      path: `/rep/${initialDeepLink.bioguide}`,
+      title: "Representative Report Card | CheckYourRepresentative.com",
+      description: "Tenure, campaign money, donors, attendance, committees and sponsored bills for one member of Congress, every number from the public record.",
+    } : null;
+    applySeo(routeKey, reportCardMeta);
     // Cookieless page view for the same route key; see src/lib/analytics.js.
     trackPageview(routeKey);
     // Google Analytics page view, sent only after the visitor allows analytics; see src/lib/ga.js.
@@ -389,6 +408,12 @@ export default function App() {
               <button onClick={() => setView("howitworks")} className="cyr-footer-link">How It Works</button>
               <button onClick={() => setView("benefits")} className="cyr-footer-link">How This Benefits You</button>
               <button onClick={() => setView("privacy")} className="cyr-footer-link">Privacy</button>
+            </div>
+            {/* Real links, not buttons: these are full pages of their own,
+                readable by search engines without running the app. */}
+            <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 18 }}>
+              <a href="/congress" className="cyr-footer-link" style={{ textDecoration: "none" }}>All Members of Congress</a>
+              <a href="/bills" className="cyr-footer-link" style={{ textDecoration: "none" }}>Bills in Plain English</a>
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.7, color: "#AFC0E2" }}>
               Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, spending from USASpending and the Census Bureau.

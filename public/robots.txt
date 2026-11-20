@@ -1,10 +1,12 @@
-# CheckYourRepresentative.com - open to all crawlers.
+# CheckYourRepresentative.com - open to all crawlers, search and AI alike.
+# Every public page is plain HTML: member pages under /rep/, state
+# delegations under /congress/, bills under /bill/.
 # The API is data plumbing for the app, not pages; auth and session
 # endpoints live under /api/auth/ and are covered by the same block.
 
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /api/auth/
+Disallow: /admin/
 
 Sitemap: https://checkyourrepresentative.com/sitemap.xml

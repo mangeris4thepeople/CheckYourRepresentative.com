@@ -1,8 +1,24 @@
 {
+  "buildCommand": "npm run build",
   "functions": {
     "api/**/*.js": { "maxDuration": 60 }
   },
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/api/seo?op=sitemap" },
+    { "source": "/congress", "destination": "/api/seo?op=congress" },
+    { "source": "/congress/:state", "destination": "/api/seo?op=state&state=:state" },
+    { "source": "/rep/:slug", "destination": "/api/seo?op=member&slug=:slug" },
+    { "source": "/bills", "destination": "/api/seo?op=bills" },
+    { "source": "/bill/:id", "destination": "/api/seo?op=bill&id=:id" },
+
+    { "source": "/vote", "destination": "/vote.html" },
+    { "source": "/all-bills", "destination": "/all-bills.html" },
+    { "source": "/accountability", "destination": "/accountability.html" },
+    { "source": "/roll-calls", "destination": "/roll-calls.html" },
+    { "source": "/follow-the-money", "destination": "/follow-the-money.html" },
+    { "source": "/constituents", "destination": "/constituents.html" },
+    { "source": "/merch", "destination": "/merch.html" },
+
     { "source": "/api/bill-detail", "destination": "/api/bills?op=bill-detail" },
     { "source": "/api/bill-summary", "destination": "/api/bills?op=bill-summary" },
     { "source": "/api/bills-list", "destination": "/api/bills?op=bills-list" },
@@ -30,8 +46,8 @@
     { "source": "/api/money-map", "destination": "/api/reps?op=money-map" },
     { "source": "/api/report-card", "destination": "/api/reps?op=report-card" },
     { "source": "/report-card/:bioguide", "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/index.html" },
-    { "source": "/welcome", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/welcome", "destination": "/welcome.html" },
     { "source": "/api/repspace/members", "destination": "/api/repspace?op=members" },
     { "source": "/api/repspace/profile", "destination": "/api/repspace?op=profile" },
     { "source": "/api/repspace/address-lookup", "destination": "/api/repspace?op=address-lookup" },
@@ -40,11 +56,11 @@
     { "source": "/know-your-rep/:path*", "destination": "/index.html" },
     { "source": "/know-your-rep", "destination": "/index.html" },
 
-    { "source": "/about", "destination": "/index.html" },
+    { "source": "/about", "destination": "/about.html" },
     { "source": "/home", "destination": "/index.html" },
-    { "source": "/tutorial", "destination": "/index.html" },
-    { "source": "/how-it-works", "destination": "/index.html" },
-    { "source": "/benefits", "destination": "/index.html" },
+    { "source": "/tutorial", "destination": "/tutorial.html" },
+    { "source": "/how-it-works", "destination": "/how-it-works.html" },
+    { "source": "/benefits", "destination": "/benefits.html" },
     { "source": "/api/metric", "destination": "/api/account?op=metric" },
     { "source": "/api/metrics-summary", "destination": "/api/account?op=metrics-summary" },
 
@@ -154,6 +170,10 @@
     {
       "path": "/api/cron?op=sync-judges",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/seo?op=indexnow",
+      "schedule": "15 15 * * *"
     }
   ]
 }
