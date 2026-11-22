@@ -208,6 +208,9 @@ export async function memberPage(m) {
   const path = memberPath(m);
   const att = stats ? pct(stats.votes_cast, stats.votes_total) : null;
   const latest = totals[0] || null;
+  // The FEC row can exist with amounts not yet filed. Unknown is not $0.
+  const hasReceipts = !!latest && latest.receipts != null;
+  const moneyCell = (v) => money(v) || "Not reported";
   const fecId = latest?.fec_candidate_id || null;
   const fecUrl = fecId ? `https://www.fec.gov/data/candidate/${encodeURIComponent(fecId)}/` : "https://www.fec.gov/data/";
   const bioguideUrl = `https://bioguide.congress.gov/search/bio/${bio}`;
@@ -236,7 +239,7 @@ export async function memberPage(m) {
   if (m.first_term_start) descBits[0] += `, first sworn in to Congress in ${yearOf(m.first_term_start)}`;
   descBits[0] += ".";
   if (stats) descBits.push(`Cast ${num(stats.votes_cast)} of ${num(stats.votes_total)} roll call votes on file for 2026 (${att}%).`);
-  if (latest) descBits.push(`${latest.cycle} cycle receipts: ${money(latest.receipts)}.`);
+  if (hasReceipts) descBits.push(`${latest.cycle} cycle receipts: ${money(latest.receipts)}.`);
   descBits.push("Donors, committees and sponsored bills from public records.");
   const description = clip(descBits.join(" "), 230);
   const title = `${name}: Voting Record, Donors and Attendance (${tagText}) | ${SITE}`;
@@ -252,11 +255,13 @@ export async function memberPage(m) {
       `In the ${SESSION_LABEL}, ${name} cast ${num(stats.votes_cast)} of the ${num(stats.votes_total)} roll call votes on file here and missed ${num(stats.votes_missed)}, a participation rate of ${att}%.` +
       (stats.last_vote_date ? ` This count runs through ${fmtDate(stats.last_vote_date)}.` : "")]);
   }
-  if (latest) {
+  if (hasReceipts) {
+    const from = [];
+    if (latest.individual_contributions != null) from.push(`${money(latest.individual_contributions)} from individual contributors`);
+    if (latest.pac_contributions != null) from.push(`${money(latest.pac_contributions)} from PACs and other committees`);
     faq.push([`How much money has ${possessive(name)} campaign raised?`,
       `Federal Election Commission filings for the ${latest.cycle} cycle show total receipts of ${money(latest.receipts)}` +
-      (latest.individual_contributions != null ? `, including ${money(latest.individual_contributions)} from individual contributors` : "") +
-      (latest.pac_contributions != null ? ` and ${money(latest.pac_contributions)} from PACs and other committees` : "") + "." +
+      (from.length ? `, including ${from.join(" and ")}` : "") + "." +
       (latest.cash_on_hand_end != null ? ` Ending cash on hand for that cycle is ${money(latest.cash_on_hand_end)}.` : "")]);
   }
   if (comms.length) {
@@ -318,7 +323,7 @@ ${m.photo_url ? `<img src="${esc(m.photo_url)}" alt="Official portrait of ${esc(
 <div class="card stat"><b>${att}%</b><span>Votes cast</span><div class="bar"><i style="width:${Math.max(0, Math.min(100, att))}%"></i></div></div>
 <div class="card stat"><b>${num(stats.votes_cast)}</b><span>Of ${num(stats.votes_total)} roll calls</span><small>${num(stats.votes_missed)} missed</small></div>
 <div class="card stat"><b>${num(stats.yes_votes)}</b><span>Yes votes</span><small>${num(stats.no_votes)} no${Number(stats.present_votes) > 0 ? `, ${num(stats.present_votes)} present` : ""}</small></div>
-<div class="card stat"><b>${latest ? esc(money(latest.receipts)) : (m.first_term_start ? yearOf(m.first_term_start) : "")}</b><span>${latest ? `${latest.cycle} cycle receipts` : "First took office"}</span>${latest ? "<small>FEC filings</small>" : ""}</div>
+<div class="card stat"><b>${hasReceipts ? esc(money(latest.receipts)) : (m.first_term_start ? yearOf(m.first_term_start) : "")}</b><span>${hasReceipts ? `${latest.cycle} cycle receipts` : (m.first_term_start ? "First took office" : "")}</span>${hasReceipts ? "<small>FEC filings</small>" : ""}</div>
 </div>` : "";
 
   const record = stats ? `<section class="card"><h2>${esc(possessive(name))} voting attendance</h2>
@@ -329,12 +334,12 @@ ${m.photo_url ? `<img src="${esc(m.photo_url)}" alt="Official portrait of ${esc(
   const moneySection = totals.length ? `<section class="card"><h2>Campaign money</h2>
 <p class="sub">Totals on file with the Federal Election Commission for ${esc(possessive(name))} campaign, by two-year cycle.</p>
 <div class="scroll"><table><thead><tr><th>Cycle</th><th class="n">Receipts</th><th class="n">Spent</th><th class="n">From individuals</th><th class="n">From PACs</th><th class="n">Cash on hand</th></tr></thead><tbody>
-${totals.map((t) => `<tr><td><strong>${t.cycle}</strong></td><td class="n">${esc(money(t.receipts))}</td><td class="n">${esc(money(t.disbursements))}</td><td class="n">${esc(money(t.individual_contributions))}</td><td class="n">${esc(money(t.pac_contributions))}</td><td class="n">${esc(money(t.cash_on_hand_end))}</td></tr>`).join("")}
+${totals.map((t) => `<tr><td><strong>${t.cycle}</strong></td><td class="n">${esc(moneyCell(t.receipts))}</td><td class="n">${esc(moneyCell(t.disbursements))}</td><td class="n">${esc(moneyCell(t.individual_contributions))}</td><td class="n">${esc(moneyCell(t.pac_contributions))}</td><td class="n">${esc(moneyCell(t.cash_on_hand_end))}</td></tr>`).join("")}
 </tbody></table></div>
 <p class="src">Source: <a href="${esc(fecUrl)}" rel="noopener">FEC candidate filings${fecId ? ` (${esc(fecId)})` : ""}</a>. <a href="/follow-the-money">Follow the money in the tool</a>.</p></section>` : "";
 
   const donorTable = (rows, head) => `<div class="scroll"><table><thead><tr><th>${head}</th><th class="n">Amount</th><th class="n">Donors</th></tr></thead><tbody>
-${rows.map((d) => `<tr><td>${esc(d.bucket_type === "state" ? (STATES[d.bucket_label] || d.bucket_label) : d.bucket_label)}</td><td class="n">${esc(money(d.total_amount))}</td><td class="n">${d.donor_count != null ? num(d.donor_count) : ""}</td></tr>`).join("")}
+${rows.map((d) => `<tr><td>${esc(d.bucket_type === "state" ? (STATES[d.bucket_label] || d.bucket_label) : d.bucket_label)}</td><td class="n">${esc(moneyCell(d.total_amount))}</td><td class="n">${d.donor_count != null ? num(d.donor_count) : ""}</td></tr>`).join("")}
 </tbody></table></div>`;
   const donorSection = (bySize.length || byState.length) ? `<section class="card"><h2>Where the money comes from</h2>
 <p class="sub">The FEC's own breakdown of individual contributions for the ${esc(donorCycle)} cycle.</p>
@@ -558,7 +563,10 @@ export async function urlInventory() {
   for (const b of bills) {
     urls.push({
       loc: ORIGIN + billPath(b.id), changefreq: "weekly", priority: "0.6",
-      lastmod: isoDate(b.action_date) || isoDate(b.generated_at) || today,
+      // The page changes when Congress acts or when its breakdown is written,
+      // whichever came later. Using only the action date hid bills summarized
+      // after an IndexNow run from every later run.
+      lastmod: [isoDate(b.action_date), isoDate(b.generated_at)].filter(Boolean).sort().pop() || today,
     });
   }
   return urls;

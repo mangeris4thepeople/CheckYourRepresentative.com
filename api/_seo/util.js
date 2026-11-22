@@ -154,7 +154,10 @@ export function isoDate(v) {
 }
 export function yearOf(v) { const p = ymd(v); return p ? p.y : null; }
 
+// A missing amount is unknown, not zero: Number(null) is 0, so stop here and
+// let the caller say "Not reported" instead of printing $0 as fact.
 export function money(v) {
+  if (v == null || v === "") return "";
   const n = Number(v);
   if (!Number.isFinite(n)) return "";
   const r = Math.round(n);
