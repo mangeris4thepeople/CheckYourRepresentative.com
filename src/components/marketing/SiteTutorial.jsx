@@ -2,6 +2,8 @@
 // SiteTutorial.jsx - the full walkthrough. Fully rerendered for the October
 // 2026 revamp (new Home tab, new visual system). Re-rendered in full on
 // 13 Nov 2026 for the optional analytics banner (no walkthrough copy changed).
+// Re-rendered in full on 20 Nov 2026 for the public Congress directory,
+// member pages, and bill pages (two new entries in TUTORIAL_OTHER).
 //
 // Exports:
 //   TutorialBody       the walkthrough content, chrome free, so it can be
