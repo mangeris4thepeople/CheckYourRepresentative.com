@@ -79,13 +79,6 @@ export const ROUTE_META = {
       "Public voter cards from constituents across the country: real positions on real " +
       "bills, by district and nationwide.",
   },
-  merch: {
-    path: "/merch",
-    title: `Merch | ${SITE}`,
-    description:
-      "Shirts and gear that fund non-partisan voter education and keep the record in " +
-      "front of the people.",
-  },
   about: {
     path: "/about",
     title: `What We Stand For | ${SITE}`,

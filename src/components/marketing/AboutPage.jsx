@@ -82,7 +82,7 @@ export default function AboutPage({ onNavigate, onEnter }) {
       </div>
 
       <div style={{ marginTop: 30, padding: "14px 16px", borderRadius: 14, background: "#F1F5FB", fontSize: 13.5, color: "#475569", lineHeight: 1.6 }}>
-        Paid for by We The People Inc. Not affiliated with any political party.
+        Published by We The People Inc. Not affiliated with any political party.
       </div>
     </MarketingPage>
   );

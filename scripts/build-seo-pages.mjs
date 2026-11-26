@@ -143,7 +143,7 @@ ${copyHtml}
 <ul class="pre-list">${SECTIONS.map(([href, name, desc]) => `<li><a href="${href}">${esc(name)}<span>${esc(desc)}</span></a></li>`).join("")}</ul>
 <h2>Members of Congress by state</h2>
 <div class="pre-chips">${stateLinks}</div>
-<p class="pre-foot">Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, spending from USASpending and the Census Bureau. Paid for by We The People Inc.</p>
+<p class="pre-foot">Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, spending from USASpending and the Census Bureau. Published by We The People Inc.</p>
 </div></div>`;
 }
 
@@ -177,7 +177,6 @@ const PAGES = [
   ["rollcalls", "roll-calls.html", heading("rollcalls"), ""],
   ["followthemoney", "follow-the-money.html", heading("followthemoney"), ""],
   ["constituents", "constituents.html", heading("constituents"), ""],
-  ["merch", "merch.html", heading("merch"), ""],
 ];
 
 let written = 0;

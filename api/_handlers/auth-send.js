@@ -84,7 +84,7 @@ export default async function handler(req, res) {
                 Your vote record is private unless you choose to make it public.
               </p>
               <div style="border-top:1px solid #D8C9A0;margin-top:24px;padding-top:16px;text-align:center;font-size:11px;color:#9B8C75">
-                CheckYourRepresentative.com · Paid for by We The People Inc.
+                CheckYourRepresentative.com · Published by We The People Inc.
               </div>
             </div>`,
         }),
