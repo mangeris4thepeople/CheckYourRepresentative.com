@@ -17,7 +17,7 @@
 import { sql } from "../_db.js";
 import { page } from "./layout.js";
 import {
-  ORIGIN, SITE, STATES, esc, clean, clip, kebab, money, num, pct, fmtDate, isoDate, yearOf,
+  ORIGIN, SITE, STATES, esc, clean, clip, fitTitle, fitSentences, kebab, money, num, pct, fmtDate, isoDate, yearOf,
   memberPath, memberSlug, memberTag, statePath, stateSlug, billPath, partyLetter, honorific,
   roleLine, seatLabel, billLabel, billKind, congressGovBillUrl, ordinal,
 } from "./util.js";
@@ -88,8 +88,11 @@ export async function congressIndex() {
   const az = [...members].sort(byLastName).map((m) =>
     `<li><a href="${memberPath(m)}">${esc(m.last_name)}, ${esc(m.first_name)}</a> <span class="meta">${esc(memberTag(m))}</span></li>`).join("");
 
-  const title = `Find Your Member of Congress: All ${members.length} Senators and Representatives | ${SITE}`;
-  const description = `Every current member of Congress in one place: ${senators} senators and ${house} House members. Open any name for attendance, campaign money, donors, committees and sponsored bills, all from public records.`;
+  const title = fitTitle(`All ${members.length} Members of Congress: Senators and Representatives`, `Find Your Member of Congress`);
+  const description = fitSentences([
+    `Every current member of Congress: ${senators} senators and ${house} House members.`,
+    "Attendance, campaign money, donors and sponsored bills from public records.",
+  ]);
 
   return page({
     title, description, path: "/congress", active: "congress",
@@ -129,8 +132,14 @@ export async function statePage(code) {
   const parts = [];
   if (sens.length) parts.push(`${sens.length} ${sens.length === 1 ? "senator" : "senators"}`);
   if (reps.length) parts.push(`${reps.length} House ${reps.length === 1 ? "member" : "members"}`);
-  const title = `${name} Members of Congress: ${isState ? "Senators and Representatives" : "House Member"} | ${SITE}`;
-  const description = clip(`${possessive(name)} delegation in the 119th Congress: ${parts.join(" and ")}. ${members.slice().sort(byLastName).slice(0, 6).map((m) => m.full_name).join(", ")}${members.length > 6 ? " and more" : ""}. Attendance, campaign money and donors from public records.`, 200);
+  const title = isState
+    ? fitTitle(`${name} Members of Congress: Senators and Representatives`, `${name} Senators and Representatives`, `${name} Members of Congress`)
+    : fitTitle(`${name} Members of Congress: House Member`, `${name} Member of Congress`);
+  const description = fitSentences([
+    `${possessive(name)} delegation in the 119th Congress: ${parts.join(" and ")}.`,
+    "Attendance, campaign money and donors from public records.",
+    `Members: ${members.slice().sort(byLastName).slice(0, 6).map((m) => m.full_name).join(", ")}${members.length > 6 ? " and more" : ""}.`,
+  ]);
 
   const path = statePath(code);
   return page({
@@ -235,14 +244,19 @@ export async function memberPage(m) {
   const byState = donors.filter((d) => d.bucket_type === "state").slice(0, 8);
 
   // ---- description and title ----
-  const descBits = [`${hon} ${name} (${tagText}) is ${roleWithArticle(m)}`];
-  if (m.first_term_start) descBits[0] += `, first sworn in to Congress in ${yearOf(m.first_term_start)}`;
-  descBits[0] += ".";
+  // Whole sentences, most useful first; fitSentences keeps those that fit.
+  const descBits = [`${hon} ${name} (${tagText}) is ${roleWithArticle(m)}.`];
   if (stats) descBits.push(`Cast ${num(stats.votes_cast)} of ${num(stats.votes_total)} roll call votes on file for 2026 (${att}%).`);
   if (hasReceipts) descBits.push(`${latest.cycle} cycle receipts: ${money(latest.receipts)}.`);
+  if (m.first_term_start) descBits.push(`First sworn in to Congress in ${yearOf(m.first_term_start)}.`);
   descBits.push("Donors, committees and sponsored bills from public records.");
-  const description = clip(descBits.join(" "), 230);
-  const title = `${name}: Voting Record, Donors and Attendance (${tagText}) | ${SITE}`;
+  const description = fitSentences(descBits);
+  const title = fitTitle(
+    `${name} (${tagText}): Voting Record, Donors, Attendance`,
+    `${name} (${tagText}): Voting Record and Donors`,
+    `${name} (${tagText}) Voting Record`,
+    `${name} Voting Record`,
+  );
 
   // ---- FAQ (visible on the page and mirrored in structured data) ----
   const faq = [];
@@ -405,8 +419,11 @@ export async function billsIndex() {
     sql`SELECT count(*)::int AS n FROM bills WHERE is_active`.catch(() => [{ n: null }]),
   ]);
   const total = countRows[0]?.n;
-  const title = `Bills in Congress, Explained in Plain English (119th Congress) | ${SITE}`;
-  const description = `Plain-language breakdowns of ${rows.length} bills moving through the 119th Congress: what each one does, who it affects, and where it stands. Read one, then put your own position on the record.`;
+  const title = fitTitle("Bills in Congress in Plain English (119th Congress)");
+  const description = fitSentences([
+    `Plain-language breakdowns of ${rows.length} bills in the 119th Congress: what each one does, who it affects, and where it stands.`,
+    "Status from Congress.gov, refreshed daily.",
+  ]);
 
   const items = rows.map((b) => `<li><a href="${billPath(b.id)}"><strong>${esc(clean(b.headline && b.headline !== "letter" ? b.headline : b.title))}</strong></a>
 <div class="meta">${esc(billLabel(b))} · ${esc(clip(clean(b.title), 150))}</div>
@@ -455,8 +472,6 @@ export async function billPage(ref) {
       plain: clean(extra.plain || ""),
       affects: clean(extra.affects || sumRows[0].affects || ""),
       sponsor: clean(extra.sponsor || ""),
-      benefits: clean(extra.who_benefits || ""),
-      loses: clean(extra.who_loses || ""),
       impact: clean(extra.vote_impact || ""),
       generated: sumRows[0].generated_at,
     };
@@ -468,10 +483,10 @@ export async function billPage(ref) {
   const govUrl = congressGovBillUrl(b);
   const path = billPath(b.id);
   const headline = s?.headline || officialTitle;
-  const title = clip(`${label}: ${headline}`, 78) + ` | ${SITE}`;
+  const title = fitTitle(`${label}: ${headline}`);
   const description = s
-    ? clip(`${label}, ${officialTitle}. ${s.plain}`, 230)
-    : clip(`${label}, ${officialTitle}. Latest action${b.action_date ? ` (${fmtDate(b.action_date)})` : ""}: ${clean(b.latest_action)}`, 230);
+    ? clip(`${label}, ${officialTitle}. ${s.plain}`)
+    : clip(`${label}, ${officialTitle}. Latest action${b.action_date ? ` (${fmtDate(b.action_date)})` : ""}: ${clean(b.latest_action)}`);
 
   const tally = { support: 0, oppose: 0, undecided: 0 };
   for (const r of tallyRows) if (r.position in tally) tally[r.position] = r.n;
@@ -500,8 +515,6 @@ ${s?.sponsor ? `<p class="meta" style="margin:10px 0 0"><strong>Sponsor:</strong
   const summary = s ? `<section class="card"><h2>What ${esc(label)} does, in plain English</h2>
 <div class="prose"><p>${esc(s.plain)}</p></div>
 ${block("Who it affects", s.affects)}
-${block("Who benefits", s.benefits)}
-${block("Who is worse off", s.loses)}
 ${block("What changes for most people", s.impact)}
 <p class="note">This breakdown was written by an AI model from the official bill record${s.generated ? ` on ${esc(fmtDate(s.generated))}` : ""}, as a reading aid. It is not the bill text and not legal advice. The bill's current status above comes directly from Congress.gov.</p></section>` : `<section class="card"><h2>About ${esc(label)}</h2>
 <div class="prose"><p>${esc(officialTitle)}</p><p>A plain-language breakdown of this bill is generated the first time someone opens it in the tool. <a href="/?tab=allbills">Open All Active Bills</a> to read it and record your position.</p></div></section>`;

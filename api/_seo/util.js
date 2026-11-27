@@ -200,13 +200,44 @@ export function congressGovBillUrl(b) {
   return `https://www.congress.gov/bill/${ordinal(b.congress)}-congress/${t[1]}/${b.number}`;
 }
 
-// Trim running text to a meta description length without cutting a word.
-export function clip(s, max = 158) {
+// Search snippet limits: Google shows about 60 characters of a title and
+// about 155 of a meta description before it truncates them itself.
+export const TITLE_MAX = 60;
+export const DESC_MAX = 155;
+
+// Trim running text to `max` characters (ellipsis included) without cutting
+// a word.
+export function clip(s, max = DESC_MAX) {
   const t = String(s || "").replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
-  const cut = t.slice(0, max - 1);
+  const cut = t.slice(0, max - 3);
   const at = cut.lastIndexOf(" ");
-  return (at > 60 ? cut.slice(0, at) : cut).replace(/[,;:.\s]+$/, "") + "...";
+  return (at > max / 3 ? cut.slice(0, at) : cut).replace(/[,;:.\s]+$/, "") + "...";
+}
+
+// Build a meta description from whole sentences: each one is added only if
+// it still fits, so the snippet never ends mid-thought. If even the first
+// does not fit, it is clipped.
+export function fitSentences(bits, max = DESC_MAX) {
+  const list = bits.map(clean).filter(Boolean);
+  let out = "";
+  for (const b of list) {
+    const next = out ? `${out} ${b}` : b;
+    if (next.length <= max) out = next;
+  }
+  return out || clip(list[0], max);
+}
+
+// Pick a page title that fits TITLE_MAX. Candidates run from most to least
+// descriptive; the first one that fits wins, and the site name is appended
+// only when there is room for it. If none fit, the last is clipped.
+export function fitTitle(...candidates) {
+  const list = candidates.map(clean).filter(Boolean);
+  for (const c of list) {
+    if (`${c} | ${SITE}`.length <= TITLE_MAX) return `${c} | ${SITE}`;
+    if (c.length <= TITLE_MAX) return c;
+  }
+  return clip(list[list.length - 1] || SITE, TITLE_MAX);
 }
 
 // The house style bans em and en dashes; source titles from Congress.gov
