@@ -330,7 +330,7 @@ export default function Landing({ onEnter, onNavigate }) {
             </div>
             <div style={{ display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff",
                           border: "1px solid rgba(255,255,255,.3)", borderRadius: 12, padding: "6px 10px" }}>
-              Paid for by We The People Inc. · Not affiliated with any political party
+              Published by We The People Inc. · Not affiliated with any political party
             </div>
           </div>
           <div style={{ flex: "1 1 360px", minWidth: 0, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.14)",

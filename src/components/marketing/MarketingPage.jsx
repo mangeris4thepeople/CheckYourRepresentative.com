@@ -86,7 +86,7 @@ export default function MarketingPage({ active, onNavigate, onEnter, title, kick
             </div>
             <div style={{ marginTop: 14, display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff",
                           border: "1px solid rgba(255,255,255,.3)", borderRadius: 16, padding: "6px 10px" }}>
-              Paid for by We The People Inc.
+              Published by We The People Inc.
             </div>
           </div>
           <div style={{ flex: "1 1 360px", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 18, padding: 20 }}>

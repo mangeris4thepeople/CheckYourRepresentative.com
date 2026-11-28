@@ -535,7 +535,7 @@ const STATIC_URLS = [
   ["/vote", "daily", "0.8"], ["/accountability", "daily", "0.8"], ["/roll-calls", "daily", "0.8"],
   ["/follow-the-money", "weekly", "0.8"], ["/constituents", "weekly", "0.5"],
   ["/about", "monthly", "0.6"], ["/how-it-works", "monthly", "0.6"], ["/benefits", "monthly", "0.5"],
-  ["/tutorial", "monthly", "0.5"], ["/welcome", "monthly", "0.5"], ["/merch", "monthly", "0.3"],
+  ["/tutorial", "monthly", "0.5"], ["/welcome", "monthly", "0.5"],
   ["/privacy", "yearly", "0.2"],
 ];
 

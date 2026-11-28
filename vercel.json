@@ -4,6 +4,7 @@
     "api/**/*.js": { "maxDuration": 60 }
   },
   "redirects": [
+    { "source": "/merch", "destination": "/", "permanent": true },
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "www.checkyourrep.com" }],
@@ -25,7 +26,6 @@
     { "source": "/roll-calls", "destination": "/roll-calls.html" },
     { "source": "/follow-the-money", "destination": "/follow-the-money.html" },
     { "source": "/constituents", "destination": "/constituents.html" },
-    { "source": "/merch", "destination": "/merch.html" },
 
     { "source": "/api/bill-detail", "destination": "/api/bills?op=bill-detail" },
     { "source": "/api/bill-summary", "destination": "/api/bills?op=bill-summary" },
@@ -81,7 +81,6 @@
 
     { "source": "/api/profile", "destination": "/api/account?op=profile" },
     { "source": "/api/geocode", "destination": "/api/account?op=geocode" },
-    { "source": "/api/checkout", "destination": "/api/account?op=checkout" },
     { "source": "/api/digest", "destination": "/api/account?op=digest" },
 
     { "source": "/api/contact", "destination": "/api/messages?op=contact" },
