@@ -219,7 +219,7 @@ ${body}
 <a href="/privacy">Privacy</a>
 </nav>
 <p>Non-partisan voter education. Bill data from Congress.gov, campaign finance from the FEC, spending from USASpending and the Census Bureau. Every figure on this page links to its public source.</p>
-<div class="paid">Paid for by We The People Inc.</div>
+<div class="paid">Published by We The People Inc.</div>
 </div>
 </div>
 </footer>
