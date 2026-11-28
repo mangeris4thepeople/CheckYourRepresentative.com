@@ -519,10 +519,6 @@ export const TUTORIAL_OTHER = [
       "from your browser's menu. It is the same site with the same public records; bills, " +
       "votes, and money data always load fresh, never from a stale cache.",
   },
-  {
-    title: "Merch",
-    body: "Supports keeping the tool running and free for everyone to use.",
-  },
 ];
 
 // Plain-English glossary of Congress.gov's bill-type prefixes, shown as a

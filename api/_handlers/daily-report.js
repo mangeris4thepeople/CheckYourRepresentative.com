@@ -167,7 +167,7 @@ function buildEmail(district, rep, rows) {
       </table>
     </div>
     <div style="background:#0A1A3F;padding:20px 32px;text-align:center;">
-      <div style="color:#C9A227;font-size:12px;font-weight:700;margin-bottom:8px;">CheckYourRepresentative.com - Paid for by We The People Inc.</div>
+      <div style="color:#C9A227;font-size:12px;font-weight:700;margin-bottom:8px;">CheckYourRepresentative.com - Published by We The People Inc.</div>
       <a href="${rep.contact_url}" style="color:#fff;font-size:12px;">Contact page: ${rep.contact_url}</a>
     </div>
   </div></body></html>`;

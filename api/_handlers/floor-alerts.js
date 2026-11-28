@@ -145,7 +145,7 @@ function buildEmail(bills) {
       Change it anytime in My Profile at CheckYourRepresentative.com.
     </p>
     <div style="border-top:1px solid #D8C9A0;margin-top:18px;padding-top:14px;text-align:center;font-size:10.5px;color:#9B8C75">
-      CheckYourRepresentative.com · Paid for by We The People Inc.
+      CheckYourRepresentative.com · Published by We The People Inc.
     </div>
   </div>`;
 }

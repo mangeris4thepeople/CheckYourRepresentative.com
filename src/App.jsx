@@ -30,11 +30,10 @@ import ConsentBanner from "./components/ConsentBanner.jsx";
 
 // Heavy or cold views load on demand instead of riding in the main bundle:
 // Follow the Money pulls the big map trees, and the
-// marketing/merch/admin views only render behind explicit navigation.
+// marketing/admin views only render behind explicit navigation.
 // (ConstituentMap - and with it the whole d3 package - was imported here for
 // nothing at all; it is retired.)
 const Landing = lazy(() => import("./components/Landing.jsx"));
-const Merch = lazy(() => import("./components/Merch.jsx"));
 const FollowTheMoney = lazy(() => import("./components/FollowTheMoney.jsx"));
 const AboutPage = lazy(() => import("./components/marketing/AboutPage.jsx"));
 const BenefitsPage = lazy(() => import("./components/marketing/BenefitsPage.jsx"));
@@ -64,7 +63,6 @@ const TABS = [
   { key: "rollcalls",    icon: "📋", label: "Roll Calls" },
   { key: "followthemoney", icon: "💰", label: "Follow the Money" },
   { key: "constituents", icon: "🌐", label: "Constituents" },
-  { key: "merch",        icon: "👕", label: "Merch" },
 ];
 
 // Tabs that get a left-hand contextual help sidebar.
@@ -109,7 +107,7 @@ export default function App() {
       const PATH_TABS = {
         "/vote": "vote", "/all-bills": "allbills", "/accountability": "matrix",
         "/roll-calls": "rollcalls", "/follow-the-money": "followthemoney",
-        "/constituents": "constituents", "/merch": "merch",
+        "/constituents": "constituents",
       };
       if (PATH_TABS[window.location.pathname]) {
         return { view: "tool", tab: PATH_TABS[window.location.pathname] };
@@ -125,7 +123,7 @@ export default function App() {
       if (rc) return { view: "report-card", tab: null, bioguide: rc[1] };
       const t = new URLSearchParams(window.location.search).get("tab");
       const VALID = new Set(["home", "vote", "allbills", "rollcalls", "constituents", "matrix",
-        "followthemoney", "profile", "merch"]);
+        "followthemoney", "profile"]);
       if (t && VALID.has(t)) return { view: "tool", tab: t };
     } catch {}
     return null;
@@ -353,7 +351,6 @@ export default function App() {
           <AllBillsBrowser district={resolved?.district} session={session} />
         )}
 
-        {tab === "merch" && <Suspense fallback={LazyFallback}><Merch /></Suspense>}
 
         {tab === "rollcalls" && (
           <RollCallExplorer district={resolved?.district} />
@@ -420,7 +417,7 @@ export default function App() {
             </div>
             <div style={{ marginTop: 14, display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff",
                           border: "1px solid rgba(255,255,255,.3)", borderRadius: 8, padding: "6px 10px" }}>
-              Paid for by We The People Inc.
+              Published by We The People Inc.
             </div>
           </div>
           <div style={{ flex: "1 1 360px", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 18, padding: 20 }}>

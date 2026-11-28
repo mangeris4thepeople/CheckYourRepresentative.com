@@ -569,7 +569,7 @@ export default function VoterProfile({ district, resolved, onResolved, onDistric
                     )}
                   </div>
                   <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.line}`, fontSize: 12, color: C.muted }}>
-                    checkyourrepresentative.com · Paid for by We The People Inc.
+                    checkyourrepresentative.com · Published by We The People Inc.
                   </div>
                 </div>
               </div>
