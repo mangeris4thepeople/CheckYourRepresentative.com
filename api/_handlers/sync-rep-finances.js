@@ -24,17 +24,20 @@
 // unknown, so this uses rep_fec_totals / rep_fec_filings /
 // rep_fec_donor_buckets instead of colliding with or repurposing them.
 //
-// MATCHING LIMITATION (do not silently paper over): FEC has no crosswalk from
-// a House seat straight to a candidate_id, so matching is office+state+
-// district plus a name match, exact last name first, falling back to a fuzzy
-// last name match if nothing exact hits. A representative whose FEC filer
-// name differs enough to miss both passes is logged and left unmatched rather
-// than guessed at, the same as etl_irs_bmf.js does for its exact-name EIN
-// crosswalk. Every unmatched representative is reported back in this
+// MATCHING: each run first checks every stored fec_candidate_id against the
+// public bioguide-to-FEC crosswalk (see api/_fec_crosswalk.js) and fixes or
+// clears ids that belong to someone else; fixed members are synced first.
+// A member the crosswalk does not cover falls back to FEC's candidate search
+// by office+state+district with the same last name AND a compatible first
+// name. A near-miss last name is logged for review but never written (it
+// attached FRANZESE, DANIEL JOHN to Rep. Lois Frankel). A representative who
+// matches no one is logged and left unmatched rather than guessed at. Every
+// change and every unmatched representative is reported back in this
 // endpoint's JSON response so a human can review and, if needed, patch
 // representatives.fec_candidate_id by hand.
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
+import { loadCrosswalk, reconcile, sameCandidateName, sameMember } from "../_fec_crosswalk.js";
 
 const FEC_API_KEY = process.env.FEC_API_KEY;
 const FEC_BASE = "https://api.open.fec.gov/v1";
@@ -76,6 +79,18 @@ export default async function handler(req, res) {
     const unmatched = [];
     const fuzzyMatched = [];
 
+    // Fix ids the crosswalk contradicts before anything else, then refresh
+    // those members right away so their pages stop showing another person's
+    // money as soon as possible.
+    const crosswalk = await checkCrosswalk();
+    // Members who showed someone else's id go first, then new fills.
+    const fixFirst = [...crosswalk.updates].sort((a, b) => (b.from ? 1 : 0) - (a.from ? 1 : 0));
+    for (const u of fixFirst) {
+      if (outOfTime()) break;
+      const rep = { district: u.key, name: u.name, fec_candidate_id: u.to };
+      if (u.to) await processRep(rep, { unmatched, fuzzyMatched });
+    }
+
     let reps = await sql`
       SELECT district, name, state, fec_candidate_id FROM representatives
       WHERE district > ${lastDistrict} ORDER BY district ASC LIMIT ${PAGE_SIZE}`;
@@ -104,6 +119,7 @@ export default async function handler(req, res) {
       processed,
       resumeAtDistrict: reachedEnd ? "" : lastDistrict,
       passComplete: reachedEnd,
+      crosswalk,
       unmatched,
       fuzzyMatched,
     });
@@ -112,12 +128,33 @@ export default async function handler(req, res) {
   }
 }
 
+async function checkCrosswalk() {
+  try {
+    const { house } = await loadCrosswalk();
+    const reps = await sql`SELECT district, name, fec_candidate_id FROM representatives`;
+    const rows = reps.map(r => {
+      const entry = house.get(r.district);
+      return { key: r.district, name: r.name, fec_candidate_id: r.fec_candidate_id,
+               entry: entry && sameMember(r.name, entry.last) ? entry : undefined };
+    });
+    const { updates } = await reconcile(rows, "H");
+    for (const u of updates) {
+      console.warn(`[sync-rep-finances] ${u.reason}: ${u.key} ${u.name} ${u.from} -> ${u.to} (${u.fecName})`);
+      await sql`UPDATE representatives SET fec_candidate_id = ${u.to} WHERE district = ${u.key}`;
+    }
+    return { checked: rows.filter(r => r.entry).length, updates };
+  } catch (err) {
+    console.warn(`[sync-rep-finances] crosswalk check skipped: ${err.message || err}`);
+    return { checked: 0, updates: [], skipped: String(err.message || err) };
+  }
+}
+
 async function processRep(rep, log) {
   try {
     let candidateId = rep.fec_candidate_id;
 
     if (!candidateId) {
-      const match = await matchCandidate(rep);
+      const match = await matchCandidate(rep, log);
       if (!match) {
         console.warn(`[sync-rep-finances] no FEC match for ${rep.district} ${rep.name}`);
         log.unmatched.push({ district: rep.district, name: rep.name });
@@ -158,7 +195,7 @@ async function processRep(rep, log) {
 }
 
 // ---- FEC candidate matching ----
-async function matchCandidate(rep) {
+async function matchCandidate(rep, log) {
   const [state, distPart] = String(rep.district || "").split("-");
   if (!state || !distPart) return null;
   const distCode = distPart === "AL" ? "00" : distPart;
@@ -168,22 +205,19 @@ async function matchCandidate(rep) {
   if (!candidates.length) return null;
 
   const repLast = lastName(rep.name);
-  const exact = candidates.filter(c => lastName(fecFirstLast(c.name).last) === repLast);
   const pick = (list) => list.sort((a, b) => (maxCycle(b) - maxCycle(a)) || (a.candidate_inactive ? 1 : -1))[0];
 
+  // Same last name is not enough: a relative or namesake can file in the same
+  // seat (NEHLS, TREVER for Rep. Troy Nehls). The first name has to fit too.
+  const exact = candidates.filter(c => sameCandidateName(rep.name, c.name));
   if (exact.length) return { candidateId: pick(exact).candidate_id, fuzzy: false };
 
-  // Fuzzy fallback: same first four letters of the last name, the same
-  // bounded approach used elsewhere in this codebase rather than a full
-  // edit-distance match that could silently pick the wrong person.
+  // Near-miss last names are reported for a human to check, never written.
   const prefix = repLast.slice(0, 4);
-  const fuzzy = prefix.length >= 3
+  const near = prefix.length >= 3
     ? candidates.filter(c => lastName(fecFirstLast(c.name).last).slice(0, 4) === prefix)
     : [];
-  if (fuzzy.length) {
-    const picked = pick(fuzzy);
-    return { candidateId: picked.candidate_id, fuzzy: true, fecName: picked.name };
-  }
+  if (near.length) log?.fuzzyMatched.push({ district: rep.district, name: rep.name, notWritten: true, fecNames: near.map(c => `${c.candidate_id} ${c.name}`) });
 
   return null;
 }

@@ -6,7 +6,7 @@
 //
 //   /congress               every sitting member, by state and A to Z
 //   /congress/:state        one state's delegation        (/congress/colorado)
-//   /rep/:slug              one member's public record    (/rep/lauren-boebert-b000825)
+//   /rep/:slug              one member's public record    (/rep/<first>-<last>-<bioguide id>)
 //   /bills                  bills with plain-language breakdowns
 //   /bill/:id               one bill                      (/bill/hr-7730-119)
 //   /sitemap.xml            generated from the database, always current
