@@ -246,7 +246,7 @@ export async function memberPage(m) {
   // ---- description and title ----
   // Whole sentences, most useful first; fitSentences keeps those that fit.
   const descBits = [`${hon} ${name} (${tagText}) is ${roleWithArticle(m)}.`];
-  if (stats) descBits.push(`Cast ${num(stats.votes_cast)} of ${num(stats.votes_total)} 2026 roll calls on file (${att}%).`);
+  if (stats) descBits.push(`2026 roll calls on file: cast ${num(stats.votes_cast)} of ${num(stats.votes_total)} (${att}%).`);
   if (hasReceipts) descBits.push(`${latest.cycle} cycle receipts: ${money(latest.receipts)}.`);
   if (m.first_term_start) descBits.push(`First sworn in to Congress in ${yearOf(m.first_term_start)}.`);
   descBits.push("Donors, committees and sponsored bills from public records.");

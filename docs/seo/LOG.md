@@ -6,3 +6,7 @@
 - Zero mentions of the site owner, any campaign or any campaign site on any live page.
 - Changes (Doug's decisions): Merch removed with /merch redirected to /; "Paid for by" changed to "Published by We The People Inc." sitewide.
 - Next 3 candidates: backlog items 1, 2 and 3.
+
+## 2026-11-27 on
+
+- One file per day in docs/seo/log/ (docs/seo/log/2026-11-27.md is the first). Backlog changes from each day are applied to BACKLOG.md when Fable merges that day's PR.
