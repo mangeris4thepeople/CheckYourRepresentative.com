@@ -20,16 +20,20 @@
 // committee's own filing history: GET /committee/{committeeId}/filings/,
 // filtered to form_category=REPORT.
 //
-// MATCHING LIMITATION (do not silently paper over): FEC has no crosswalk
-// from a Senate seat straight to a candidate_id, so matching is
-// office+state plus a name match, exact last name first, falling back to a
-// fuzzy last name match if nothing exact hits. A senator whose FEC filer
-// name differs enough to miss both passes is logged and left unmatched
-// rather than guessed at. Every unmatched senator is reported back in this
-// endpoint's JSON response so a human can review and, if needed, patch
-// senators.fec_candidate_id by hand.
+// MATCHING: each run first checks every stored fec_candidate_id against the
+// public bioguide-to-FEC crosswalk (see api/_fec_crosswalk.js) and fixes or
+// clears ids that belong to someone else; fixed senators are synced first.
+// This is what took GRAHAM, LINDSEY O. (S0SC00149) off Sen. Darline Graham's
+// page: the old last-name-only match attached it. A senator the crosswalk
+// does not cover falls back to FEC's candidate search by office+state with
+// the same last name AND a compatible first name. A near-miss last name is
+// logged for review but never written. A senator who matches no one is
+// logged and left unmatched rather than guessed at. Every change and every
+// unmatched senator is reported back in this endpoint's JSON response so a
+// human can review and, if needed, patch senators.fec_candidate_id by hand.
 // =============================================================================
 import { sql, hasDb } from "../_db.js";
+import { loadCrosswalk, reconcile, sameCandidateName } from "../_fec_crosswalk.js";
 
 const FEC_API_KEY = process.env.FEC_API_KEY;
 const FEC_BASE = "https://api.open.fec.gov/v1";
@@ -69,6 +73,18 @@ export default async function handler(req, res) {
     const unmatched = [];
     const fuzzyMatched = [];
 
+    // Fix ids the crosswalk contradicts before anything else, then refresh
+    // those senators right away so their pages stop showing another person's
+    // money as soon as possible.
+    const crosswalk = await checkCrosswalk();
+    // Members who showed someone else's id go first, then new fills.
+    const fixFirst = [...crosswalk.updates].sort((a, b) => (b.from ? 1 : 0) - (a.from ? 1 : 0));
+    for (const u of fixFirst) {
+      if (outOfTime()) break;
+      const sen = { bioguide_id: u.key, name: u.name, state: u.state, fec_candidate_id: u.to };
+      if (u.to) await processSenator(sen, { unmatched, fuzzyMatched });
+    }
+
     let senators = await sql`
       SELECT bioguide_id, name, state, fec_candidate_id FROM senators
       WHERE bioguide_id > ${lastId} ORDER BY bioguide_id ASC LIMIT ${PAGE_SIZE}`;
@@ -97,6 +113,7 @@ export default async function handler(req, res) {
       processed,
       resumeAtBioguideId: reachedEnd ? "" : lastId,
       passComplete: reachedEnd,
+      crosswalk,
       unmatched,
       fuzzyMatched,
     });
@@ -105,12 +122,31 @@ export default async function handler(req, res) {
   }
 }
 
+async function checkCrosswalk() {
+  try {
+    const { senate } = await loadCrosswalk();
+    const sens = await sql`SELECT bioguide_id, name, state, fec_candidate_id FROM senators`;
+    const rows = sens.map(r => ({ key: r.bioguide_id, name: r.name, state: r.state,
+                                  fec_candidate_id: r.fec_candidate_id, entry: senate.get(r.bioguide_id) }));
+    const { updates } = await reconcile(rows, "S");
+    for (const u of updates) {
+      u.state = rows.find(r => r.key === u.key)?.state;
+      console.warn(`[sync-senator-finances] ${u.reason}: ${u.key} ${u.name} ${u.from} -> ${u.to} (${u.fecName})`);
+      await sql`UPDATE senators SET fec_candidate_id = ${u.to} WHERE bioguide_id = ${u.key}`;
+    }
+    return { checked: rows.filter(r => r.entry).length, updates };
+  } catch (err) {
+    console.warn(`[sync-senator-finances] crosswalk check skipped: ${err.message || err}`);
+    return { checked: 0, updates: [], skipped: String(err.message || err) };
+  }
+}
+
 async function processSenator(sen, log) {
   try {
     let candidateId = sen.fec_candidate_id;
 
     if (!candidateId) {
-      const match = await matchCandidate(sen);
+      const match = await matchCandidate(sen, log);
       if (!match) {
         console.warn(`[sync-senator-finances] no FEC match for ${sen.state} ${sen.name}`);
         log.unmatched.push({ bioguideId: sen.bioguide_id, state: sen.state, name: sen.name });
@@ -146,7 +182,7 @@ async function processSenator(sen, log) {
 }
 
 // ---- FEC candidate matching ----
-async function matchCandidate(sen) {
+async function matchCandidate(sen, log) {
   const state = String(sen.state || "").trim();
   if (!state) return null;
 
@@ -155,22 +191,20 @@ async function matchCandidate(sen) {
   if (!candidates.length) return null;
 
   const senLast = lastName(sen.name);
-  const exact = candidates.filter(c => lastName(fecFirstLast(c.name).last) === senLast);
   const pick = (list) => list.sort((a, b) => (maxCycle(b) - maxCycle(a)) || (a.candidate_inactive ? 1 : -1))[0];
 
+  // Same last name is not enough: an appointee can share a last name with the
+  // senator they replaced (GRAHAM, LINDSEY O. for Sen. Darline Graham). The
+  // first name has to fit too.
+  const exact = candidates.filter(c => sameCandidateName(sen.name, c.name));
   if (exact.length) return { candidateId: pick(exact).candidate_id, fuzzy: false };
 
-  // Fuzzy fallback: same first four letters of the last name, the same
-  // bounded approach api/sync-rep-finances.js uses rather than a full
-  // edit-distance match that could silently pick the wrong person.
+  // Near-miss last names are reported for a human to check, never written.
   const prefix = senLast.slice(0, 4);
-  const fuzzy = prefix.length >= 3
+  const near = prefix.length >= 3
     ? candidates.filter(c => lastName(fecFirstLast(c.name).last).slice(0, 4) === prefix)
     : [];
-  if (fuzzy.length) {
-    const picked = pick(fuzzy);
-    return { candidateId: picked.candidate_id, fuzzy: true, fecName: picked.name };
-  }
+  if (near.length) log?.fuzzyMatched.push({ bioguideId: sen.bioguide_id, name: sen.name, notWritten: true, fecNames: near.map(c => `${c.candidate_id} ${c.name}`) });
 
   return null;
 }
