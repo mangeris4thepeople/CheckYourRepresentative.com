@@ -1,7 +1,7 @@
 # CYR SEO backlog
 
 Worked daily: Opus builds at 1:37 AM Mountain, Fable inspects, corrects and merges at 3:19 AM.
-Source: full crawl of all 858 sitemap URLs on 2026-11-26. All returned 200. Zero mentions of Doug Mangeris or any campaign.
+Source: full crawl of all 858 sitemap URLs on 2026-11-26. All returned 200. Zero mentions of the site owner or any campaign.
 
 ## Open
 
@@ -10,7 +10,7 @@ Source: full crawl of all 858 sitemap URLs on 2026-11-26. All returned 200. Zero
 3. [P1 titles] 850 of 858 titles exceed 65 characters, mostly from the " | CheckYourRepresentative.com" suffix. Shorten the suffix or drop it on rep and bill pages so the name and key words fit in 60 characters.
 4. [P1 descriptions] 840 of 858 meta descriptions exceed 160 characters. Generate them at 155 or less from the page's own data.
 5. [P2 freshness] 433 sitemap lastmod values read 2026-11-20 and about 100 still read early July 2026. Set lastmod from each page's real data update time.
-6. [P2 separation] Admin address mangeris4thepeople2026@gmail.com is hard-coded in api/_handlers/daily-report.js, test-email.js and verify-congress.js in a public repo. Move to an ADMIN_EMAIL env var defaulting to info@checkyourrepresentative.com.
+6. [P2 separation] A personal admin Gmail address is hard-coded in api/_handlers/daily-report.js, test-email.js and verify-congress.js in a public repo. Move to an ADMIN_EMAIL env var defaulting to info@checkyourrepresentative.com.
 7. [P3] api/seo.js header comment uses /rep/lauren-boebert-b000825 as its example; use a neutral example.
 
 ## Done
